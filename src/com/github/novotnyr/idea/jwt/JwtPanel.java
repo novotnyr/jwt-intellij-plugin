@@ -6,7 +6,6 @@ import com.intellij.util.ui.JBUI;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -14,7 +13,9 @@ import java.awt.GridBagLayout;
 public class JwtPanel extends JPanel {
     private JLabel headerLabel = new JLabel("Header (algorithm and token type");
 
-    private JTextArea headerTextArea = new JTextArea();
+    private JwtHeaderTableModel headerTableModel;
+
+    private JBTable headerTable = new JBTable();
 
     private JLabel payloadLabel = new JLabel("Payload (data)");
 
@@ -40,7 +41,7 @@ public class JwtPanel extends JPanel {
         add(this.headerLabel, cc);
 
         cc.gridy++;
-        add(this.headerTextArea, cc);
+        add(this.headerTable, cc);
 
         cc.gridy++;
         add(this.payloadLabel, cc);
@@ -58,15 +59,13 @@ public class JwtPanel extends JPanel {
         add(this.secretTextField, cc);
         */
 
-        this.headerTextArea.setRows(3);
-        this.headerTextArea.setText("{\n" +
-                "  \"alg\": \"HS256\"\n" +
-                "}");
 
     }
 
     public void setJwt(DecodedJWT jwt) {
-        this.headerTextArea.setText(JwtHelper.prettyUnbase64Json(jwt.getHeader()));
+        this.headerTableModel = new JwtHeaderTableModel(jwt);
+        this.headerTable.setModel(this.headerTableModel);
+
         this.claimsTableModel = new JWTClaimsTableModel(jwt);
         this.claimsTable.setModel(this.claimsTableModel);
     }
