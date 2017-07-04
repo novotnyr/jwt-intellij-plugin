@@ -11,13 +11,13 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 
 public class JwtPanel extends JPanel {
-    private JLabel headerLabel = new JLabel("Header (algorithm and token type");
+    private JLabel headerLabel = new JLabel("Header");
 
     private JwtHeaderTableModel headerTableModel;
 
     private JBTable headerTable = new JBTable();
 
-    private JLabel payloadLabel = new JLabel("Payload (data)");
+    private JLabel payloadLabel = new JLabel("Payload");
 
     private JWTClaimsTableModel claimsTableModel;
 
