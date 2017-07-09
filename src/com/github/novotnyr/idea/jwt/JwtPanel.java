@@ -31,7 +31,7 @@ public class JwtPanel extends JPanel {
 
     private JBTable claimsTable = new JBTable();
 
-    private JLabel verifySignatureLabel = new JLabel("Verify Signature");
+    private JLabel verifySignatureLabel = new JLabel("Verify signature with secret:");
 
     private JTextField secretTextField = new JTextField();
 
