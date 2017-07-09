@@ -51,12 +51,14 @@ public class JwtPanel extends JPanel {
         cc.gridy = 0;
         cc.insets = JBUI.insets(5);
         add(this.headerLabel, cc);
+        this.headerLabel.setVisible(false);
 
         cc.gridy++;
         add(this.headerTable, cc);
 
         cc.gridy++;
         add(this.payloadLabel, cc);
+        this.payloadLabel.setVisible(false);
 
         cc.gridy++;
         cc.weighty = 1;
@@ -71,6 +73,7 @@ public class JwtPanel extends JPanel {
 
         cc.gridy++;
         add(this.validateButton, cc);
+        this.validateButton.setEnabled(false);
         this.validateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -105,6 +108,10 @@ public class JwtPanel extends JPanel {
 
     public void setJwt(DecodedJWT jwt) {
         this.jwt = jwt;
+
+        this.headerLabel.setVisible(true);
+        this.payloadLabel.setVisible(true);
+        this.validateButton.setEnabled(true);
 
         this.headerTableModel = new JwtHeaderTableModel(jwt);
         this.headerTable.setModel(this.headerTableModel);

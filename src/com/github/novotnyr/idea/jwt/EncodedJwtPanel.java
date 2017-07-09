@@ -1,6 +1,7 @@
 package com.github.novotnyr.idea.jwt;
 
 import com.intellij.ui.DocumentAdapter;
+import org.jdesktop.swingx.prompt.PromptSupport;
 
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
@@ -24,6 +25,7 @@ public class EncodedJwtPanel extends JPanel {
 
         add(this.encodedJwtTextArea, BorderLayout.CENTER);
 
+        PromptSupport.init("Paste or type JWT here", null, null, this.encodedJwtTextArea);
         this.encodedJwtTextArea.setLineWrap(true);
         this.encodedJwtTextArea.getDocument().addDocumentListener(new DocumentAdapter() {
             @Override
