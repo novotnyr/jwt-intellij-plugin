@@ -20,6 +20,10 @@ public class JwtValidator {
     private List<ClaimError> claimErrors = new ArrayList<>();
 
     public void validate(DecodedJWT jwt, Object validationContext) {
+        assertInFuture(jwt, PublicClaims.EXPIRES_AT);
+        assertInPast(jwt, PublicClaims.ISSUED_AT);
+        assertInPast(jwt, PublicClaims.NOT_BEFORE);
+
         String algorithmString = jwt.getAlgorithm();
         Algorithm algorithm = null;
         switch (algorithmString) {
@@ -41,7 +45,8 @@ public class JwtValidator {
                 break;
             }
             default:
-                throw new UnknownAlgorithmException(algorithmString);
+                globalErrors.add(SignatureError.forUnknownAlgorithm(algorithmString));
+                return;
         }
         try {
             algorithm.verify(jwt);
@@ -50,9 +55,6 @@ public class JwtValidator {
         } catch (IllegalArgumentException e) {
             globalErrors.add(SignatureError.forEmptySecret());
         }
-        assertInFuture(jwt, PublicClaims.EXPIRES_AT);
-        assertInPast(jwt, PublicClaims.ISSUED_AT);
-        assertInPast(jwt, PublicClaims.NOT_BEFORE);
     }
 
     public SignatureError getSignatureError() {

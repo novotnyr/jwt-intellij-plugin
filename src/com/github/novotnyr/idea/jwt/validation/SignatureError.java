@@ -12,4 +12,8 @@ public class SignatureError extends GlobalError {
     public static SignatureError forEmptySecret() {
         return new SignatureError("Empty secret");
     }
+
+    public static SignatureError forUnknownAlgorithm(String algorithmName) {
+        return new SignatureError("Unsupported algorithm " + algorithmName);
+    }
 }
