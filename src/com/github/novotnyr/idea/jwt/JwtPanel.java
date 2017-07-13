@@ -1,17 +1,23 @@
 package com.github.novotnyr.idea.jwt;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.github.novotnyr.idea.jwt.ui.UiUtils;
 import com.github.novotnyr.idea.jwt.validation.JwtValidator;
+import com.intellij.ide.CopyPasteManagerEx;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.TextTransferable;
 
+import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -63,6 +69,7 @@ public class JwtPanel extends JPanel {
         cc.gridy++;
         cc.weighty = 1;
         add(this.claimsTable, cc);
+        configureClaimsTablePopup(this.claimsTable);
 
         cc.gridy++;
         cc.weighty = 0;
@@ -81,6 +88,47 @@ public class JwtPanel extends JPanel {
             }
         });
 
+    }
+
+    private void configureClaimsTablePopup(JBTable table) {
+        JPopupMenu popupMenu = new JPopupMenu();
+        UiUtils.configureTableRowSelectionOnPopup(popupMenu);
+
+        JMenuItem copyValueMenuItem = new JMenuItem("Copy value (as string)");
+        copyValueMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JwtPanel.this.onCopyValueMenuItemActionPerformed(e);
+            }
+        });
+        popupMenu.add(copyValueMenuItem);
+
+        JMenuItem copyAsKeyAndValueMenuItem = new JMenuItem(new AbstractAction("Copy value (as key=value)") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                onCopyKeyAndValueMenuItemActionPerformed(e);
+            }
+        });
+        popupMenu.add(copyAsKeyAndValueMenuItem);
+
+        this.claimsTable.setComponentPopupMenu(popupMenu);
+    }
+
+    public void onCopyValueMenuItemActionPerformed(ActionEvent e) {
+        int selectedRowIndex = this.claimsTable.getSelectedRow();
+        Object claimValue = this.claimsTableModel.getValueAt(selectedRowIndex, 1);
+        TextTransferable textTransferable = new TextTransferable(claimValue.toString());
+
+        CopyPasteManagerEx.getInstanceEx().setContents(textTransferable);
+    }
+
+    public void onCopyKeyAndValueMenuItemActionPerformed(ActionEvent e) {
+        int selectedRowIndex = this.claimsTable.getSelectedRow();
+        Object claimName = this.claimsTableModel.getValueAt(selectedRowIndex, 0);
+        Object claimValue = this.claimsTableModel.getValueAt(selectedRowIndex, 1);
+        TextTransferable textTransferable = new TextTransferable(claimName + "=" + claimValue.toString());
+
+        CopyPasteManagerEx.getInstanceEx().setContents(textTransferable);
     }
 
     private void onValidateButtonClick(ActionEvent e) {
