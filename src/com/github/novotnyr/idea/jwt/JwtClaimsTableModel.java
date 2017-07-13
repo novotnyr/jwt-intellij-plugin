@@ -19,7 +19,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class JWTClaimsTableModel extends AbstractTableModel implements TableCellRenderer {
+public class JwtClaimsTableModel extends AbstractTableModel implements TableCellRenderer {
     private DecodedJWT jwt;
 
     private DefaultTableCellRenderer delegateRenderer = new DefaultTableCellRenderer();
@@ -28,7 +28,7 @@ public class JWTClaimsTableModel extends AbstractTableModel implements TableCell
 
     private Color originalForegroundColor;
 
-    public JWTClaimsTableModel(DecodedJWT jwt) {
+    public JwtClaimsTableModel(DecodedJWT jwt) {
         this.jwt = jwt;
 
         this.originalForegroundColor = delegateRenderer.getForeground();

@@ -27,7 +27,7 @@ public class JwtPanel extends JPanel {
 
     private JLabel payloadLabel = new JLabel("Payload");
 
-    private JWTClaimsTableModel claimsTableModel;
+    private JwtClaimsTableModel claimsTableModel;
 
     private JBTable claimsTable = new JBTable();
 
@@ -116,7 +116,7 @@ public class JwtPanel extends JPanel {
         this.headerTableModel = new JwtHeaderTableModel(jwt);
         this.headerTable.setModel(this.headerTableModel);
 
-        this.claimsTableModel = new JWTClaimsTableModel(jwt);
+        this.claimsTableModel = new JwtClaimsTableModel(jwt);
         this.claimsTable.setModel(this.claimsTableModel);
         this.claimsTable.setDefaultRenderer(Object.class, this.claimsTableModel);
     }
