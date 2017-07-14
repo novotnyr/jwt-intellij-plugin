@@ -31,6 +31,18 @@ public class JwtHeaderTableModel extends AbstractTableModel {
     }
 
     @Override
+    public String getColumnName(int column) {
+        switch (column) {
+            case 0:
+                return "Claim";
+            case 1:
+                return "Value";
+            default:
+                return "-";
+        }
+    }
+
+    @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         int i = 0;
         for (Map.Entry<String, String> entry : this.jwtMap.entrySet()) {

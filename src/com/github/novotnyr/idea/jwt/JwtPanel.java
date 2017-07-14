@@ -3,10 +3,14 @@ package com.github.novotnyr.idea.jwt;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.github.novotnyr.idea.jwt.ui.UiUtils;
 import com.github.novotnyr.idea.jwt.validation.JwtValidator;
+import com.intellij.icons.AllIcons;
 import com.intellij.ide.CopyPasteManagerEx;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
+import com.intellij.ui.AnActionButton;
+import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.JBUI;
@@ -36,6 +40,8 @@ public class JwtPanel extends JPanel {
     private JwtClaimsTableModel claimsTableModel;
 
     private JBTable claimsTable = new JBTable();
+
+    private JPanel claimsTablePanel;
 
     private JLabel verifySignatureLabel = new JLabel("Verify signature with secret:");
 
@@ -68,11 +74,15 @@ public class JwtPanel extends JPanel {
 
         cc.gridy++;
         cc.weighty = 1;
-        add(this.claimsTable, cc);
+        cc.ipady = 50;
+        cc.fill = GridBagConstraints.BOTH;
+        add(this.claimsTablePanel = configureClaimsTableActions(), cc);
         configureClaimsTablePopup(this.claimsTable);
 
         cc.gridy++;
         cc.weighty = 0;
+        cc.ipady = 0;
+        cc.fill = GridBagConstraints.HORIZONTAL;
         add(this.verifySignatureLabel, cc);
 
         cc.gridy++;
@@ -88,6 +98,21 @@ public class JwtPanel extends JPanel {
             }
         });
 
+    }
+
+    private JPanel configureClaimsTableActions() {
+        this.claimsTablePanel = ToolbarDecorator.createDecorator(this.claimsTable)
+                .disableAddAction()
+                .disableRemoveAction()
+                .disableUpDownActions()
+                .addExtraAction(new AnActionButton("Copy as JSON", AllIcons.FileTypes.Json) {
+                    @Override
+                    public void actionPerformed(AnActionEvent anActionEvent) {
+                        onCopyAsJsonActionPerformed(anActionEvent);
+                    }
+                })
+                .createPanel();
+        return this.claimsTablePanel;
     }
 
     private void configureClaimsTablePopup(JBTable table) {
@@ -114,11 +139,17 @@ public class JwtPanel extends JPanel {
         this.claimsTable.setComponentPopupMenu(popupMenu);
     }
 
+
+    private void onCopyAsJsonActionPerformed(AnActionEvent anActionEvent) {
+        TextTransferable textTransferable = new TextTransferable(JwtHelper.prettyUnbase64Json(this.jwt.getPayload()));
+        CopyPasteManagerEx.getInstanceEx().setContents(textTransferable);
+    }
+
+
     public void onCopyValueMenuItemActionPerformed(ActionEvent e) {
         int selectedRowIndex = this.claimsTable.getSelectedRow();
         Object claimValue = this.claimsTableModel.getValueAt(selectedRowIndex, 1);
         TextTransferable textTransferable = new TextTransferable(claimValue.toString());
-
         CopyPasteManagerEx.getInstanceEx().setContents(textTransferable);
     }
 
