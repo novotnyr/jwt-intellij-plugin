@@ -7,12 +7,10 @@ import com.intellij.openapi.editor.colors.CodeInsightColors;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.markup.TextAttributes;
 
-import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
-import java.awt.Color;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -22,16 +20,19 @@ import java.util.Map;
 public class JwtClaimsTableModel extends AbstractTableModel implements TableCellRenderer {
     private DecodedJWT jwt;
 
-    private DefaultTableCellRenderer delegateRenderer = new DefaultTableCellRenderer();
+    private DefaultTableCellRenderer errorTableCellRenderer = new DefaultTableCellRenderer();
+
+    private DefaultTableCellRenderer defaultDelegateRenderer = new DefaultTableCellRenderer();
 
     private List<ClaimError> claimErrors = new ArrayList<>();
-
-    private Color originalForegroundColor;
 
     public JwtClaimsTableModel(DecodedJWT jwt) {
         this.jwt = jwt;
 
-        this.originalForegroundColor = delegateRenderer.getForeground();
+        TextAttributes attributes = EditorColorsManager.getInstance()
+                .getGlobalScheme()
+                .getAttributes(CodeInsightColors.ERRORS_ATTRIBUTES);
+        this.errorTableCellRenderer.setForeground(attributes.getEffectColor());
     }
 
     @Override
@@ -66,9 +67,6 @@ public class JwtClaimsTableModel extends AbstractTableModel implements TableCell
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        JLabel renderer = (JLabel) this.delegateRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        renderer.setForeground(this.originalForegroundColor);
-
         Iterator<String> iter = jwt.getClaims().keySet().iterator();
         int i = 0;
         while (iter.hasNext()) {
@@ -76,17 +74,13 @@ public class JwtClaimsTableModel extends AbstractTableModel implements TableCell
             if(row == i) {
                 for (ClaimError claimError : this.claimErrors) {
                     if(claimError.getClaim().equalsIgnoreCase(key)) {
-                        TextAttributes attributes = EditorColorsManager.getInstance()
-                                .getGlobalScheme()
-                                .getAttributes(CodeInsightColors.ERRORS_ATTRIBUTES);
-                        renderer.setForeground(attributes.getEffectColor());
-                        return renderer;
+                        return this.errorTableCellRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                     }
                 }
             }
             i++;
         }
-        return renderer;
+        return this.defaultDelegateRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
     }
 
     public void setClaimErrors(List<ClaimError> claimErrors) {
