@@ -19,10 +19,16 @@ public class JwtValidator {
 
     private List<ClaimError> claimErrors = new ArrayList<>();
 
-    public void validate(DecodedJWT jwt, Object validationContext) {
+    public JwtValidator validateClaims(DecodedJWT jwt) {
         assertInFuture(jwt, PublicClaims.EXPIRES_AT);
         assertInPast(jwt, PublicClaims.ISSUED_AT);
         assertInPast(jwt, PublicClaims.NOT_BEFORE);
+
+        return this;
+    }
+
+    public void validate(DecodedJWT jwt, Object validationContext) {
+        validateClaims(jwt);
 
         String algorithmString = jwt.getAlgorithm();
         Algorithm algorithm = null;

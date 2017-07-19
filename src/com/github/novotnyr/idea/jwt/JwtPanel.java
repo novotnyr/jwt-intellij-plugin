@@ -2,6 +2,7 @@ package com.github.novotnyr.idea.jwt;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.github.novotnyr.idea.jwt.ui.UiUtils;
+import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.github.novotnyr.idea.jwt.validation.JwtValidator;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.CopyPasteManagerEx;
@@ -27,6 +28,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 
 public class JwtPanel extends JPanel {
     private JLabel headerLabel = new JLabel("Header");
@@ -196,8 +198,13 @@ public class JwtPanel extends JPanel {
         this.headerTable.setModel(this.headerTableModel);
 
         this.claimsTableModel = new JwtClaimsTableModel(jwt);
+        this.claimsTableModel.setClaimErrors(validateClaims(jwt));
         this.claimsTable.setModel(this.claimsTableModel);
         this.claimsTable.setDefaultRenderer(Object.class, this.claimsTableModel);
+    }
+
+    private List<ClaimError> validateClaims(DecodedJWT jwt) {
+        return new JwtValidator().validateClaims(jwt).getClaimErrors();
     }
 
     public String getSecret() {
