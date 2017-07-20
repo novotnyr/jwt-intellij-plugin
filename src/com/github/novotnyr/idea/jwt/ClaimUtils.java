@@ -1,6 +1,7 @@
 package com.github.novotnyr.idea.jwt;
 
 import com.auth0.jwt.interfaces.Claim;
+import org.ocpsoft.prettytime.PrettyTime;
 
 import java.util.Arrays;
 import java.util.List;
@@ -14,7 +15,13 @@ public class ClaimUtils {
             return null;
         }
         if(NUMERIC_DATE_FIELDS.contains(claimName)) {
-            return claimValue.asDate();
+            if (Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.ISO) {
+                return claimValue.asDate();
+            }
+            if (Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.RELATIVE) {
+                PrettyTime prettyTime = new PrettyTime();
+                return prettyTime.format(claimValue.asDate());
+            }
         }
 
         Boolean booleanClaim = claimValue.asBoolean();
