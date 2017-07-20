@@ -15,5 +15,6 @@
     <orderEntry type="library" name="jackson-core-2.8.4" level="project" />
     <orderEntry type="library" name="jackson-databind-2.8.4" level="project" />
     <orderEntry type="library" name="java-jwt-3.2.0" level="project" />
+    <orderEntry type="library" name="prettytime-4.0.1.Final" level="project" />
   </component>
 </module>
