@@ -32,8 +32,8 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
     }
 
     private ActionGroup getToolWindowActionGroup(JwtExplorer jwtExplorer) {
-        DefaultActionGroup actionGroup = new DefaultActionGroup();
-        actionGroup.add(new CheckboxAction("Show timestamps as raw values") {
+        DefaultActionGroup actionGroup = new DefaultActionGroup("Timestamp format", true);
+        actionGroup.add(new CheckboxAction("Unix timestamp") {
             @Override
             public boolean isSelected(AnActionEvent anActionEvent) {
                 return Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.RAW;
@@ -44,7 +44,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
                 Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.RAW);
             }
         });
-        actionGroup.add(new CheckboxAction("Show timestamps in ISO format") {
+        actionGroup.add(new CheckboxAction("ISO") {
             @Override
             public boolean isSelected(AnActionEvent anActionEvent) {
                 return Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.ISO;
@@ -55,7 +55,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
                 Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.ISO);
             }
         });
-        actionGroup.add(new CheckboxAction("Show relative timestamps") {
+        actionGroup.add(new CheckboxAction("Relative") {
             @Override
             public boolean isSelected(AnActionEvent anActionEvent) {
                 return Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.RELATIVE;
@@ -66,7 +66,12 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
                 Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.RELATIVE);
             }
         });
-        return actionGroup;
+
+        DefaultActionGroup timestampFormatActionGroup = new DefaultActionGroup();
+
+        timestampFormatActionGroup.add(actionGroup);
+
+        return timestampFormatActionGroup;
     }
 
 }
