@@ -27,8 +27,8 @@ public class ClaimDialog extends DialogWrapper {
 
     @Override
     protected void doOKAction() {
-        String claimName = this.claimPanel.claimNameLabel.getText();
-        String claimValue = this.claimPanel.claimValueTextField.getText();
+        String claimName = this.claimPanel.getClaimName();
+        String claimValue = this.claimPanel.getClaimValue();
 
         // create copy
         this.claim = ClaimUtils.newClaim(claimName, claimValue);
@@ -47,15 +47,15 @@ public class ClaimDialog extends DialogWrapper {
     }
 
     private class ClaimPanel extends JPanel {
-        private NamedClaim<?> claim;
+        protected NamedClaim<?> claim;
 
-        private JLabel claimTextLabel = new JLabel("Claim");
+        private JLabel claimTextLabel = new JLabel("Claim:");
 
-        private JLabel claimNameLabel = new JLabel();
+        protected JLabel claimNameLabel = new JLabel();
 
-        private JLabel claimValueTextLabel = new JLabel("Value");
+        protected JLabel claimValueTextLabel = new JLabel("Value:");
 
-        private JTextField claimValueTextField = new JTextField();
+        protected JTextField claimValueTextField = new JTextField();
 
         public ClaimPanel(NamedClaim<?> claim) {
             super(new GridBagLayout());
@@ -81,6 +81,10 @@ public class ClaimDialog extends DialogWrapper {
             add(this.claimTextLabel, cColumn1);
             add(this.claimNameLabel, cColumns2);
 
+            initBottom(claim, cColumn1, cColumns2);
+        }
+
+        protected void initBottom(NamedClaim<?> claim, GridBagConstraints cColumn1, GridBagConstraints cColumns2) {
             cColumn1.gridy = 1;
             cColumns2.gridy = 1;
 
@@ -91,8 +95,37 @@ public class ClaimDialog extends DialogWrapper {
             this.claimValueTextField.setText(claim.getValueString());
         }
 
+        public String getClaimName() {
+            return this.claimNameLabel.getText();
+        }
+
+        public String getClaimValue() {
+            return this.claimValueTextField.getText();
+        }
+
         public NamedClaim<?> getClaim() {
             return claim;
         }
+    }
+
+    private class DateClaimPanel extends ClaimPanel {
+        private JLabel datePreviewLabel = new JLabel();
+
+        public DateClaimPanel(NamedClaim<?> claim) {
+            super(claim);
+        }
+
+        @Override
+        protected void initBottom(NamedClaim<?> claim, GridBagConstraints cColumn1, GridBagConstraints cColumns2) {
+            super.initBottom(claim, cColumn1, cColumns2);
+
+            cColumn1.gridy = 2;
+            cColumns2.gridy = 2;
+
+            add(this.datePreviewLabel, cColumns2);
+            // TODO monitor changes on the textarea
+        }
+
+
     }
 }
