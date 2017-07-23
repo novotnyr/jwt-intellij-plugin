@@ -1,12 +1,13 @@
 package com.github.novotnyr.idea.jwt;
 
-import com.auth0.jwt.interfaces.Claim;
-import com.auth0.jwt.interfaces.DecodedJWT;
+import com.github.novotnyr.idea.jwt.core.DateClaim;
+import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.intellij.openapi.editor.colors.CodeInsightColors;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.markup.TextAttributes;
+import org.ocpsoft.prettytime.PrettyTime;
 
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
@@ -14,12 +15,10 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import java.awt.Component;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 public class JwtClaimsTableModel extends AbstractTableModel implements TableCellRenderer {
-    private DecodedJWT jwt;
+    private Jwt jwt;
 
     private DefaultTableCellRenderer errorTableCellRenderer = new DefaultTableCellRenderer();
 
@@ -27,7 +26,7 @@ public class JwtClaimsTableModel extends AbstractTableModel implements TableCell
 
     private List<ClaimError> claimErrors = new ArrayList<>();
 
-    public JwtClaimsTableModel(DecodedJWT jwt) {
+    public JwtClaimsTableModel(Jwt jwt) {
         this.jwt = jwt;
 
         TextAttributes attributes = EditorColorsManager.getInstance()
@@ -38,7 +37,7 @@ public class JwtClaimsTableModel extends AbstractTableModel implements TableCell
 
     @Override
     public int getRowCount() {
-        return jwt.getClaims().size();
+        return jwt.getPayloadClaims().size();
     }
 
     @Override
@@ -60,52 +59,55 @@ public class JwtClaimsTableModel extends AbstractTableModel implements TableCell
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
-        Map<String, Claim> claims = jwt.getClaims();
-        Iterator<String> iter = claims.keySet().iterator();
-        int i = 0;
-        while (iter.hasNext()) {
-            String key = iter.next();
+        List<NamedClaim<?>> claims = this.jwt.getPayloadClaims();
+        for (int i = 0; i < claims.size(); i++) {
+            NamedClaim<?> claim = claims.get(i);
             if(i == rowIndex) {
                 switch (columnIndex) {
                     case 0:
-                        return key;
+                        return claim.getName();
                     case 1:
-                        return ClaimUtils.get(key, claims.get(key));
+                        return render(claim);
                 }
             }
-            i++;
         }
         return null;
     }
 
-    public NamedClaim<?> getClaimAt(int rowIndex) {
-        Map<String, Claim> claims = jwt.getClaims();
-        Iterator<String> iter = claims.keySet().iterator();
-        int i = 0;
-        while (iter.hasNext()) {
-            String key = iter.next();
-            if (i == rowIndex) {
-                return new NamedClaim<>(key, ClaimUtils.get(key, claims.get(key), false));
+    private Object render(NamedClaim<?> claim) {
+        if(claim instanceof DateClaim) {
+            DateClaim dateClaim = (DateClaim) claim;
+            if (Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.ISO) {
+                return dateClaim.getValue();
             }
-            i++;
+            if (Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.RELATIVE) {
+                PrettyTime prettyTime = new PrettyTime();
+                return prettyTime.format(dateClaim.getValue());
+            }
+            if (Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.RAW) {
+                return dateClaim.getValue().getTime() / 1000;
+            }
         }
-        return null;
+        return claim.getValue();
+    }
+
+    public NamedClaim<?> getClaimAt(int rowIndex) {
+        return jwt.getPayloadClaims().get(rowIndex);
     }
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        Iterator<String> iter = jwt.getClaims().keySet().iterator();
-        int i = 0;
-        while (iter.hasNext()) {
-            String key = iter.next();
+        List<NamedClaim<?>> payloadClaims = jwt.getPayloadClaims();
+        for (int i = 0; i < payloadClaims.size(); i++) {
+            NamedClaim<?> claim = payloadClaims.get(i);
+
             if(row == i) {
                 for (ClaimError claimError : this.claimErrors) {
-                    if(claimError.getClaim().equalsIgnoreCase(key)) {
+                    if(claimError.getClaim().equalsIgnoreCase(claim.getName())) {
                         return this.errorTableCellRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                     }
                 }
             }
-            i++;
         }
         return this.defaultDelegateRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
     }

@@ -1,8 +1,10 @@
 package com.github.novotnyr.idea.jwt.core;
 
+import com.auth0.jwt.JWT;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Date;
 import java.util.List;
 
 public class JwtTest {
@@ -29,4 +31,19 @@ public class JwtTest {
         Assert.assertEquals("test", payloadClaims.get(0).getValue());
 
     }
+
+    @Test
+    public void testDate() throws Exception {
+        Jwt jwt = new Jwt();
+        jwt.setSigningCredentials(new StringSecret("secret"));
+        jwt.setAlgorithm("HS256");
+        jwt.setPayloadClaim(new DateClaim("dat", new Date(1500814917000L)));
+
+        String s = jwt.toString();
+        Assert.assertEquals("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXQiOjE1MDA4MTQ5MTd9.6f43dfop34oMDNNxLVNAGHraf86Xsox95N6wCDiSLDo", s);
+
+        Date dat = JWT.decode(s).getClaim("dat").asDate();
+        Assert.assertEquals(1500814917000L, dat.getTime());
+    }
+
 }

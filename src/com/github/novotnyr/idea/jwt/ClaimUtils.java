@@ -59,5 +59,22 @@ public class ClaimUtils {
             return new NumericClaim(claimName, longClaim);
         }
         return new StringClaim(claimName, claimValue.asString());
+
+    }
+
+    public static NamedClaim<?> newClaim(String name, Object value) {
+        if(value instanceof Date) {
+            return new DateClaim(name, (Date) value);
+        }
+        if(value instanceof Boolean) {
+            return new BooleanClaim(name, (Boolean) value);
+        }
+        if(value instanceof Long) {
+            return new NumericClaim(name, (Long) value);
+        }
+        if(value instanceof String) {
+            return new StringClaim(name, (String) value);
+        }
+        throw new IllegalArgumentException("Cannot convert " + value.getClass() + " to claim value");
     }
 }

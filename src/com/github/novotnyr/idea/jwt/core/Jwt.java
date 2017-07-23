@@ -2,6 +2,7 @@ package com.github.novotnyr.idea.jwt.core;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
+import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.github.novotnyr.idea.jwt.ClaimUtils;
@@ -29,12 +30,14 @@ public class Jwt {
     }
 
     public Jwt(String encodedJwt) {
+        this.jwtString = encodedJwt;
+
         DecodedJWT decodedJwt = JWT.decode(encodedJwt);
 
-        headerClaims.add(new StringClaim("alg", decodedJwt.getAlgorithm()));
-        headerClaims.add(new StringClaim("typ", decodedJwt.getType()));
-        headerClaims.add(new StringClaim("cty", decodedJwt.getContentType()));
-        headerClaims.add(new StringClaim("kid", decodedJwt.getKeyId()));
+        addHeaderIfNotNull("alg", decodedJwt.getAlgorithm());
+        addHeaderIfNotNull("typ", decodedJwt.getType());
+        addHeaderIfNotNull("cty", decodedJwt.getContentType());
+        addHeaderIfNotNull("kid", decodedJwt.getKeyId());
 
         this.algorithm = decodedJwt.getAlgorithm();
 
@@ -43,8 +46,15 @@ public class Jwt {
         }
     }
 
+    private void addHeaderIfNotNull(String claimName, String value) {
+        if(value == null) {
+            return;
+        }
+        this.headerClaims.add(new StringClaim(claimName, value));
+    }
+
     public List<NamedClaim<?>> getHeaderClaims() {
-        return Collections.unmodifiableList(this.getHeaderClaims());
+        return Collections.unmodifiableList(this.headerClaims);
     }
 
     public List<NamedClaim<?>> getPayloadClaims() {
@@ -72,14 +82,14 @@ public class Jwt {
     private void updatePayload(NamedClaim<?> claim) {
         JWTCreator.Builder builder = JWT.create();
         for (NamedClaim<?> payloadClaim : this.payloadClaims) {
-            if(claim instanceof StringClaim) {
-                builder.withClaim(claim.getName(), (String) claim.getValue());
+            if(payloadClaim instanceof StringClaim) {
+                builder.withClaim(payloadClaim.getName(), (String) payloadClaim.getValue());
             }
-            if(claim instanceof NumericClaim) {
-                builder.withClaim(claim.getName(), (Long) claim.getValue());
+            if(payloadClaim instanceof NumericClaim) {
+                builder.withClaim(payloadClaim.getName(), (Long) payloadClaim.getValue());
             }
-            if(claim instanceof DateClaim) {
-                builder.withClaim(claim.getName(), (Date) claim.getValue());
+            if(payloadClaim instanceof DateClaim) {
+                builder.withClaim(payloadClaim.getName(), (Date) payloadClaim.getValue());
             }
         }
         this.jwtString = builder.sign(AlgoritmResolver.resolve(this.algorithm, this.signingCredentials));
@@ -93,7 +103,28 @@ public class Jwt {
         this.algorithm = algorithm;
     }
 
+    public String getPayloadString() {
+        return splitToken(this.jwtString)[1];
+    }
+
+    protected String[] splitToken(String token) throws JWTDecodeException {
+        String[] parts = token.split("\\.");
+        if (parts.length == 2 && token.endsWith(".")) {
+            //Tokens with alg='none' have empty String as Signature.
+            parts = new String[]{ parts[0], parts[1], "" };
+        }
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("Expecting 3 token parts, but got " + parts.length);
+        }
+        return parts;
+    }
+
     public String toString() {
         return this.jwtString;
     }
+
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
 }

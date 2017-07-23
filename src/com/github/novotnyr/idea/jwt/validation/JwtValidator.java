@@ -1,9 +1,11 @@
 package com.github.novotnyr.idea.jwt.validation;
 
+import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.SignatureVerificationException;
 import com.auth0.jwt.impl.PublicClaims;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.github.novotnyr.idea.jwt.core.Jwt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +21,12 @@ public class JwtValidator {
 
     private List<ClaimError> claimErrors = new ArrayList<>();
 
-    public JwtValidator validateClaims(DecodedJWT jwt) {
+    public JwtValidator validateClaims(Jwt jwt) {
+        DecodedJWT decodedJWT = JWT.decode(jwt.toString());
+        return validateClaims(decodedJWT);
+    }
+
+    private JwtValidator validateClaims(DecodedJWT jwt) {
         assertInFuture(jwt, PublicClaims.EXPIRES_AT);
         assertInPast(jwt, PublicClaims.ISSUED_AT);
         assertInPast(jwt, PublicClaims.NOT_BEFORE);
@@ -27,7 +34,12 @@ public class JwtValidator {
         return this;
     }
 
-    public void validate(DecodedJWT jwt, Object validationContext) {
+    public void validate(Jwt jwt, Object validationContext) {
+        DecodedJWT decodedJWT = JWT.decode(jwt.toString());
+        validate(decodedJWT, validationContext);
+    }
+
+    private void validate(DecodedJWT jwt, Object validationContext) {
         validateClaims(jwt);
 
         String algorithmString = jwt.getAlgorithm();

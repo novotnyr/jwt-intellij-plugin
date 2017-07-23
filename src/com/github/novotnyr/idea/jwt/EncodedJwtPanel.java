@@ -1,5 +1,6 @@
 package com.github.novotnyr.idea.jwt;
 
+import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.intellij.ui.DocumentAdapter;
 import org.jdesktop.swingx.prompt.PromptSupport;
 
@@ -60,5 +61,9 @@ public class EncodedJwtPanel extends JPanel {
         } catch (BadLocationException e) {
             e.printStackTrace();
         }
+    }
+
+    public void setJwt(Jwt jwt) {
+        this.encodedJwtTextArea.setText(jwt.toString());
     }
 }

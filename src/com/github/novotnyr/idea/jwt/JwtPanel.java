@@ -1,7 +1,8 @@
 package com.github.novotnyr.idea.jwt;
 
-import com.auth0.jwt.interfaces.DecodedJWT;
+import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
+import com.github.novotnyr.idea.jwt.core.StringSecret;
 import com.github.novotnyr.idea.jwt.ui.UiUtils;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.github.novotnyr.idea.jwt.validation.JwtValidator;
@@ -54,7 +55,7 @@ public class JwtPanel extends JPanel {
 
     private JButton validateButton = new JButton("Validate");
 
-    private DecodedJWT jwt;
+    private Jwt jwt;
 
     public JwtPanel() {
         setLayout(new GridBagLayout());
@@ -103,6 +104,12 @@ public class JwtPanel extends JPanel {
             }
         });
 
+        new DoubleClickListener() {
+            @Override
+            protected boolean onDoubleClick(MouseEvent mouseEvent) {
+                return onClaimsTableDoubleClick(mouseEvent);
+            };
+        }.installOn(this.claimsTable);
     }
 
     private JPanel configureClaimsTableActions() {
@@ -146,7 +153,7 @@ public class JwtPanel extends JPanel {
 
 
     private void onCopyAsJsonActionPerformed(AnActionEvent anActionEvent) {
-        TextTransferable textTransferable = new TextTransferable(JwtHelper.prettyUnbase64Json(this.jwt.getPayload()));
+        TextTransferable textTransferable = new TextTransferable(JwtHelper.prettyUnbase64Json(this.jwt.getPayloadString()));
         CopyPasteManagerEx.getInstanceEx().setContents(textTransferable);
     }
 
@@ -190,7 +197,33 @@ public class JwtPanel extends JPanel {
         }
     }
 
-    public void setJwt(DecodedJWT jwt) {
+    private boolean onClaimsTableDoubleClick(MouseEvent mouseEvent) {
+        if(!hasSecret()) {
+            JBPopupFactory.getInstance()
+                    .createHtmlTextBalloonBuilder("Cannot edit claims when a secret is empty", MessageType.WARNING, null)
+                    .setFadeoutTime(7500)
+                    .createBalloon()
+                    .show(RelativePoint.getNorthWestOf(this.secretTextField),
+                            Balloon.Position.atRight);
+            return true;
+        }
+
+        int selectedRow = claimsTable.rowAtPoint(mouseEvent.getPoint());
+        NamedClaim<?> claim = claimsTableModel.getClaimAt(selectedRow);
+        ClaimDialog claimDialog = new ClaimDialog(claim);
+        if(claimDialog.showAndGet()) {
+            NamedClaim<?> updatedClaim = claimDialog.getClaim();
+            jwt.setSigningCredentials(new StringSecret(getSecret()));
+            jwt.setPayloadClaim(updatedClaim);
+            Jwt oldJwt = this.jwt;
+            setJwt(jwt);
+            firePropertyChange("jwt", null, jwt);
+        }
+
+        return true;
+    }
+
+   public void setJwt(Jwt jwt) {
         this.jwt = jwt;
 
         this.headerLabel.setVisible(true);
@@ -204,25 +237,19 @@ public class JwtPanel extends JPanel {
         this.claimsTableModel.setClaimErrors(validateClaims(jwt));
         this.claimsTable.setModel(this.claimsTableModel);
         this.claimsTable.setDefaultRenderer(Object.class, this.claimsTableModel);
-        new DoubleClickListener() {
-            @Override
-            protected boolean onDoubleClick(MouseEvent mouseEvent) {
-                int selectedRow = claimsTable.rowAtPoint(mouseEvent.getPoint());
-                NamedClaim<?> claim = claimsTableModel.getClaimAt(selectedRow);
-                ClaimDialog claimDialog = new ClaimDialog(claim);
-                claimDialog.showAndGet();
 
-                return true;
-            };
-        }.installOn(this.claimsTable);
     }
 
-    private List<ClaimError> validateClaims(DecodedJWT jwt) {
+    private List<ClaimError> validateClaims(Jwt jwt) {
         return new JwtValidator().validateClaims(jwt).getClaimErrors();
     }
 
     public String getSecret() {
         return this.secretTextField.getText();
+    }
+
+    public boolean hasSecret() {
+        return getSecret() != null && ! getSecret().isEmpty();
     }
 
     public JTextField getSecretTextField() {

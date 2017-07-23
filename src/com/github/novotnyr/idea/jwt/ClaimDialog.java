@@ -15,19 +15,40 @@ import java.awt.GridBagLayout;
 public class ClaimDialog extends DialogWrapper {
     private NamedClaim<?> claim;
 
+    private ClaimPanel claimPanel;
+
     protected ClaimDialog(NamedClaim<?> claim) {
         super(false);
         this.claim = claim;
+        this.claimPanel = new ClaimPanel(claim);
+
         init();
+    }
+
+    @Override
+    protected void doOKAction() {
+        String claimName = this.claimPanel.claimNameLabel.getText();
+        String claimValue = this.claimPanel.claimValueTextField.getText();
+
+        // create copy
+        this.claim = ClaimUtils.newClaim(claimName, claimValue);
+
+        super.doOKAction();
     }
 
     @Nullable
     @Override
     protected JComponent createCenterPanel() {
-        return new ClaimPanel(this.claim);
+        return this.claimPanel;
     }
 
-    public static class ClaimPanel extends JPanel {
+    public NamedClaim<?> getClaim() {
+        return claim;
+    }
+
+    private class ClaimPanel extends JPanel {
+        private NamedClaim<?> claim;
+
         private JLabel claimTextLabel = new JLabel("Claim");
 
         private JLabel claimNameLabel = new JLabel();
@@ -38,6 +59,8 @@ public class ClaimDialog extends DialogWrapper {
 
         public ClaimPanel(NamedClaim<?> claim) {
             super(new GridBagLayout());
+
+            this.claim = claim;
 
             GridBagConstraints cColumn1 = new GridBagConstraints();
             cColumn1.fill = GridBagConstraints.NONE;
@@ -65,7 +88,11 @@ public class ClaimDialog extends DialogWrapper {
             add(this.claimValueTextField, cColumns2);
 
             this.claimNameLabel.setText(claim.getName());
-            this.claimValueTextField.setText(claim.getValue().toString());
+            this.claimValueTextField.setText(claim.getValueString());
+        }
+
+        public NamedClaim<?> getClaim() {
+            return claim;
         }
     }
 }

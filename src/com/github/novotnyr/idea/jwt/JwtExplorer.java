@@ -2,7 +2,7 @@ package com.github.novotnyr.idea.jwt;
 
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.SignatureVerificationException;
-import com.auth0.jwt.interfaces.DecodedJWT;
+import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.ui.ClipboardUtils;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
@@ -21,14 +21,13 @@ import com.intellij.util.ui.JBUI;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.UnsupportedEncodingException;
 
 public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
 
     private final EncodedJwtPanel encodedJwtPanel;
     private final JwtPanel jwtPanel;
 
-    private DecodedJWT jwt;
+    private Jwt jwt;
 
     public JwtExplorer() {
         super(true);
@@ -41,10 +40,9 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
             public void propertyChange(PropertyChangeEvent event) {
                 try {
                     String jwtString = (String) event.getNewValue();
-                    JwtExplorer.this.jwt = JwtHelper.decodeHmac256(jwtString);
-                    JwtExplorer.this.jwtPanel.setJwt(JwtExplorer.this.jwt);
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
+                    Jwt jwt = new Jwt(jwtString);
+                    JwtExplorer.this.jwt = jwt;
+                    JwtExplorer.this.jwtPanel.setJwt(jwt);
                 } catch (SignatureVerificationException e) {
                     JBPopupFactory.getInstance()
                             .createHtmlTextBalloonBuilder(e.getMessage(), MessageType.ERROR, null)
@@ -67,6 +65,13 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
                             .show(RelativePoint.getNorthWestOf(jwtPanel.getSecretTextField()),
                                     Balloon.Position.atRight);
                 }
+            }
+        });
+        jwtPanel.addPropertyChangeListener("jwt", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                Jwt jwt = (Jwt) evt.getNewValue();
+                encodedJwtPanel.setJwt(jwt);
             }
         });
 
