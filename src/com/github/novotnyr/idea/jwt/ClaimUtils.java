@@ -1,9 +1,15 @@
 package com.github.novotnyr.idea.jwt;
 
 import com.auth0.jwt.interfaces.Claim;
+import com.github.novotnyr.idea.jwt.core.BooleanClaim;
+import com.github.novotnyr.idea.jwt.core.DateClaim;
+import com.github.novotnyr.idea.jwt.core.NamedClaim;
+import com.github.novotnyr.idea.jwt.core.NumericClaim;
+import com.github.novotnyr.idea.jwt.core.StringClaim;
 import org.ocpsoft.prettytime.PrettyTime;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 public class ClaimUtils {
@@ -11,10 +17,14 @@ public class ClaimUtils {
 
 
     public static Object get(String claimName, Claim claimValue) {
+        return get(claimName, claimValue, true);
+    }
+
+    public static Object get(String claimName, Claim claimValue, boolean prettify) {
         if(claimValue == null) {
             return null;
         }
-        if(NUMERIC_DATE_FIELDS.contains(claimName)) {
+        if(prettify && NUMERIC_DATE_FIELDS.contains(claimName)) {
             if (Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.ISO) {
                 return claimValue.asDate();
             }
@@ -35,5 +45,19 @@ public class ClaimUtils {
         return claimValue.asString();
     }
 
-
+    public static NamedClaim<?> getClaim(String claimName, Claim claimValue) {
+        Date date = claimValue.asDate();
+        if(date != null) {
+            return new DateClaim(claimName, date);
+        }
+        Boolean bool = claimValue.asBoolean();
+        if(bool != null) {
+            return new BooleanClaim(claimName, bool);
+        }
+        Long longClaim = claimValue.asLong();
+        if(longClaim != null) {
+            return new NumericClaim(claimName, longClaim);
+        }
+        return new StringClaim(claimName, claimValue.asString());
+    }
 }

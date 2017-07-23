@@ -2,6 +2,7 @@ package com.github.novotnyr.idea.jwt;
 
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.intellij.openapi.editor.colors.CodeInsightColors;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
@@ -71,6 +72,20 @@ public class JwtClaimsTableModel extends AbstractTableModel implements TableCell
                     case 1:
                         return ClaimUtils.get(key, claims.get(key));
                 }
+            }
+            i++;
+        }
+        return null;
+    }
+
+    public NamedClaim<?> getClaimAt(int rowIndex) {
+        Map<String, Claim> claims = jwt.getClaims();
+        Iterator<String> iter = claims.keySet().iterator();
+        int i = 0;
+        while (iter.hasNext()) {
+            String key = iter.next();
+            if (i == rowIndex) {
+                return new NamedClaim<>(key, ClaimUtils.get(key, claims.get(key), false));
             }
             i++;
         }

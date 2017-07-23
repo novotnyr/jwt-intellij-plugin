@@ -1,6 +1,7 @@
 package com.github.novotnyr.idea.jwt;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.ui.UiUtils;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.github.novotnyr.idea.jwt.validation.JwtValidator;
@@ -11,6 +12,7 @@ import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.AnActionButton;
+import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.table.JBTable;
@@ -28,6 +30,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
 import java.util.List;
 
 public class JwtPanel extends JPanel {
@@ -201,6 +204,17 @@ public class JwtPanel extends JPanel {
         this.claimsTableModel.setClaimErrors(validateClaims(jwt));
         this.claimsTable.setModel(this.claimsTableModel);
         this.claimsTable.setDefaultRenderer(Object.class, this.claimsTableModel);
+        new DoubleClickListener() {
+            @Override
+            protected boolean onDoubleClick(MouseEvent mouseEvent) {
+                int selectedRow = claimsTable.rowAtPoint(mouseEvent.getPoint());
+                NamedClaim<?> claim = claimsTableModel.getClaimAt(selectedRow);
+                ClaimDialog claimDialog = new ClaimDialog(claim);
+                claimDialog.showAndGet();
+
+                return true;
+            };
+        }.installOn(this.claimsTable);
     }
 
     private List<ClaimError> validateClaims(DecodedJWT jwt) {

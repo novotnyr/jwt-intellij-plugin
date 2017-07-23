@@ -18,6 +18,8 @@ public class JwtHeaderTableModel extends AbstractTableModel {
         putIfNotNull("typ", jwt.getType());
         putIfNotNull("cty", jwt.getContentType());
         putIfNotNull("kid", jwt.getKeyId());
+
+
     }
 
     @Override
