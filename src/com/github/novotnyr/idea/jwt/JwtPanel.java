@@ -213,11 +213,11 @@ public class JwtPanel extends JPanel {
         ClaimDialog claimDialog = new ClaimDialog(claim);
         if(claimDialog.showAndGet()) {
             NamedClaim<?> updatedClaim = claimDialog.getClaim();
-            jwt.setSigningCredentials(new StringSecret(getSecret()));
-            jwt.setPayloadClaim(updatedClaim);
+            this.jwt.setSigningCredentials(new StringSecret(getSecret()));
+            this.jwt.setPayloadClaim(updatedClaim);
             Jwt oldJwt = this.jwt;
-            setJwt(jwt);
-            firePropertyChange("jwt", null, jwt);
+            setJwt(this.jwt);
+            firePropertyChange("jwt", null, this.jwt);
         }
 
         return true;

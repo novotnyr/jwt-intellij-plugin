@@ -28,4 +28,8 @@ public abstract class NamedClaim<T> {
 
     public abstract NamedClaim<T> copy();
 
+    @Override
+    public String toString() {
+        return this.name + ":" + this.value;
+    }
 }
