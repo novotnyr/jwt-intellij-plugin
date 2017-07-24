@@ -49,7 +49,7 @@ public class JwtPanel extends JPanel {
 
     private JPanel claimsTablePanel;
 
-    private JLabel verifySignatureLabel = new JLabel("Verify signature with secret:");
+    private JLabel signatureLabel = new JLabel("Sign/verify signature with secret:");
 
     private JTextField secretTextField = new JTextField();
 
@@ -89,7 +89,7 @@ public class JwtPanel extends JPanel {
         cc.weighty = 0;
         cc.ipady = 0;
         cc.fill = GridBagConstraints.HORIZONTAL;
-        add(this.verifySignatureLabel, cc);
+        add(this.signatureLabel, cc);
 
         cc.gridy++;
         add(this.secretTextField, cc);
@@ -209,6 +209,9 @@ public class JwtPanel extends JPanel {
         }
 
         int selectedRow = claimsTable.rowAtPoint(mouseEvent.getPoint());
+        if(selectedRow < 0) {
+            return true;
+        }
         NamedClaim<?> claim = claimsTableModel.getClaimAt(selectedRow);
         ClaimDialog claimDialog = new ClaimDialog(claim);
         if(claimDialog.showAndGet()) {
