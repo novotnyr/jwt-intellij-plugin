@@ -3,6 +3,7 @@ package com.github.novotnyr.idea.jwt;
 import com.github.novotnyr.idea.jwt.core.DateClaim;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.Nullable;
@@ -23,6 +24,8 @@ public class ClaimDialog extends DialogWrapper {
     private NamedClaim<?> claim;
 
     private ClaimPanel claimPanel;
+
+    private ValidationInfo validationInfo;
 
     protected ClaimDialog(NamedClaim<?> claim) {
         super(false);
@@ -51,6 +54,12 @@ public class ClaimDialog extends DialogWrapper {
     @Override
     protected JComponent createCenterPanel() {
         return this.claimPanel;
+    }
+
+    @Nullable
+    @Override
+    protected ValidationInfo doValidate() {
+        return this.validationInfo;
     }
 
     public NamedClaim<?> getClaim() {
@@ -198,6 +207,7 @@ public class ClaimDialog extends DialogWrapper {
         }
 
         private void nowButtonClicked(ActionEvent e) {
+            validationInfo = null;
             long unixTimestamp = new Date().getTime() / 1000;
             claimValueTextField.setText(String.valueOf(unixTimestamp));
             datePreviewLabel.setText(new Date(unixTimestamp * 1000).toString());
@@ -211,6 +221,7 @@ public class ClaimDialog extends DialogWrapper {
                 datePreviewLabel.setText(new Date(unixTimestamp * 1000).toString());
             } catch (NumberFormatException e) {
                 datePreviewLabel.setText("Not a valid timestamp");
+                validationInfo = new ValidationInfo("Not a valid timestamp", claimValueTextField);
             }
         }
 
@@ -222,15 +233,18 @@ public class ClaimDialog extends DialogWrapper {
                 datePreviewLabel.setText(new Date(unixTimestamp * 1000).toString());
             } catch (NumberFormatException e) {
                 datePreviewLabel.setText("Not a valid timestamp");
+                validationInfo = new ValidationInfo("Not a valid timestamp", claimValueTextField);
             }
         }
 
         private void onClaimValueTextFieldChanged() {
             try {
+                validationInfo = null;
                 long unixTimestamp = Long.parseLong(claimValueTextField.getText());
                 datePreviewLabel.setText(new Date(unixTimestamp * 1000).toString());
             } catch (NumberFormatException e) {
                 datePreviewLabel.setText("Not a valid timestamp");
+                validationInfo = new ValidationInfo("Not a valid timestamp", claimValueTextField);
             }
         }
 

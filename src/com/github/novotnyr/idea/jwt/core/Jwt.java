@@ -93,6 +93,7 @@ public class Jwt {
             }
         }
         this.jwtString = builder.sign(AlgoritmResolver.resolve(this.algorithm, this.signingCredentials));
+
     }
 
     public void setSigningCredentials(SigningCredentials signingCredentials) {
