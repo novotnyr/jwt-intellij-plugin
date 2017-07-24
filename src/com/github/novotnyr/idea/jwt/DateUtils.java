@@ -3,6 +3,15 @@ package com.github.novotnyr.idea.jwt;
 import java.util.Date;
 
 public class DateUtils {
+    public static Date toDate(String unixTimestamp) {
+        try {
+            long longUnixTimestamp = Long.parseLong(unixTimestamp);
+            return new Date(longUnixTimestamp * 1000);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Illegal format of unix timestamp: " + unixTimestamp, e);
+        }
+    }
+
     public static Date toDate(long unixTimestamp) {
         return new Date(unixTimestamp * 100);
     }
