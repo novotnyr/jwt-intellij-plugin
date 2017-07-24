@@ -62,6 +62,31 @@ public class ClaimUtils {
 
     }
 
+    public static NamedClaim<?> copyClaim(NamedClaim<?> templateClaim, String name, Object value) {
+        if(templateClaim instanceof DateClaim) {
+            Date date = null;
+            if(value == null) {
+                date = null;
+            }
+            if(value instanceof String) {
+                date = new Date(Long.parseLong((String) value) * 1000);
+            } else if (value instanceof Long) {
+                date = new Date((Long) value * 1000);
+            }
+            return new DateClaim(name, date);
+        }
+        if(templateClaim instanceof BooleanClaim) {
+            return new BooleanClaim(name, (Boolean) value);
+        }
+        if(templateClaim instanceof NumericClaim) {
+            return new NumericClaim(name, (Long) value);
+        }
+        if(templateClaim instanceof StringClaim) {
+            return new StringClaim(name, (String) value);
+        }
+        throw new IllegalArgumentException("Cannot convert " + value.getClass() + " to claim value");
+    }
+
     public static NamedClaim<?> newClaim(String name, Object value) {
         if(value instanceof Date) {
             return new DateClaim(name, (Date) value);
