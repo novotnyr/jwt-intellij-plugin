@@ -9,6 +9,13 @@
     ]]></description>
 
   <change-notes><![CDATA[
+      <em>0.2</em>
+      <ul>
+        <li>Introduce claim editor: string, numeric, boolean values are allowed, timestamps have a dedicated editor
+        <li>Copy JWT payload to clipboard as a JSON
+        <li>Configure timestamp display format in view menu: use unix timestamp, ISO format or relative ("x seconds ago")
+      </ul>
+
       <em>0.1</em> First release
     ]]>
   </change-notes>
