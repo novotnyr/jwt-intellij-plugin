@@ -13,6 +13,7 @@ import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.AnActionButton;
+import com.intellij.ui.AnActionButtonRunnable;
 import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.awt.RelativePoint;
@@ -123,9 +124,16 @@ public class JwtPanel extends JPanel {
                         onCopyAsJsonActionPerformed(anActionEvent);
                     }
                 })
+                .setEditAction(new AnActionButtonRunnable() {
+                    @Override
+                    public void run(AnActionButton anActionButton) {
+                        onEditAction(anActionButton);
+                    }
+                })
                 .createPanel();
         return this.claimsTablePanel;
     }
+
 
     private void configureClaimsTablePopup(JBTable table) {
         JPopupMenu popupMenu = new JPopupMenu();
@@ -149,6 +157,19 @@ public class JwtPanel extends JPanel {
         popupMenu.add(copyAsKeyAndValueMenuItem);
 
         this.claimsTable.setComponentPopupMenu(popupMenu);
+    }
+
+    private void editClaimAtRow(int row) {
+        NamedClaim<?> claim = claimsTableModel.getClaimAt(row);
+        ClaimDialog claimDialog = new ClaimDialog(claim);
+        if(claimDialog.showAndGet()) {
+            NamedClaim<?> updatedClaim = claimDialog.getClaim();
+            this.jwt.setSigningCredentials(new StringSecret(getSecret()));
+            this.jwt.setPayloadClaim(updatedClaim);
+            Jwt oldJwt = this.jwt;
+            setJwt(this.jwt);
+            firePropertyChange("jwt", null, this.jwt);
+        }
     }
 
 
@@ -212,21 +233,21 @@ public class JwtPanel extends JPanel {
         if(selectedRow < 0) {
             return true;
         }
-        NamedClaim<?> claim = claimsTableModel.getClaimAt(selectedRow);
-        ClaimDialog claimDialog = new ClaimDialog(claim);
-        if(claimDialog.showAndGet()) {
-            NamedClaim<?> updatedClaim = claimDialog.getClaim();
-            this.jwt.setSigningCredentials(new StringSecret(getSecret()));
-            this.jwt.setPayloadClaim(updatedClaim);
-            Jwt oldJwt = this.jwt;
-            setJwt(this.jwt);
-            firePropertyChange("jwt", null, this.jwt);
-        }
+        editClaimAtRow(selectedRow);
 
         return true;
     }
 
-   public void setJwt(Jwt jwt) {
+    private void onEditAction(AnActionButton anActionButton) {
+        int selectedRow = this.claimsTable.getSelectedRow();
+        if (selectedRow < 0) {
+            return;
+        }
+
+        editClaimAtRow(selectedRow);
+    }
+
+    public void setJwt(Jwt jwt) {
         this.jwt = jwt;
 
         this.headerLabel.setVisible(true);
