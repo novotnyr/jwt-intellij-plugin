@@ -1,10 +1,12 @@
 package com.github.novotnyr.idea.jwt;
 
+import com.github.novotnyr.idea.jwt.core.BooleanClaim;
 import com.github.novotnyr.idea.jwt.core.DateClaim;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.core.NumericClaim;
 import com.github.novotnyr.idea.jwt.core.StringClaim;
 import com.github.novotnyr.idea.jwt.ui.claimpanel.AbstractClaimPanel;
+import com.github.novotnyr.idea.jwt.ui.claimpanel.BooleanClaimPanel;
 import com.github.novotnyr.idea.jwt.ui.claimpanel.DateClaimPanel;
 import com.github.novotnyr.idea.jwt.ui.claimpanel.NumericClaimPanel;
 import com.github.novotnyr.idea.jwt.ui.claimpanel.StringClaimPanel;
@@ -114,7 +116,10 @@ public class ClaimDialog extends DialogWrapper {
                 return new StringClaimPanel((StringClaim) this.claim);
             } else if(this.claim instanceof NumericClaim) {
                 return new NumericClaimPanel((NumericClaim) this.claim);
+            } else if(this.claim instanceof BooleanClaim) {
+                return new BooleanClaimPanel((BooleanClaim) this.claim);
             }
+
 
             return null;
         }

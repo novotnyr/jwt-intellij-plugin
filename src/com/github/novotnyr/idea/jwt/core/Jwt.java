@@ -91,6 +91,9 @@ public class Jwt {
             if(payloadClaim instanceof DateClaim) {
                 builder.withClaim(payloadClaim.getName(), (Date) payloadClaim.getValue());
             }
+            if(payloadClaim instanceof BooleanClaim) {
+                builder.withClaim(payloadClaim.getName(), (Boolean) payloadClaim.getValue());
+            }
         }
         this.jwtString = builder.sign(AlgoritmResolver.resolve(this.algorithm, this.signingCredentials));
 
