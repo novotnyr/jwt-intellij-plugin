@@ -13,7 +13,7 @@ public class ClaimUtils {
 
     public static NamedClaim<?> getClaim(String claimName, Claim claimValue) {
         Date date = claimValue.asDate();
-        if(date != null) {
+        if (isDateClaim(claimName, claimValue)) {
             return new DateClaim(claimName, date);
         }
         Boolean bool = claimValue.asBoolean();
@@ -28,6 +28,11 @@ public class ClaimUtils {
 
     }
 
+    public static boolean isDateClaim(String claimName, Claim claimValue) {
+        return claimValue.getClass() != null
+                && Configuration.INSTANCE.getTimestampDateFields().contains(claimName);
+    }
+
     public static NamedClaim<?> copyClaim(NamedClaim<?> templateClaim, String name, Object value) {
         if(templateClaim instanceof DateClaim) {
             Date date = null;
@@ -38,6 +43,8 @@ public class ClaimUtils {
                 date = DateUtils.toDate((String) value);
             } else if (value instanceof Long) {
                 date = new Date((Long) value * 1000);
+            } else if (value instanceof Date) {
+                date = (Date) value;
             }
             return new DateClaim(name, date);
         }
