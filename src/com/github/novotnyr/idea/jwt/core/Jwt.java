@@ -1,14 +1,12 @@
 package com.github.novotnyr.idea.jwt.core;
 
 import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.github.novotnyr.idea.jwt.ClaimUtils;
 
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -80,22 +78,11 @@ public class Jwt {
     }
 
     private void updatePayload(NamedClaim<?> claim) {
-        JWTCreator.Builder builder = JWT.create();
+        JwtBuilder builder = new JwtBuilder();
         for (NamedClaim<?> payloadClaim : this.payloadClaims) {
-            if(payloadClaim instanceof StringClaim) {
-                builder.withClaim(payloadClaim.getName(), (String) payloadClaim.getValue());
-            }
-            if(payloadClaim instanceof NumericClaim) {
-                builder.withClaim(payloadClaim.getName(), (Long) payloadClaim.getValue());
-            }
-            if(payloadClaim instanceof DateClaim) {
-                builder.withClaim(payloadClaim.getName(), (Date) payloadClaim.getValue());
-            }
-            if(payloadClaim instanceof BooleanClaim) {
-                builder.withClaim(payloadClaim.getName(), (Boolean) payloadClaim.getValue());
-            }
+            builder.withClaim(payloadClaim);
         }
-        this.jwtString = builder.sign(AlgoritmResolver.resolve(this.algorithm, this.signingCredentials));
+        this.jwtString = builder.sign(this.algorithm, this.signingCredentials);
 
     }
 
