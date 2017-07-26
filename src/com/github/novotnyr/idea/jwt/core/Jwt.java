@@ -2,10 +2,13 @@ package com.github.novotnyr.idea.jwt.core;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.impl.NullClaim;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.github.novotnyr.idea.jwt.ClaimUtils;
 
+import java.lang.reflect.Constructor;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,8 +42,38 @@ public class Jwt {
 
         this.algorithm = decodedJwt.getAlgorithm();
 
-        for (Map.Entry<String, Claim> claim : decodedJwt.getClaims().entrySet()) {
+        for (Map.Entry<String, Claim> claim : getClaims(decodedJwt).entrySet()) {
             this.payloadClaims.add(ClaimUtils.getClaim(claim.getKey(), claim.getValue()));
+        }
+    }
+
+    private Map<String, Claim> getClaims(DecodedJWT decodedJwt) {
+        try {
+            if (Hacking.isInstanceOfJWTDecoder(decodedJwt)) {
+                return Hacking.getClaims(decodedJwt);
+            }
+        } catch (Exception e) {
+            // do nothing, fall back to the regular and clean claim retrieval
+            e.printStackTrace();
+        }
+        return decodedJwt.getClaims();
+    }
+
+    private static Claim _claimFromNode(JsonNode node) {
+        if (node == null || node.isNull() || node.isMissingNode()) {
+            return new NullClaim();
+        }
+        return _newJsonNodeClaim(node);
+    }
+
+    private static Claim _newJsonNodeClaim(JsonNode node) {
+        try {
+            //noinspection JavaReflectionMemberAccess
+            Constructor<?> constructor = Class.forName("com.auth0.jwt.impl.JsonNodeClaim")
+                    .getConstructor(JsonNode.class);
+            return (Claim) constructor.newInstance(node);
+        } catch (Exception e) {
+            return new NullClaim();
         }
     }
 
