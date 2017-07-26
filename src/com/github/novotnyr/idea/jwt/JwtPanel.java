@@ -3,6 +3,7 @@ package com.github.novotnyr.idea.jwt;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.core.StringSecret;
+import com.github.novotnyr.idea.jwt.ui.ClaimTableTranferHandler;
 import com.github.novotnyr.idea.jwt.ui.UiUtils;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.github.novotnyr.idea.jwt.validation.JwtValidator;
@@ -85,6 +86,7 @@ public class JwtPanel extends JPanel {
         cc.fill = GridBagConstraints.BOTH;
         add(this.claimsTablePanel = configureClaimsTableActions(), cc);
         configureClaimsTablePopup(this.claimsTable);
+        configureClipboardCopy(this.claimsTable);
 
         cc.gridy++;
         cc.weighty = 0;
@@ -111,6 +113,10 @@ public class JwtPanel extends JPanel {
                 return onClaimsTableDoubleClick(mouseEvent);
             };
         }.installOn(this.claimsTable);
+    }
+
+    private void configureClipboardCopy(JBTable claimsTable) {
+        this.claimsTable.setTransferHandler(new ClaimTableTranferHandler());
     }
 
     private JPanel configureClaimsTableActions() {
