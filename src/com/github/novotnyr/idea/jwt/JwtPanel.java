@@ -1,8 +1,11 @@
 package com.github.novotnyr.idea.jwt;
 
+import com.github.novotnyr.idea.jwt.action.AddClaimActionButtonController;
+import com.github.novotnyr.idea.jwt.action.EditClaimActionButtonUpdater;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.core.StringSecret;
+import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry;
 import com.github.novotnyr.idea.jwt.ui.ClaimTableTranferHandler;
 import com.github.novotnyr.idea.jwt.ui.UiUtils;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
@@ -10,11 +13,14 @@ import com.github.novotnyr.idea.jwt.validation.JwtValidator;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.CopyPasteManagerEx;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.AnActionButtonRunnable;
+import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.awt.RelativePoint;
@@ -29,6 +35,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -59,6 +66,10 @@ public class JwtPanel extends JPanel {
 
     private Jwt jwt;
 
+    private AddClaimActionButtonController addClaimActionButtonController;
+
+    private EditClaimActionButtonUpdater editClaimActionButtonUpdater;
+
     public JwtPanel() {
         setLayout(new GridBagLayout());
 
@@ -84,6 +95,7 @@ public class JwtPanel extends JPanel {
         cc.weighty = 1;
         cc.ipady = 50;
         cc.fill = GridBagConstraints.BOTH;
+        this.claimsTable.setName(Constants.CLAIMS_TABLE_NAME);
         add(this.claimsTablePanel = configureClaimsTableActions(), cc);
         configureClaimsTablePopup(this.claimsTable);
         configureClipboardCopy(this.claimsTable);
@@ -96,6 +108,7 @@ public class JwtPanel extends JPanel {
 
         cc.gridy++;
         add(this.secretTextField, cc);
+        configureSecretTextFieldListeners(this.secretTextField);
 
         cc.gridy++;
         add(this.validateButton, cc);
@@ -115,13 +128,22 @@ public class JwtPanel extends JPanel {
         }.installOn(this.claimsTable);
     }
 
+
     private void configureClipboardCopy(JBTable claimsTable) {
         this.claimsTable.setTransferHandler(new ClaimTableTranferHandler());
     }
 
     private JPanel configureClaimsTableActions() {
+        this.addClaimActionButtonController = new AddClaimActionButtonController() {
+            @Override
+            public void onClaimTypeSelected(DataTypeRegistry.DataType dataType) {
+                onNewAction(dataType);
+            }
+        };
+
+        this.editClaimActionButtonUpdater = new EditClaimActionButtonUpdater();
+
         this.claimsTablePanel = ToolbarDecorator.createDecorator(this.claimsTable)
-                .disableAddAction()
                 .disableRemoveAction()
                 .disableUpDownActions()
                 .addExtraAction(new AnActionButton("Copy as JSON", AllIcons.FileTypes.Json) {
@@ -136,9 +158,13 @@ public class JwtPanel extends JPanel {
                         onEditAction(anActionButton);
                     }
                 })
+                .setEditActionUpdater(editClaimActionButtonUpdater)
+                .setAddAction(addClaimActionButtonController)
+                .setAddActionUpdater(addClaimActionButtonController)
                 .createPanel();
         return this.claimsTablePanel;
     }
+
 
 
     private void configureClaimsTablePopup(JBTable table) {
@@ -165,17 +191,18 @@ public class JwtPanel extends JPanel {
         this.claimsTable.setComponentPopupMenu(popupMenu);
     }
 
+    private void configureSecretTextFieldListeners(JTextField secretTextField) {
+        secretTextField.getDocument().addDocumentListener(new DocumentAdapter() {
+            @Override
+            protected void textChanged(DocumentEvent documentEvent) {
+                onSecretTextFieldTextChanged(documentEvent);
+            }
+        });
+    }
+
     private void editClaimAtRow(int row) {
         NamedClaim<?> claim = claimsTableModel.getClaimAt(row);
-        ClaimDialog claimDialog = new ClaimDialog(claim);
-        if(claimDialog.showAndGet()) {
-            NamedClaim<?> updatedClaim = claimDialog.getClaim();
-            this.jwt.setSigningCredentials(new StringSecret(getSecret()));
-            this.jwt.setPayloadClaim(updatedClaim);
-            Jwt oldJwt = this.jwt;
-            setJwt(this.jwt);
-            firePropertyChange("jwt", null, this.jwt);
-        }
+        showClaimDialog(claim, ClaimDialog.Mode.EDIT);
     }
 
 
@@ -252,6 +279,33 @@ public class JwtPanel extends JPanel {
 
         editClaimAtRow(selectedRow);
     }
+
+    private void onNewAction(DataTypeRegistry.DataType dataType) {
+        NamedClaim<?> claim = ClaimUtils.newEmptyClaim(dataType);
+        showClaimDialog(claim, ClaimDialog.Mode.NEW);
+    }
+
+    private void showClaimDialog(NamedClaim<?> claim, ClaimDialog.Mode mode) {
+        ClaimDialog claimDialog = new ClaimDialog(claim, mode);
+        if(claimDialog.showAndGet()) {
+            NamedClaim<?> updatedClaim = claimDialog.getClaim();
+            this.jwt.setSigningCredentials(new StringSecret(getSecret()));
+            this.jwt.setPayloadClaim(updatedClaim);
+            Jwt oldJwt = this.jwt;
+            setJwt(this.jwt);
+            firePropertyChange("jwt", null, this.jwt);
+        }
+    }
+
+    private void onSecretTextFieldTextChanged(DocumentEvent documentEvent) {
+        boolean secretIsPresent = documentEvent.getDocument().getLength() > 0;
+
+        DataContext dataContext = SimpleDataContext.getSimpleContext(Constants.DataKeys.SECRET_IS_PRESENT.getName(), secretIsPresent);
+        AnActionEvent event = AnActionEvent.createFromDataContext("place", null, dataContext);
+        this.addClaimActionButtonController.isEnabled(event);
+        this.editClaimActionButtonUpdater.isEnabled(event);
+    }
+
 
     public void setJwt(Jwt jwt) {
         this.jwt = jwt;

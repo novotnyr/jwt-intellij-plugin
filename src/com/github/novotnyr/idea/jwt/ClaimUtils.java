@@ -6,6 +6,7 @@ import com.github.novotnyr.idea.jwt.core.DateClaim;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.core.NumericClaim;
 import com.github.novotnyr.idea.jwt.core.StringClaim;
+import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry.DataType;
 
 import java.util.Date;
 
@@ -31,6 +32,21 @@ public class ClaimUtils {
     public static boolean isDateClaim(String claimName, Claim claimValue) {
         return claimValue.getClass() != null
                 && Configuration.INSTANCE.getTimestampDateFields().contains(claimName);
+    }
+
+    public static NamedClaim<?> newEmptyClaim(DataType dataType) {
+        switch (dataType) {
+            case BOOLEAN:
+                return new BooleanClaim("claim", false);
+            case STRING:
+                return new StringClaim("claim", "value");
+            case NUMERIC:
+                return new NumericClaim("claim", 0L);
+            case TIMESTAMP:
+                return new DateClaim("claim", new Date());
+            default:
+                throw new IllegalStateException("Unknown data type " + dataType);
+        }
     }
 
     public static NamedClaim<?> copyClaim(NamedClaim<?> templateClaim, String name, Object value) {

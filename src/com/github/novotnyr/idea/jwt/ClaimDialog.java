@@ -18,18 +18,21 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+
+import static com.github.novotnyr.idea.jwt.ClaimDialog.Mode.NEW;
 
 public class ClaimDialog extends DialogWrapper {
     private NamedClaim<?> claim;
 
     private ClaimPanel claimPanel;
 
-    protected ClaimDialog(NamedClaim<?> claim) {
+    protected ClaimDialog(NamedClaim<?> claim, Mode mode) {
         super(false);
         this.claim = claim;
-        this.claimPanel = new ClaimPanel(claim);
+        this.claimPanel = new ClaimPanel(claim, mode);
 
         init();
     }
@@ -64,18 +67,21 @@ public class ClaimDialog extends DialogWrapper {
     private class ClaimPanel extends JPanel {
         protected NamedClaim<?> claim;
 
+        protected Mode mode;
+
         private JLabel claimTextLabel = new JLabel("Claim:");
 
-        protected JLabel claimNameLabel = new JLabel();
+        protected JTextField claimNameTextField = new JTextField();
 
         protected JLabel claimValueTextLabel = new JLabel("Value:");
 
         protected AbstractClaimPanel<?, ?> nestedClaimPanel;
 
-        public ClaimPanel(NamedClaim<?> claim) {
+        public ClaimPanel(NamedClaim<?> claim, Mode mode) {
             super(new GridBagLayout());
 
             this.claim = claim;
+            this.mode = mode;
 
             GridBagConstraints cColumn1 = new GridBagConstraints();
             cColumn1.fill = GridBagConstraints.NONE;
@@ -94,7 +100,9 @@ public class ClaimDialog extends DialogWrapper {
             cColumns2.insets = JBUI.insets(5);
 
             add(this.claimTextLabel, cColumn1);
-            add(this.claimNameLabel, cColumns2);
+            add(this.claimNameTextField, cColumns2);
+
+            this.claimNameTextField.setEnabled(mode == NEW);
 
             initBottom(claim, cColumn1, cColumns2);
         }
@@ -106,7 +114,7 @@ public class ClaimDialog extends DialogWrapper {
             add(this.claimValueTextLabel, cColumn1);
             add(this.nestedClaimPanel = createNestedPanel(), cColumns2);
 
-            this.claimNameLabel.setText(claim.getName());
+            this.claimNameTextField.setText(claim.getName());
         }
 
         private AbstractClaimPanel<?, ?> createNestedPanel() {
@@ -125,7 +133,7 @@ public class ClaimDialog extends DialogWrapper {
         }
 
         public String getClaimName() {
-            return this.claimNameLabel.getText();
+            return this.claimNameTextField.getText();
         }
 
         public Object getClaimValue() {
@@ -135,5 +143,9 @@ public class ClaimDialog extends DialogWrapper {
         public ValidationInfo getValidationInfo() {
             return this.nestedClaimPanel.getValidationInfo();
         }
+    }
+
+    public enum Mode {
+        NEW, EDIT
     }
 }
