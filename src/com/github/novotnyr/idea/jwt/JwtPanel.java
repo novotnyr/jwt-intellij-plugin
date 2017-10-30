@@ -225,6 +225,9 @@ public class JwtPanel extends JPanel implements DataProvider {
 
 
     private void onCopyAsJsonActionPerformed(AnActionEvent anActionEvent) {
+        if (this.jwt == null) {
+            return;
+        }
         TextTransferable textTransferable = new TextTransferable(JwtHelper.prettyUnbase64Json(this.jwt.getPayloadString()));
         CopyPasteManagerEx.getInstanceEx().setContents(textTransferable);
     }

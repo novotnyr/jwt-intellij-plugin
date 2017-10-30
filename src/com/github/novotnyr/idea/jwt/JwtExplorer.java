@@ -87,7 +87,10 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
         group.add(new AnAction("Copy as JSON", "Copy JWT to clipboard as JSON", AllIcons.FileTypes.Json) {
             @Override
             public void actionPerformed(AnActionEvent anActionEvent) {
-                ClipboardUtils.copyPayload(JwtExplorer.this.jwt);
+                Jwt jwt = JwtExplorer.this.jwt;
+                if (jwt != null) {
+                    ClipboardUtils.copyPayload(JwtExplorer.this.jwt);
+                }
             }
         });
 
