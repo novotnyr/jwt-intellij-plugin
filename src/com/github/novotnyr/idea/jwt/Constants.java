@@ -8,5 +8,7 @@ public interface Constants {
 
     interface DataKeys {
         DataKey<Boolean> SECRET_IS_PRESENT = DataKey.create("secretIsPresent");
+
+        DataKey<String> SECRET = DataKey.create("secret");
     }
 }

@@ -10,6 +10,7 @@ import com.github.novotnyr.idea.jwt.ClaimUtils;
 
 import java.lang.reflect.Constructor;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -91,6 +92,18 @@ public class Jwt {
     public List<NamedClaim<?>> getPayloadClaims() {
         return Collections.unmodifiableList(this.payloadClaims);
     }
+
+    public void removeClaim(String claimName) {
+        Iterator<NamedClaim<?>> iterator = this.payloadClaims.iterator();
+        while(iterator.hasNext()) {
+            NamedClaim<?> claim = iterator.next();
+            if (claim.getName().equals(claimName)) {
+                iterator.remove();
+            }
+        }
+        updatePayload(null);
+    }
+
 
     public void setPayloadClaim(NamedClaim<?> claim) {
         int i = 0;

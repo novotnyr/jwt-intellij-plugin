@@ -1,5 +1,6 @@
 package com.github.novotnyr.idea.jwt;
 
+import com.github.novotnyr.idea.jwt.action.AbstractActionButtonController;
 import com.github.novotnyr.idea.jwt.action.AddClaimActionButtonController;
 import com.github.novotnyr.idea.jwt.action.EditClaimActionButtonUpdater;
 import com.github.novotnyr.idea.jwt.core.Jwt;
@@ -14,6 +15,8 @@ import com.intellij.icons.AllIcons;
 import com.intellij.ide.CopyPasteManagerEx;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.actionSystem.DataProvider;
+import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.popup.Balloon;
@@ -27,6 +30,7 @@ import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.TextTransferable;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -43,7 +47,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.util.List;
 
-public class JwtPanel extends JPanel {
+public class JwtPanel extends JPanel implements DataProvider {
     private JLabel headerLabel = new JLabel("Header");
 
     private JwtHeaderTableModel headerTableModel;
@@ -69,6 +73,8 @@ public class JwtPanel extends JPanel {
     private AddClaimActionButtonController addClaimActionButtonController;
 
     private EditClaimActionButtonUpdater editClaimActionButtonUpdater;
+
+    private AbstractActionButtonController removeClaimActionButtonController;
 
     public JwtPanel() {
         setLayout(new GridBagLayout());
@@ -143,8 +149,19 @@ public class JwtPanel extends JPanel {
 
         this.editClaimActionButtonUpdater = new EditClaimActionButtonUpdater();
 
+        this.removeClaimActionButtonController = new AbstractActionButtonController() {
+            @Override
+            public void run(AnActionButton button) {
+                onRemoveClaim();
+            }
+
+            @Override
+            public boolean isEnabled(AnActionEvent anActionEvent) {
+                return isRemoveClaimActionEnabled();
+            }
+        };
+
         this.claimsTablePanel = ToolbarDecorator.createDecorator(this.claimsTable)
-                .disableRemoveAction()
                 .disableUpDownActions()
                 .addExtraAction(new AnActionButton("Copy as JSON", AllIcons.FileTypes.Json) {
                     @Override
@@ -161,10 +178,11 @@ public class JwtPanel extends JPanel {
                 .setEditActionUpdater(editClaimActionButtonUpdater)
                 .setAddAction(addClaimActionButtonController)
                 .setAddActionUpdater(addClaimActionButtonController)
+                .setRemoveAction(this.removeClaimActionButtonController)
+                .setRemoveActionUpdater(this.removeClaimActionButtonController)
                 .createPanel();
         return this.claimsTablePanel;
     }
-
 
 
     private void configureClaimsTablePopup(JBTable table) {
@@ -285,15 +303,23 @@ public class JwtPanel extends JPanel {
         showClaimDialog(claim, ClaimDialog.Mode.NEW);
     }
 
+    private void onRemoveClaim() {
+        int selectedRow = claimsTable.getSelectedRow();
+        NamedClaim<?> claim = claimsTableModel.getClaimAt(selectedRow);
+        this.jwt.setSigningCredentials(new StringSecret(getSecret()));
+        this.jwt.removeClaim(claim.getName());
+
+        refreshJwt();
+    }
+
+
     private void showClaimDialog(NamedClaim<?> claim, ClaimDialog.Mode mode) {
         ClaimDialog claimDialog = new ClaimDialog(claim, mode);
         if(claimDialog.showAndGet()) {
             NamedClaim<?> updatedClaim = claimDialog.getClaim();
             this.jwt.setSigningCredentials(new StringSecret(getSecret()));
             this.jwt.setPayloadClaim(updatedClaim);
-            Jwt oldJwt = this.jwt;
-            setJwt(this.jwt);
-            firePropertyChange("jwt", null, this.jwt);
+            refreshJwt();
         }
     }
 
@@ -306,6 +332,27 @@ public class JwtPanel extends JPanel {
         this.editClaimActionButtonUpdater.isEnabled(event);
     }
 
+    @Nullable
+    @Override
+    public Object getData(String dataId) {
+        if (Constants.DataKeys.SECRET.is(dataId)) {
+            return this.getSecret();
+        }
+        if (PlatformDataKeys.SELECTED_ITEM.is(dataId)) {
+            int selectedRow = this.claimsTable.getSelectedRow();
+            if (selectedRow < 0) {
+                return null;
+            }
+            return this.claimsTableModel.getClaimAt(selectedRow);
+        }
+
+        return null;
+    }
+
+    private void refreshJwt() {
+        setJwt(this.jwt);
+        firePropertyChange("jwt", null, this.jwt);
+    }
 
     public void setJwt(Jwt jwt) {
         this.jwt = jwt;
@@ -338,5 +385,9 @@ public class JwtPanel extends JPanel {
 
     public JTextField getSecretTextField() {
         return secretTextField;
+    }
+
+    private boolean isRemoveClaimActionEnabled() {
+        return hasSecret() && claimsTable.getSelectedRows().length > 0;
     }
 }
