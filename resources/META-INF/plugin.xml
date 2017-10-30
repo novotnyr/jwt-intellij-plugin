@@ -1,14 +1,20 @@
 <idea-plugin>
   <id>com.github.novotnyr.jwt-intellij-plugin</id>
   <name>JWT (JSON Web Token) Analyzer</name>
-  <version>0.2</version>
+  <version>0.3</version>
   <vendor email="novotnr0@gmail.com" url="https://github.com/novotnyr/jwt-intellij-plugin">Róbert Novotný</vendor>
-ú
+
   <description><![CDATA[
     JSON Web Token Parser and Analyzer.
     ]]></description>
 
   <change-notes><![CDATA[
+      <em>0.3</em>
+      <ul>
+        <li>Allow adding and removing claims from claim table
+        <li>Handle exception when copying an empty JWT to clipboard
+      </ul>
+
       <em>0.2</em>
       <ul>
         <li>Introduce claim editor: string, numeric, boolean values are allowed, timestamps have a dedicated editor
