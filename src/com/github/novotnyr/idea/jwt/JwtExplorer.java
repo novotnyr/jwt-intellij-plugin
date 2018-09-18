@@ -93,6 +93,14 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
                 }
             }
         });
+        group.add(new AnAction("Reset", "Reset All Fields", AllIcons.General.Reset) {
+            @Override
+            public void actionPerformed(AnActionEvent anActionEvent) {
+                JwtExplorer.this.jwt = null;
+                JwtExplorer.this.encodedJwtPanel.reset();
+                JwtExplorer.this.jwtPanel.reset();
+            }
+        });
 
         ActionToolbar actionToolBar = ActionManager.getInstance().createActionToolbar("jwtToolbar", group, true);
         actionToolBar.setTargetComponent(this.encodedJwtPanel);

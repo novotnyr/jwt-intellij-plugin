@@ -66,4 +66,8 @@ public class EncodedJwtPanel extends JPanel {
     public void setJwt(Jwt jwt) {
         this.encodedJwtTextArea.setText(jwt.toString());
     }
+
+    public void reset() {
+        this.encodedJwtTextArea.setText("");
+    }
 }

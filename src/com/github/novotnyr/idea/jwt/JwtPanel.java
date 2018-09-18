@@ -45,6 +45,7 @@ import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.util.Collections;
 import java.util.List;
 
 public class JwtPanel extends JPanel implements DataProvider {
@@ -103,6 +104,7 @@ public class JwtPanel extends JPanel implements DataProvider {
         cc.fill = GridBagConstraints.BOTH;
         this.claimsTable.setName(Constants.CLAIMS_TABLE_NAME);
         add(this.claimsTablePanel = configureClaimsTableActions(), cc);
+        initializeClaimsTableModel(this.claimsTable);
         configureClaimsTablePopup(this.claimsTable);
         configureClipboardCopy(this.claimsTable);
 
@@ -132,6 +134,11 @@ public class JwtPanel extends JPanel implements DataProvider {
                 return onClaimsTableDoubleClick(mouseEvent);
             };
         }.installOn(this.claimsTable);
+    }
+
+    private void initializeClaimsTableModel(JBTable claimsTable) {
+        this.claimsTableModel = new JwtClaimsTableModel(Jwt.EMPTY);
+        claimsTable.setModel(this.claimsTableModel);
     }
 
 
@@ -359,13 +366,18 @@ public class JwtPanel extends JPanel implements DataProvider {
 
     public void setJwt(Jwt jwt) {
         this.jwt = jwt;
-
-        this.headerLabel.setVisible(true);
-        this.payloadLabel.setVisible(true);
-        this.validateButton.setEnabled(true);
-
         this.headerTableModel = new JwtHeaderTableModel(jwt);
         this.headerTable.setModel(this.headerTableModel);
+
+        if (Jwt.EMPTY.equals(jwt)) {
+            this.headerLabel.setVisible(false);
+            this.payloadLabel.setVisible(false);
+            this.validateButton.setEnabled(false);
+        } else {
+            this.headerLabel.setVisible(true);
+            this.payloadLabel.setVisible(true);
+            this.validateButton.setEnabled(true);
+        }
 
         this.claimsTableModel = new JwtClaimsTableModel(jwt);
         this.claimsTableModel.setClaimErrors(validateClaims(jwt));
@@ -375,6 +387,9 @@ public class JwtPanel extends JPanel implements DataProvider {
     }
 
     private List<ClaimError> validateClaims(Jwt jwt) {
+        if (Jwt.EMPTY.equals(jwt)) {
+            return Collections.emptyList();
+        }
         return new JwtValidator().validateClaims(jwt).getClaimErrors();
     }
 
@@ -392,5 +407,9 @@ public class JwtPanel extends JPanel implements DataProvider {
 
     private boolean isRemoveClaimActionEnabled() {
         return hasSecret() && claimsTable.getSelectedRows().length > 0;
+    }
+
+    public void reset() {
+        setJwt(Jwt.EMPTY);
     }
 }
