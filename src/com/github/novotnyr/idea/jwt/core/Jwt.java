@@ -181,4 +181,8 @@ public class Jwt {
     public int hashCode() {
         return Objects.hash(getHeaderClaims(), getPayloadClaims(), signingCredentials, jwtString, getAlgorithm());
     }
+
+    public boolean isEmpty() {
+        return Jwt.EMPTY.equals(this);
+    }
 }

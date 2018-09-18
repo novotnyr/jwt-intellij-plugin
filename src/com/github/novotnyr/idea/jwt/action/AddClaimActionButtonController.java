@@ -1,6 +1,7 @@
 package com.github.novotnyr.idea.jwt.action;
 
 import com.github.novotnyr.idea.jwt.Constants;
+import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.ui.popup.JBPopup;
@@ -66,10 +67,12 @@ public class AddClaimActionButtonController implements AnActionButtonRunnable, A
 
     @Override
     public boolean isEnabled(AnActionEvent event) {
-        Boolean data = event.getData(Constants.DataKeys.SECRET_IS_PRESENT);
-        if(data != null) {
-            this.enabled = data;
-            return data;
+        Boolean secretIsPresent = event.getData(Constants.DataKeys.SECRET_IS_PRESENT);
+        Jwt jwt = event.getData(Constants.DataKeys.JWT);
+        System.out.println("" + secretIsPresent + ",jwt " + jwt);
+        if (secretIsPresent != null && jwt != null) {
+            this.enabled = secretIsPresent && !jwt.isEmpty();
+            return this.enabled;
         }
         return this.enabled;
     }

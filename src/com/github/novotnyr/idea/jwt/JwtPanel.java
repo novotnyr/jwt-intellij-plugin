@@ -17,7 +17,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
-import com.intellij.openapi.actionSystem.impl.SimpleDataContext;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
@@ -334,9 +333,26 @@ public class JwtPanel extends JPanel implements DataProvider {
     }
 
     private void onSecretTextFieldTextChanged(DocumentEvent documentEvent) {
-        boolean secretIsPresent = documentEvent.getDocument().getLength() > 0;
+        final boolean secretIsPresent = documentEvent.getDocument().getLength() > 0;
 
-        DataContext dataContext = SimpleDataContext.getSimpleContext(Constants.DataKeys.SECRET_IS_PRESENT.getName(), secretIsPresent);
+        refreshClaimsTableControllers(secretIsPresent);
+    }
+
+    private void refreshClaimsTableControllers(final boolean secretIsPresent) {
+        DataContext dataContext = new DataContext() {
+            @Nullable
+            @Override
+            public Object getData(String dataId) {
+                if (Constants.DataKeys.SECRET_IS_PRESENT.is(dataId)) {
+                    return secretIsPresent;
+                }
+                if (Constants.DataKeys.JWT.is(dataId)) {
+                    return jwt;
+                }
+                return null;
+            }
+        };
+
         AnActionEvent event = AnActionEvent.createFromDataContext("place", null, dataContext);
         this.addClaimActionButtonController.isEnabled(event);
         this.editClaimActionButtonUpdater.isEnabled(event);
@@ -373,10 +389,12 @@ public class JwtPanel extends JPanel implements DataProvider {
             this.headerLabel.setVisible(false);
             this.payloadLabel.setVisible(false);
             this.validateButton.setEnabled(false);
+            refreshClaimsTableControllers(hasSecret());
         } else {
             this.headerLabel.setVisible(true);
             this.payloadLabel.setVisible(true);
             this.validateButton.setEnabled(true);
+            refreshClaimsTableControllers(hasSecret());
         }
 
         this.claimsTableModel = new JwtClaimsTableModel(jwt);

@@ -35,7 +35,7 @@ public class EncodedJwtPanel extends JPanel {
                     Document document = documentEvent.getDocument();
                     highlight(document);
                     String text = document.getText(0, document.getLength());
-                    EncodedJwtPanel.this.firePropertyChange("jwt", "", text);
+                    EncodedJwtPanel.this.firePropertyChange("jwt", "5679497a-18f9-43c2-bb6c-939574f51cb2", text);
                 } catch (BadLocationException e) {
                     e.printStackTrace();
                 }

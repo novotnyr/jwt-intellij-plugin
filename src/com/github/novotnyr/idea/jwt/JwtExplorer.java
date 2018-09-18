@@ -18,6 +18,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.JBSplitter;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.util.ui.JBUI;
+import org.apache.commons.lang.StringUtils;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -40,7 +41,7 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
             public void propertyChange(PropertyChangeEvent event) {
                 try {
                     String jwtString = (String) event.getNewValue();
-                    Jwt jwt = new Jwt(jwtString);
+                    Jwt jwt = StringUtils.isEmpty(jwtString) ? Jwt.EMPTY : new Jwt(jwtString);
                     JwtExplorer.this.jwt = jwt;
                     JwtExplorer.this.jwtPanel.setJwt(jwt);
                 } catch (SignatureVerificationException e) {
