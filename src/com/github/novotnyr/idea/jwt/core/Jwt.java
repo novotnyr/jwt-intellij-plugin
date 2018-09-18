@@ -14,9 +14,10 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class Jwt {
-    private DecodedJWT jwtImpl;
+    public static Jwt EMPTY = new Jwt();
 
     private List<NamedClaim<?>> headerClaims = new LinkedList<>();
 
@@ -164,4 +165,20 @@ public class Jwt {
         return algorithm;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Jwt)) return false;
+        Jwt jwt = (Jwt) o;
+        return Objects.equals(getHeaderClaims(), jwt.getHeaderClaims()) &&
+                Objects.equals(getPayloadClaims(), jwt.getPayloadClaims()) &&
+                Objects.equals(signingCredentials, jwt.signingCredentials) &&
+                Objects.equals(jwtString, jwt.jwtString) &&
+                Objects.equals(getAlgorithm(), jwt.getAlgorithm());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getHeaderClaims(), getPayloadClaims(), signingCredentials, jwtString, getAlgorithm());
+    }
 }

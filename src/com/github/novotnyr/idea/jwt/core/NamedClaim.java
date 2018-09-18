@@ -1,5 +1,7 @@
 package com.github.novotnyr.idea.jwt.core;
 
+import java.util.Objects;
+
 public abstract class NamedClaim<T> {
     private final String name;
 
@@ -31,5 +33,19 @@ public abstract class NamedClaim<T> {
     @Override
     public String toString() {
         return this.name + ":" + this.value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof NamedClaim)) return false;
+        NamedClaim<?> that = (NamedClaim<?>) o;
+        return Objects.equals(getName(), that.getName()) &&
+                Objects.equals(getValue(), that.getValue());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getName(), getValue());
     }
 }
