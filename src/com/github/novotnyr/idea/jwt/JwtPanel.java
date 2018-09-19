@@ -77,6 +77,8 @@ public class JwtPanel extends JPanel implements DataProvider {
 
     private AbstractActionButtonController removeClaimActionButtonController;
 
+    private boolean jwtUpdateInProgress;
+
     public JwtPanel() {
         setLayout(new GridBagLayout());
 
@@ -378,10 +380,20 @@ public class JwtPanel extends JPanel implements DataProvider {
 
     private void refreshJwt() {
         setJwt(this.jwt);
+        this.jwtUpdateInProgress = true;
         firePropertyChange("jwt", null, this.jwt);
+        this.jwtUpdateInProgress = false;
     }
 
     public void setJwt(Jwt jwt) {
+        if (this.jwtUpdateInProgress) {
+            // this means that change in claims triggered
+            // a change in String representation that
+            // again triggered a change in claims
+            // In such case, do nothing
+            return;
+        }
+
         this.jwt = jwt;
         this.headerTableModel = new JwtHeaderTableModel(jwt);
         this.headerTable.setModel(this.headerTableModel);
