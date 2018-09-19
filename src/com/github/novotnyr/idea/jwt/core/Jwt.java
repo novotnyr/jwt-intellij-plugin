@@ -107,9 +107,18 @@ public class Jwt {
 
 
     public void setPayloadClaim(NamedClaim<?> claim) {
+        doSetClaim(claim, this.payloadClaims);
+        updatePayload(claim);
+    }
+
+    public void setHeaderClaim(NamedClaim<?> claim) {
+        doSetClaim(claim, this.headerClaims);
+    }
+
+    private void doSetClaim(NamedClaim<?> claim, List<NamedClaim<?>> destinationClaimList) {
         int i = 0;
         boolean found = false;
-        for (NamedClaim<?> payloadClaim : payloadClaims) {
+        for (NamedClaim<?> payloadClaim : destinationClaimList) {
             if(payloadClaim.getName().equals(claim.getName())) {
                 found = true;
                 break;
@@ -117,11 +126,10 @@ public class Jwt {
             i++;
         }
         if(found) {
-            payloadClaims.set(i, claim);
+            destinationClaimList.set(i, claim);
         } else {
-            payloadClaims.add(claim);
+            destinationClaimList.add(claim);
         }
-        updatePayload(claim);
     }
 
     private void updatePayload(NamedClaim<?> claim) {
@@ -130,7 +138,10 @@ public class Jwt {
             builder.withClaim(payloadClaim);
         }
         this.jwtString = builder.sign(this.algorithm, this.signingCredentials);
+    }
 
+    public void rebuild() {
+        updatePayload(null);
     }
 
     public void setSigningCredentials(SigningCredentials signingCredentials) {

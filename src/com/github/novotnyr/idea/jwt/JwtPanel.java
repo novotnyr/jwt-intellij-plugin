@@ -5,6 +5,7 @@ import com.github.novotnyr.idea.jwt.action.AddClaimActionButtonController;
 import com.github.novotnyr.idea.jwt.action.EditClaimActionButtonUpdater;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
+import com.github.novotnyr.idea.jwt.core.SigningCredentials;
 import com.github.novotnyr.idea.jwt.core.StringSecret;
 import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry;
 import com.github.novotnyr.idea.jwt.ui.ClaimTableTranferHandler;
@@ -415,6 +416,18 @@ public class JwtPanel extends JPanel implements DataProvider {
         return this.secretTextField.getText();
     }
 
+    public void setSecret(String secret) {
+        this.secretTextField.setText(secret);
+    }
+
+    public void setSigningCredentials(SigningCredentials signingCredentials) {
+        if (signingCredentials instanceof StringSecret) {
+            StringSecret stringSecret = (StringSecret) signingCredentials;
+            this.secretTextField.setText(stringSecret.getSecret());
+        }
+    }
+
+
     public boolean hasSecret() {
         return getSecret() != null && ! getSecret().isEmpty();
     }
@@ -430,4 +443,5 @@ public class JwtPanel extends JPanel implements DataProvider {
     public void reset() {
         setJwt(Jwt.EMPTY);
     }
+
 }

@@ -4,6 +4,7 @@ import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.SignatureVerificationException;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.ui.ClipboardUtils;
+import com.github.novotnyr.idea.jwt.ui.NewJwtDialog;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
@@ -85,6 +86,20 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
 
     private void configureToolbar() {
         DefaultActionGroup group = new DefaultActionGroup();
+        group.add(new AnAction("New JWT", "Create a new JWT", AllIcons.FileTypes.Any_type) {
+            @Override
+            public void actionPerformed(AnActionEvent anActionEvent) {
+                NewJwtDialog dialog = new NewJwtDialog(anActionEvent.getProject());
+                if (dialog.showAndGet()) {
+                    Jwt jwt = dialog.getJwt();
+                    JwtExplorer.this.jwt = jwt;
+                    JwtExplorer.this.encodedJwtPanel.setJwt(jwt);
+                    JwtExplorer.this.jwtPanel.setSigningCredentials(dialog.getSigningCredentials());
+                    JwtExplorer.this.jwtPanel.setJwt(jwt);
+                }
+            }
+        });
+
         group.add(new AnAction("Copy as JSON", "Copy JWT to clipboard as JSON", AllIcons.FileTypes.Json) {
             @Override
             public void actionPerformed(AnActionEvent anActionEvent) {

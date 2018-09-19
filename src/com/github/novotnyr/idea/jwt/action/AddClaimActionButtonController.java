@@ -69,7 +69,6 @@ public class AddClaimActionButtonController implements AnActionButtonRunnable, A
     public boolean isEnabled(AnActionEvent event) {
         Boolean secretIsPresent = event.getData(Constants.DataKeys.SECRET_IS_PRESENT);
         Jwt jwt = event.getData(Constants.DataKeys.JWT);
-        System.out.println("" + secretIsPresent + ",jwt " + jwt);
         if (secretIsPresent != null && jwt != null) {
             this.enabled = secretIsPresent && !jwt.isEmpty();
             return this.enabled;
