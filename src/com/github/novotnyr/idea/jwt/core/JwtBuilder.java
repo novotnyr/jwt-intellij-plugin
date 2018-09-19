@@ -38,6 +38,7 @@ public class JwtBuilder {
     public String sign(String algorithmName, Object securityContexts) {
         Algorithm algorithm = algorithmResolver.resolve(algorithmName, securityContexts);
         headerClaims.put(PublicClaims.ALGORITHM, algorithm.getName());
+        this.headerClaims.put(PublicClaims.TYPE, "JWT");
         String signingKeyId = algorithm.getSigningKeyId();
         if (signingKeyId != null) {
             this.headerClaims.put(PublicClaims.KEY_ID, signingKeyId);
