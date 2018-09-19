@@ -182,9 +182,9 @@ public class JwtPanel extends JPanel implements DataProvider {
                         onEditAction(anActionButton);
                     }
                 })
-                .setEditActionUpdater(editClaimActionButtonUpdater)
-                .setAddAction(addClaimActionButtonController)
-                .setAddActionUpdater(addClaimActionButtonController)
+                .setEditActionUpdater(this.editClaimActionButtonUpdater)
+                .setAddAction(this.addClaimActionButtonController)
+                .setAddActionUpdater(this.addClaimActionButtonController)
                 .setRemoveAction(this.removeClaimActionButtonController)
                 .setRemoveActionUpdater(this.removeClaimActionButtonController)
                 .createPanel();
@@ -226,7 +226,7 @@ public class JwtPanel extends JPanel implements DataProvider {
     }
 
     private void editClaimAtRow(int row) {
-        NamedClaim<?> claim = claimsTableModel.getClaimAt(row);
+        NamedClaim<?> claim = this.claimsTableModel.getClaimAt(row);
         showClaimDialog(claim, ClaimDialog.Mode.EDIT);
     }
 
@@ -290,7 +290,7 @@ public class JwtPanel extends JPanel implements DataProvider {
             return true;
         }
 
-        int selectedRow = claimsTable.rowAtPoint(mouseEvent.getPoint());
+        int selectedRow = this.claimsTable.rowAtPoint(mouseEvent.getPoint());
         if(selectedRow < 0) {
             return true;
         }
@@ -314,8 +314,8 @@ public class JwtPanel extends JPanel implements DataProvider {
     }
 
     private void onRemoveClaim() {
-        int selectedRow = claimsTable.getSelectedRow();
-        NamedClaim<?> claim = claimsTableModel.getClaimAt(selectedRow);
+        int selectedRow = this.claimsTable.getSelectedRow();
+        NamedClaim<?> claim = this.claimsTableModel.getClaimAt(selectedRow);
         this.jwt.setSigningCredentials(new StringSecret(getSecret()));
         this.jwt.removeClaim(claim.getName());
 
@@ -348,7 +348,7 @@ public class JwtPanel extends JPanel implements DataProvider {
                     return secretIsPresent;
                 }
                 if (Constants.DataKeys.JWT.is(dataId)) {
-                    return jwt;
+                    return JwtPanel.this.jwt;
                 }
                 return null;
             }
