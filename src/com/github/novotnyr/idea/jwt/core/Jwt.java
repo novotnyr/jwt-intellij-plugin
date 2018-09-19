@@ -100,6 +100,7 @@ public class Jwt {
             NamedClaim<?> claim = iterator.next();
             if (claim.getName().equals(claimName)) {
                 iterator.remove();
+                break;
             }
         }
         updatePayload(null);

@@ -24,10 +24,10 @@ public class JwtBuilder {
     private final ObjectMapper mapper;
 
     public JwtBuilder() {
-        mapper = new ObjectMapper();
+        this.mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
         module.addSerializer(ClaimsHolder.class, new PayloadSerializer());
-        mapper.registerModule(module);
+        this.mapper.registerModule(module);
     }
 
     public JwtBuilder withClaim(NamedClaim<?> claim) {
@@ -36,8 +36,8 @@ public class JwtBuilder {
     }
 
     public String sign(String algorithmName, Object securityContexts) {
-        Algorithm algorithm = algorithmResolver.resolve(algorithmName, securityContexts);
-        headerClaims.put(PublicClaims.ALGORITHM, algorithm.getName());
+        Algorithm algorithm = this.algorithmResolver.resolve(algorithmName, securityContexts);
+        this.headerClaims.put(PublicClaims.ALGORITHM, algorithm.getName());
         this.headerClaims.put(PublicClaims.TYPE, "JWT");
         String signingKeyId = algorithm.getSigningKeyId();
         if (signingKeyId != null) {
@@ -45,8 +45,8 @@ public class JwtBuilder {
         }
 
         try {
-            String headerJson = mapper.writeValueAsString(headerClaims);
-            String payloadJson = mapper.writeValueAsString(new ClaimsHolder(payloadClaims));
+            String headerJson = this.mapper.writeValueAsString(this.headerClaims);
+            String payloadJson = this.mapper.writeValueAsString(new ClaimsHolder(this.payloadClaims));
 
             String header = Base64.encodeBase64URLSafeString(headerJson.getBytes(StandardCharsets.UTF_8));
             String payload = Base64.encodeBase64URLSafeString(payloadJson.getBytes(StandardCharsets.UTF_8));

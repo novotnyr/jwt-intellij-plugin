@@ -132,7 +132,7 @@ public class JwtPanel extends JPanel implements DataProvider {
             @Override
             protected boolean onDoubleClick(MouseEvent mouseEvent) {
                 return onClaimsTableDoubleClick(mouseEvent);
-            };
+            }
         }.installOn(this.claimsTable);
     }
 

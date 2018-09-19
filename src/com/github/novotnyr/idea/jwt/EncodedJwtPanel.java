@@ -2,6 +2,7 @@ package com.github.novotnyr.idea.jwt;
 
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.ui.JBColor;
 import org.jdesktop.swingx.prompt.PromptSupport;
 
 import javax.swing.JPanel;
@@ -12,14 +13,13 @@ import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Document;
 import javax.swing.text.Highlighter;
 import java.awt.BorderLayout;
-import java.awt.Color;
 
 public class EncodedJwtPanel extends JPanel {
     private JTextArea encodedJwtTextArea = new JTextArea(8, 0);
 
-    private Highlighter.HighlightPainter headerPainter = new DefaultHighlighter.DefaultHighlightPainter(Color.LIGHT_GRAY);
-    private Highlighter.HighlightPainter payloadPainter = new DefaultHighlighter.DefaultHighlightPainter(Color.LIGHT_GRAY);
-    private Highlighter.HighlightPainter signaturePainter = new DefaultHighlighter.DefaultHighlightPainter(Color.GRAY);
+    private Highlighter.HighlightPainter headerPainter = new DefaultHighlighter.DefaultHighlightPainter(JBColor.LIGHT_GRAY);
+    private Highlighter.HighlightPainter payloadPainter = new DefaultHighlighter.DefaultHighlightPainter(JBColor.LIGHT_GRAY);
+    private Highlighter.HighlightPainter signaturePainter = new DefaultHighlighter.DefaultHighlightPainter(JBColor.GRAY);
 
     public EncodedJwtPanel() {
         super(new BorderLayout());
