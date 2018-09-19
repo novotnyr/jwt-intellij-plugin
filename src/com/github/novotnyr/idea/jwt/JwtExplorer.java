@@ -35,9 +35,9 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
         super(true);
         configureToolbar();
 
-        encodedJwtPanel = new EncodedJwtPanel();
-        jwtPanel = new JwtPanel();
-        encodedJwtPanel.addPropertyChangeListener("jwt", new PropertyChangeListener() {
+        this.encodedJwtPanel = new EncodedJwtPanel();
+        this.jwtPanel = new JwtPanel();
+        this.encodedJwtPanel.addPropertyChangeListener("jwt", new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent event) {
                 try {
@@ -50,36 +50,36 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
                             .createHtmlTextBalloonBuilder(e.getMessage(), MessageType.ERROR, null)
                             .setFadeoutTime(7500)
                             .createBalloon()
-                            .show(RelativePoint.getNorthWestOf(encodedJwtPanel),
+                            .show(RelativePoint.getNorthWestOf(JwtExplorer.this.encodedJwtPanel),
                                     Balloon.Position.atRight);
                 } catch (@SuppressWarnings("TryWithIdenticalCatches") JWTDecodeException e) {
                     JBPopupFactory.getInstance()
                             .createHtmlTextBalloonBuilder("JWT has a wrong syntax", MessageType.ERROR, null)
                             .setFadeoutTime(7500)
                             .createBalloon()
-                            .show(RelativePoint.getNorthWestOf(encodedJwtPanel),
+                            .show(RelativePoint.getNorthWestOf(JwtExplorer.this.encodedJwtPanel),
                                     Balloon.Position.atRight);
                 } catch (SecretNotSpecifiedException e) {
                     JBPopupFactory.getInstance()
                             .createHtmlTextBalloonBuilder(e.getMessage(), MessageType.ERROR, null)
                             .setFadeoutTime(7500)
                             .createBalloon()
-                            .show(RelativePoint.getNorthWestOf(jwtPanel.getSecretTextField()),
+                            .show(RelativePoint.getNorthWestOf(JwtExplorer.this.jwtPanel.getSecretTextField()),
                                     Balloon.Position.atRight);
                 }
             }
         });
-        jwtPanel.addPropertyChangeListener("jwt", new PropertyChangeListener() {
+        this.jwtPanel.addPropertyChangeListener("jwt", new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 Jwt jwt = (Jwt) evt.getNewValue();
-                encodedJwtPanel.setJwt(jwt);
+                JwtExplorer.this.encodedJwtPanel.setJwt(jwt);
             }
         });
 
         JBSplitter splitter = new JBSplitter(true, 0.5f);
-        splitter.setFirstComponent(encodedJwtPanel);
-        splitter.setSecondComponent(jwtPanel);
+        splitter.setFirstComponent(this.encodedJwtPanel);
+        splitter.setSecondComponent(this.jwtPanel);
 
         setContent(splitter);
     }
