@@ -15,7 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class JwtBuilder {
-    private AlgoritmResolver algorithmResolver = new AlgoritmResolver();
+    private AlgorithmResolver algorithmResolver = new AlgorithmResolver();
 
     private Map<String, Object> headerClaims = new LinkedHashMap<>();
 

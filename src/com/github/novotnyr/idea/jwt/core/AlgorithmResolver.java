@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 
-public class AlgoritmResolver {
+public class AlgorithmResolver {
     public static final Logger logger = LoggerFactory.getLogger(Algorithm.class);
 
     public static Algorithm resolve(String algorithmName, Object securityContext) {
