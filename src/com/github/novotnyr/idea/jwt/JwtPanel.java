@@ -8,7 +8,7 @@ import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.core.SigningCredentials;
 import com.github.novotnyr.idea.jwt.core.StringSecret;
 import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry;
-import com.github.novotnyr.idea.jwt.ui.ClaimTableTranferHandler;
+import com.github.novotnyr.idea.jwt.ui.ClaimTableTransferHandler;
 import com.github.novotnyr.idea.jwt.ui.UiUtils;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.github.novotnyr.idea.jwt.validation.JwtValidator;
@@ -143,7 +143,7 @@ public class JwtPanel extends JPanel implements DataProvider {
 
 
     private void configureClipboardCopy(JBTable claimsTable) {
-        this.claimsTable.setTransferHandler(new ClaimTableTranferHandler());
+        this.claimsTable.setTransferHandler(new ClaimTableTransferHandler());
     }
 
     private JPanel configureClaimsTableActions() {

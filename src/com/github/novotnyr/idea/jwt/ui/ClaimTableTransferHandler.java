@@ -8,10 +8,10 @@ import javax.swing.TransferHandler;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 
-public class ClaimTableTranferHandler extends TransferHandler {
+public class ClaimTableTransferHandler extends TransferHandler {
     private static final String NO_PROPERTY = null;
 
-    public ClaimTableTranferHandler() {
+    public ClaimTableTransferHandler() {
         super(NO_PROPERTY);
     }
 
