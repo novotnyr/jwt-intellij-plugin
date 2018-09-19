@@ -69,7 +69,7 @@ public class JwtPanel extends JPanel implements DataProvider {
 
     private JButton validateButton = new JButton("Validate");
 
-    private Jwt jwt;
+    private Jwt jwt = Jwt.EMPTY;
 
     private AddClaimActionButtonController addClaimActionButtonController;
 
@@ -172,10 +172,15 @@ public class JwtPanel extends JPanel implements DataProvider {
 
         this.claimsTablePanel = ToolbarDecorator.createDecorator(this.claimsTable)
                 .disableUpDownActions()
-                .addExtraAction(new AnActionButton("Copy as JSON", AllIcons.FileTypes.Json) {
+                .addExtraAction(new AnActionButton("Copy payload as JSON", AllIcons.FileTypes.Json) {
                     @Override
                     public void actionPerformed(AnActionEvent anActionEvent) {
                         onCopyAsJsonActionPerformed(anActionEvent);
+                    }
+
+                    @Override
+                    public boolean isEnabled() {
+                        return !JwtPanel.this.jwt.getPayloadClaims().isEmpty();
                     }
                 })
                 .setEditAction(new AnActionButtonRunnable() {
@@ -234,7 +239,7 @@ public class JwtPanel extends JPanel implements DataProvider {
 
 
     private void onCopyAsJsonActionPerformed(AnActionEvent anActionEvent) {
-        if (this.jwt == null) {
+        if (this.jwt == null || this.jwt.isEmpty()) {
             return;
         }
         TextTransferable textTransferable = new TextTransferable(JwtHelper.prettyUnbase64Json(this.jwt.getPayloadString()));
