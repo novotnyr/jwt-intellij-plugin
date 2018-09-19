@@ -29,7 +29,7 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
     private final EncodedJwtPanel encodedJwtPanel;
     private final JwtPanel jwtPanel;
 
-    private Jwt jwt;
+    private Jwt jwt = Jwt.EMPTY;
 
     public JwtExplorer() {
         super(true);
@@ -108,11 +108,16 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
                     ClipboardUtils.copyPayload(JwtExplorer.this.jwt);
                 }
             }
+
+            @Override
+            public void update(AnActionEvent e) {
+                e.getPresentation().setEnabled(!JwtExplorer.this.jwt.isEmpty());
+            }
         });
         group.add(new AnAction("Reset", "Reset All Fields", AllIcons.General.Reset) {
             @Override
             public void actionPerformed(AnActionEvent anActionEvent) {
-                JwtExplorer.this.jwt = null;
+                JwtExplorer.this.jwt = Jwt.EMPTY;
                 JwtExplorer.this.encodedJwtPanel.reset();
                 JwtExplorer.this.jwtPanel.reset();
             }
