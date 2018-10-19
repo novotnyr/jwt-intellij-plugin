@@ -8,7 +8,7 @@ An IntelliJ IDEA plugin for JSON Web Tokens (JWT)
 *   Verify signature (HS256 support)
 *   Verify validity of timestamp-based claims
 *   Visualize timestamp-based claims in unix / ISO / human relative format
-*   Edit claim values: dedicated editor for string, timestamp, boolean and numeric values
+*   Edit claim values: dedicated editor for string, timestamp, boolean, numeric and RAW JSON values
 
 ## Installing
 

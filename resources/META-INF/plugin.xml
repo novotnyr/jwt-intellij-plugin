@@ -9,6 +9,13 @@
     ]]></description>
 
   <change-notes><![CDATA[
+      <em>0.4</em>
+      <ul>
+        <li>Support adding, editing and removing of arbitrary raw JSON claim values
+        <li>Create a brand new JWT from a scratch
+        <li>Various user interface improvements and bugfixes when editing claims
+      </ul>
+
       <em>0.3</em>
       <ul>
         <li>Allow adding and removing claims from claim table
