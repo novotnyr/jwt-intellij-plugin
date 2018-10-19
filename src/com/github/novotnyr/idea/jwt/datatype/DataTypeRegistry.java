@@ -18,6 +18,7 @@ public class DataTypeRegistry {
         STRING,
         BOOLEAN,
         NUMERIC,
-        TIMESTAMP
+        TIMESTAMP,
+        RAW
     }
 }

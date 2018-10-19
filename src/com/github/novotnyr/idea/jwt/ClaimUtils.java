@@ -1,10 +1,13 @@
 package com.github.novotnyr.idea.jwt;
 
 import com.auth0.jwt.interfaces.Claim;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import com.github.novotnyr.idea.jwt.core.BooleanClaim;
 import com.github.novotnyr.idea.jwt.core.DateClaim;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.core.NumericClaim;
+import com.github.novotnyr.idea.jwt.core.RawClaim;
 import com.github.novotnyr.idea.jwt.core.StringClaim;
 import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry.DataType;
 
@@ -44,6 +47,8 @@ public class ClaimUtils {
                 return new NumericClaim("claim", 0L);
             case TIMESTAMP:
                 return new DateClaim("claim", new Date());
+            case RAW:
+                return new RawClaim("claim", MissingNode.getInstance());
             default:
                 throw new IllegalStateException("Unknown data type " + dataType);
         }
@@ -73,6 +78,10 @@ public class ClaimUtils {
         if(templateClaim instanceof StringClaim) {
             return new StringClaim(name, (String) value);
         }
+        if(templateClaim instanceof RawClaim) {
+            return new RawClaim(name, (TreeNode) value);
+        }
+
         throw new IllegalArgumentException("Cannot convert " + value.getClass() + " to claim value");
     }
 
