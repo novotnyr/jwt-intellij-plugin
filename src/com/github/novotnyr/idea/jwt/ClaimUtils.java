@@ -12,6 +12,7 @@ import com.github.novotnyr.idea.jwt.core.StringClaim;
 import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry.DataType;
 
 import java.util.Date;
+import java.util.List;
 
 public class ClaimUtils {
 
@@ -28,6 +29,11 @@ public class ClaimUtils {
         if(longClaim != null) {
             return new NumericClaim(claimName, longClaim);
         }
+        List<Object> objects = claimValue.asList(Object.class);
+        if (objects != null) {
+            return new RawClaim(claimName, claimValue);
+        }
+
         return new StringClaim(claimName, claimValue.asString());
 
     }

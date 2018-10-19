@@ -34,6 +34,17 @@ public class Hacking {
         }
     }
 
+    public static JsonNode asJsonNode(Claim claim) {
+        try {
+            Field dataField = claim.getClass().getDeclaredField("data");
+            dataField.setAccessible(true);
+            JsonNode data = (JsonNode) dataField.get(claim);
+            return data;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Reflection failed on JWT Claim " + claim.toString(), e);
+        }
+    }
+
     private static Claim _claimFromNode(JsonNode node) {
         if (node == null || node.isNull() || node.isMissingNode()) {
             return new NullClaim();
