@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.github.novotnyr.jwt-intellij-plugin</id>
   <name>JWT (JSON Web Token) Analyzer</name>
-  <version>0.4</version>
+  <version>0.5-SNAPSHOT</version>
   <vendor email="novotnr0@gmail.com" url="https://github.com/novotnyr/jwt-intellij-plugin">Róbert Novotný</vendor>
 
   <description><![CDATA[
