@@ -223,7 +223,7 @@ public class JwtPanel extends JPanel implements DataProvider {
         this.secretPanel.setSignatureContextChangedListener(new SignatureContextChangedListener() {
             @Override
             public void onSignatureContextChanged(SignatureContext newSignatureContext) {
-                refreshClaimsTableControllers(newSignatureContext.isEmpty());
+                refreshClaimsTableControllers(!newSignatureContext.isEmpty());
             }
         });
     }
