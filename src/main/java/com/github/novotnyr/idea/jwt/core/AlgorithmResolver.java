@@ -13,18 +13,29 @@ public class AlgorithmResolver {
     public static final Logger logger = LoggerFactory.getLogger(Algorithm.class);
 
     // TODO search duplicates
-    public static Algorithm resolve(String algorithmName, Object securityContext) {
+    public static Algorithm resolve(String algorithmName, Object signatureContext) {
         Algorithm algorithm = null;
         switch (algorithmName) {
             case "HS256" : {
-                if(securityContext == null) {
+                if(signatureContext == null) {
                     throw new SecretNotSpecifiedException();
-                } else if (securityContext instanceof byte[]) {
-                    byte[] byteArraySecret = (byte[]) securityContext;
+                } else if (signatureContext instanceof byte[]) {
+                    byte[] byteArraySecret = (byte[]) signatureContext;
                     algorithm = Algorithm.HMAC256(byteArraySecret);
-                } else if (securityContext instanceof HS256SignatureContext) {
+                } else if (signatureContext instanceof String) {
                     try {
-                        String secret = ((HS256SignatureContext) securityContext).getSecret();
+                        String secret = (String) signatureContext;
+                        algorithm = Algorithm.HMAC256(secret);
+                    } catch (UnsupportedEncodingException e) {
+                        // UTF-8 should be supported everywhere on JVM, so this
+                        // won't happen
+                        logger.error("Unsupported encoding", e);
+                        throw new UnknownAlgorithmException(algorithmName);
+                    }
+
+                } else if (signatureContext instanceof HS256SignatureContext) {
+                    try {
+                        String secret = ((HS256SignatureContext) signatureContext).getSecret();
                         algorithm = Algorithm.HMAC256(secret);
                     } catch (UnsupportedEncodingException e) {
                         // UTF-8 should be supported everywhere on JVM, so this
