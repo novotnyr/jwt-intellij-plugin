@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.github.novotnyr'
-version '0.5-SNAPSHOT'
+version '0.5'
 
 sourceCompatibility = 1.7
 
@@ -29,5 +29,7 @@ intellij {
 patchPluginXml {
     sinceBuild '143'
     changeNotes """
+        <li>Add support for RS256 algorithm.</li>
       """
 }
+
