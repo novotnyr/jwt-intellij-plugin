@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.SignatureVerificationException;
 import com.auth0.jwt.impl.PublicClaims;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.core.AlgorithmResolver;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import org.slf4j.Logger;
@@ -34,15 +35,15 @@ public class JwtValidator {
         return this;
     }
 
-    public void validate(Jwt jwt, Object validationContext) {
+    public void validate(Jwt jwt, SignatureContext signatureContext) {
         DecodedJWT decodedJWT = JWT.decode(jwt.toString());
-        validate(decodedJWT, validationContext);
+        validate(decodedJWT, signatureContext);
     }
 
-    private void validate(DecodedJWT jwt, Object validationContext) {
+    private void validate(DecodedJWT jwt, SignatureContext signatureContext) {
         validateClaims(jwt);
         try {
-            Algorithm algorithm = AlgorithmResolver.resolve(jwt.getAlgorithm(), validationContext);
+            Algorithm algorithm = AlgorithmResolver.resolve(jwt.getAlgorithm(), signatureContext);
             algorithm.verify(jwt);
         } catch (SignatureVerificationException e) {
             globalErrors.add(new SignatureError());
