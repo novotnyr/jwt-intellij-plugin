@@ -19,7 +19,7 @@ public class JwtFactory {
         Jwt jwt = new Jwt();
         jwt.setAlgorithm(algorithm);
         jwt.setSignatureContext(signatureContext);
-        jwt.setHeaderClaim(new StringClaim("alg", "HS256"));
+        jwt.setHeaderClaim(new StringClaim("alg", algorithm));
         jwt.setHeaderClaim(new StringClaim("typ", "JWT"));
         if (addIat) {
             jwt.setPayloadClaim(new DateClaim("iat", new Date()));

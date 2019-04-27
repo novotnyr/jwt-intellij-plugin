@@ -45,7 +45,8 @@ public abstract class RsaUtils {
     public static String toString(RSAPrivateKey rsaPrivateKey) {
         StringWriter out = new StringWriter();
         try(JcaPEMWriter pemWriter = new JcaPEMWriter(out);) {
-            pemWriter.writeObject(rsaPrivateKey.getEncoded());
+            pemWriter.writeObject(rsaPrivateKey);
+            pemWriter.flush();
             return out.toString();
         } catch (IOException e) {
             throw new SignatureContextException("Unable to write RSA private key from string", e);
@@ -55,7 +56,8 @@ public abstract class RsaUtils {
     public static String toString(RSAPublicKey rsaPublicKey) {
         StringWriter out = new StringWriter();
         try(JcaPEMWriter pemWriter = new JcaPEMWriter(out);) {
-            pemWriter.writeObject(rsaPublicKey.getEncoded());
+            pemWriter.writeObject(rsaPublicKey);
+            pemWriter.flush();
             return out.toString();
         } catch (IOException e) {
             throw new SignatureContextException("Unable to write RSA public key from string", e);
