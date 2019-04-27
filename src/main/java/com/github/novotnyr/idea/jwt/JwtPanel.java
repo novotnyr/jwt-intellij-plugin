@@ -33,6 +33,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -58,6 +59,8 @@ public class JwtPanel extends JPanel implements DataProvider {
 
     private JLabel signatureLabel = new JLabel("Sign/verify signature with secret:");
 
+    private JPanel secretPanelContainer = new JPanel(new BorderLayout());
+
     private SecretPanel secretPanel = new UnrecognitedSecretPanel();
 
     private JButton validateButton = new JButton("Validate");
@@ -71,8 +74,6 @@ public class JwtPanel extends JPanel implements DataProvider {
     private AbstractActionButtonController removeClaimActionButtonController;
 
     private boolean jwtUpdateInProgress;
-
-    private GridBagConstraints secretPanelLayoutConstraints;
 
     public JwtPanel() {
         setLayout(new GridBagLayout());
@@ -114,8 +115,8 @@ public class JwtPanel extends JPanel implements DataProvider {
         cc.gridy++;
         cc.weighty = 1;
         cc.fill = GridBagConstraints.BOTH;
-        this.secretPanelLayoutConstraints = (GridBagConstraints) cc.clone();
-        add(this.secretPanel.getRoot(), cc);
+        add(this.secretPanelContainer, cc);
+        replaceSecretPanelContent(this.secretPanel);
         configureSecretTextFieldListeners(this.secretPanel);
 
         cc.gridy++;
@@ -137,7 +138,6 @@ public class JwtPanel extends JPanel implements DataProvider {
             }
         }.installOn(this.claimsTable);
     }
-
 
     private void initializeClaimsTableModel(JBTable claimsTable) {
         this.claimsTableModel = new JwtClaimsTableModel(Jwt.EMPTY);
@@ -405,16 +405,18 @@ public class JwtPanel extends JPanel implements DataProvider {
         configureSecretPanel(jwt);
     }
 
+    private void replaceSecretPanelContent(SecretPanel secretPanel) {
+        this.secretPanelContainer.removeAll();
+        this.secretPanelContainer.add(secretPanel.getRoot(), BorderLayout.CENTER);
+    }
+
     private void configureSecretPanel(Jwt jwt) {
         SecretPanel newSecretPanel = SecretPanelFactory.getInstance().newSecretPanel(jwt);
         if (isSameSecretPanel(newSecretPanel)) {
             return;
         }
-
         this.secretPanel.removeSignatureContextChangedListener();
-        remove(this.secretPanel.getRoot());
-
-        add(newSecretPanel.getRoot(), this.secretPanelLayoutConstraints);
+        replaceSecretPanelContent(newSecretPanel);
         this.secretPanel = newSecretPanel;
         configureSecretTextFieldListeners(this.secretPanel);
     }
