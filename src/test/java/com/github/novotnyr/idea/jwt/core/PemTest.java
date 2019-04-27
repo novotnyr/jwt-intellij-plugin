@@ -1,6 +1,6 @@
 package com.github.novotnyr.idea.jwt.core;
 
-import com.github.novotnyr.idea.jwt.RS256SignatureContext;
+import com.github.novotnyr.idea.jwt.rs256.RS256SignatureContext;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.junit.Assert;
 import org.junit.Test;

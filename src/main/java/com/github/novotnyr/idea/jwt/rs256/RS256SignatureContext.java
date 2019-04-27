@@ -1,6 +1,6 @@
-package com.github.novotnyr.idea.jwt;
+package com.github.novotnyr.idea.jwt.rs256;
 
-import com.github.novotnyr.idea.jwt.rs256.RsaUtils;
+import com.github.novotnyr.idea.jwt.SignatureContext;
 
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;

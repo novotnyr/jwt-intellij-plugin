@@ -1,8 +1,10 @@
-package com.github.novotnyr.idea.jwt.ui.secretpanel;
+package com.github.novotnyr.idea.jwt.rs256;
 
-import com.github.novotnyr.idea.jwt.RS256SignatureContext;
 import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.SignatureContextException;
+import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
+import com.github.novotnyr.idea.jwt.ui.secretpanel.SignatureContextChangedListener;
+import com.github.novotnyr.idea.jwt.ui.secretpanel.UnsupportedSignatureContext;
 import com.github.novotnyr.idea.jwt.validation.SignatureError;
 import com.intellij.ui.DocumentAdapter;
 

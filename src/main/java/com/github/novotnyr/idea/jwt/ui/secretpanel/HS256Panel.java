@@ -2,6 +2,7 @@ package com.github.novotnyr.idea.jwt.ui.secretpanel;
 
 import com.github.novotnyr.idea.jwt.HS256SignatureContext;
 import com.github.novotnyr.idea.jwt.SignatureContext;
+import com.github.novotnyr.idea.jwt.ui.SecretPanelDelegatingDocumentAdapter;
 
 import javax.annotation.Nonnull;
 import javax.swing.JComponent;
@@ -11,6 +12,8 @@ import javax.swing.JTextField;
 public class HS256Panel extends SecretPanel {
     private JPanel root;
     private JTextField secretTextField;
+
+    private SecretPanelDelegatingDocumentAdapter secretTextFieldDocumentListener;
 
     public void setSecret(String secret) {
         this.secretTextField.setText(secret);
@@ -46,5 +49,18 @@ public class HS256Panel extends SecretPanel {
     @Override
     public JComponent getBaloonableComponent() {
         return this.secretTextField;
+    }
+
+    @Override
+    public void setSignatureContextChangedListener(@Nonnull SignatureContextChangedListener listener) {
+        super.setSignatureContextChangedListener(listener);
+        this.secretTextFieldDocumentListener = new SecretPanelDelegatingDocumentAdapter(this, listener);
+        this.secretTextField.getDocument().addDocumentListener(this.secretTextFieldDocumentListener);
+    }
+
+    @Override
+    public void removeSignatureContextChangedListener() {
+        super.removeSignatureContextChangedListener();
+        this.secretTextField.getDocument().removeDocumentListener(this.secretTextFieldDocumentListener);
     }
 }

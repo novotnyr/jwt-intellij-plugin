@@ -2,7 +2,7 @@ package com.github.novotnyr.idea.jwt.core;
 
 import com.auth0.jwt.algorithms.Algorithm;
 import com.github.novotnyr.idea.jwt.HS256SignatureContext;
-import com.github.novotnyr.idea.jwt.RS256SignatureContext;
+import com.github.novotnyr.idea.jwt.rs256.RS256SignatureContext;
 import com.github.novotnyr.idea.jwt.SecretNotSpecifiedException;
 import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.validation.UnknownAlgorithmException;

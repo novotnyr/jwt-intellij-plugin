@@ -2,7 +2,7 @@ package com.github.novotnyr.idea.jwt;
 
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.HS256Panel;
-import com.github.novotnyr.idea.jwt.ui.secretpanel.RS256Panel;
+import com.github.novotnyr.idea.jwt.rs256.RS256Panel;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 
 public class SecretPanelFactory {
