@@ -10,7 +10,9 @@ import com.intellij.openapi.ui.ValidationInfo;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -18,13 +20,17 @@ import javax.swing.JTextField;
 public class NewJwtDialog extends DialogWrapper {
     private final JwtFactory jwtFactory = JwtFactory.getInstance();
 
-    private JTextField algorithmTextField;
+    private static final String[] ALGORITHMS = {"HS256", "RS256"};
+
+    private JComboBox<String> algorithmComboBox;
     private JTextField signingSecretTextField;
     private JPanel rootPanel;
     private JCheckBox addIatCheckBox;
 
     public NewJwtDialog(@Nullable Project project) {
         super(project);
+        algorithmComboBox.setModel(new DefaultComboBoxModel<>(ALGORITHMS));
+        algorithmComboBox.setSelectedItem("HS256");
         init();
     }
 
@@ -48,7 +54,7 @@ public class NewJwtDialog extends DialogWrapper {
     }
 
     private String getAlgorithm() {
-        return this.algorithmTextField.getText();
+        return (String) this.algorithmComboBox.getSelectedItem();
     }
 
     public SignatureContext getSignatureContext() {
