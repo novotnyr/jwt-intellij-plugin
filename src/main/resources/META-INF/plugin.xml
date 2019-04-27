@@ -15,31 +15,6 @@
     </ul>
     ]]></description>
 
-  <change-notes><![CDATA[
-      <em>0.4</em>
-      <ul>
-        <li>Support adding, editing and removing of arbitrary raw JSON claim values
-        <li>Create a brand new JWT from a scratch
-        <li>Various user interface improvements and bugfixes when editing claims
-      </ul>
-
-      <em>0.3</em>
-      <ul>
-        <li>Allow adding and removing claims from claim table
-        <li>Handle exception when copying an empty JWT to clipboard
-      </ul>
-
-      <em>0.2</em>
-      <ul>
-        <li>Introduce claim editor: string, numeric, boolean values are allowed, timestamps have a dedicated editor
-        <li>Copy JWT payload to clipboard as a JSON
-        <li>Configure timestamp display format in view menu: use unix timestamp, ISO format or relative ("x seconds ago")
-      </ul>
-
-      <em>0.1</em> First release
-    ]]>
-  </change-notes>
-
   <idea-version since-build="143.0"/>
 
   <depends>com.intellij.modules.lang</depends>

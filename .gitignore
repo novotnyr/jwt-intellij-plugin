@@ -1,7 +1,4 @@
 jwt-intellij-plugin.zip
-.idea/**/*.xml
-.idea/**/libraries
-.idea/**/mongoSettings.xml
 *.iws
 /out/
 .idea_modules/
@@ -10,3 +7,6 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+.idea/
+.gradle/
+build/
