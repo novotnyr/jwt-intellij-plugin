@@ -23,7 +23,6 @@ import com.intellij.ui.AnActionButtonRunnable;
 import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
-import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.TextTransferable;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,36 +33,38 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import java.awt.BorderLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.Collections;
 import java.util.List;
 
-public class JwtPanel extends JPanel implements DataProvider {
-    private JLabel headerLabel = new JLabel("Header");
+public class JwtPanel implements DataProvider {
+    private PropertyChangeSupport propertyChangeSupport;
+
+    private JPanel rootPanel;
+
+    private JLabel headerLabel;
 
     private JwtHeaderTableModel headerTableModel;
 
-    private JBTable headerTable = new JBTable();
+    private JBTable headerTable;
 
-    private JLabel payloadLabel = new JLabel("Payload");
+    private JLabel payloadLabel;
 
     private JwtClaimsTableModel claimsTableModel;
 
-    private JBTable claimsTable = new JBTable();
+    private JBTable claimsTable;
 
     private JPanel claimsTablePanel;
 
-    private JLabel signatureLabel = new JLabel("Sign/verify signature with secret:");
+    private JPanel secretPanelContainer;
 
-    private JPanel secretPanelContainer = new JPanel(new BorderLayout());
+    private SecretPanel secretPanel = new UnrecognizedSecretPanel();
 
-    private SecretPanel secretPanel = new UnrecognitedSecretPanel();
-
-    private JButton validateButton = new JButton("Validate");
+    private JButton validateButton;
 
     private Jwt jwt = Jwt.EMPTY;
 
@@ -76,53 +77,17 @@ public class JwtPanel extends JPanel implements DataProvider {
     private boolean jwtUpdateInProgress;
 
     public JwtPanel() {
-        setLayout(new GridBagLayout());
-
-        GridBagConstraints cc = new GridBagConstraints();
-        cc.fill = GridBagConstraints.HORIZONTAL;
-        cc.weightx = 1;
-        cc.weighty = 0;
-        cc.anchor = GridBagConstraints.FIRST_LINE_START;
-        cc.gridx = 0;
-        cc.gridy = 0;
-        cc.insets = JBUI.insets(5);
-        add(this.headerLabel, cc);
         this.headerLabel.setVisible(false);
-
-        cc.gridy++;
-        add(this.headerTable, cc);
-
-        cc.gridy++;
-        add(this.payloadLabel, cc);
         this.payloadLabel.setVisible(false);
-
-        cc.gridy++;
-        cc.weighty = 1;
-        cc.ipady = 50;
-        cc.fill = GridBagConstraints.BOTH;
         this.claimsTable.setName(Constants.CLAIMS_TABLE_NAME);
-        add(this.claimsTablePanel = configureClaimsTableActions(), cc);
+
         initializeClaimsTableModel(this.claimsTable);
         configureClaimsTablePopup(this.claimsTable);
         configureClipboardCopy(this.claimsTable);
 
-        cc.gridy++;
-        cc.weighty = 0;
-        cc.ipady = 0;
-        cc.fill = GridBagConstraints.HORIZONTAL;
-        add(this.signatureLabel, cc);
-
-        cc.gridy++;
-        cc.weighty = 1;
-        cc.fill = GridBagConstraints.BOTH;
-        add(this.secretPanelContainer, cc);
         replaceSecretPanelContent(this.secretPanel);
         configureSecretTextFieldListeners(this.secretPanel);
 
-        cc.gridy++;
-        cc.weighty = 0;
-        cc.fill = GridBagConstraints.HORIZONTAL;
-        add(this.validateButton, cc);
         this.validateButton.setEnabled(false);
         this.validateButton.addActionListener(new ActionListener() {
             @Override
@@ -138,6 +103,17 @@ public class JwtPanel extends JPanel implements DataProvider {
             }
         }.installOn(this.claimsTable);
     }
+
+    private void createUIComponents() {
+        this.propertyChangeSupport = new PropertyChangeSupport(this);
+        this.claimsTable = new JBTable();
+        this.claimsTablePanel = configureClaimsTableActions();
+    }
+
+    public JPanel getRootPanel() {
+        return this.rootPanel;
+    }
+
 
     private void initializeClaimsTableModel(JBTable claimsTable) {
         this.claimsTableModel = new JwtClaimsTableModel(Jwt.EMPTY);
@@ -368,7 +344,7 @@ public class JwtPanel extends JPanel implements DataProvider {
     private void refreshJwt() {
         setJwt(this.jwt);
         this.jwtUpdateInProgress = true;
-        firePropertyChange("jwt", null, this.jwt);
+        this.propertyChangeSupport.firePropertyChange("jwt", null, this.jwt);
         this.jwtUpdateInProgress = false;
     }
 
@@ -457,4 +433,7 @@ public class JwtPanel extends JPanel implements DataProvider {
         setJwt(Jwt.EMPTY);
     }
 
+    public void addJwtListener(PropertyChangeListener listener) {
+        this.propertyChangeSupport.addPropertyChangeListener("jwt", listener);
+    }
 }

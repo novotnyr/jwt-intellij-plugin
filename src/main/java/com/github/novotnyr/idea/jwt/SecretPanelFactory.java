@@ -17,7 +17,7 @@ public class SecretPanelFactory {
 
     public SecretPanel newSecretPanel(Jwt jwt) {
         if (jwt == null || jwt.getAlgorithm() == null) {
-            return new UnrecognitedSecretPanel();
+            return new UnrecognizedSecretPanel();
         }
 
         switch (jwt.getAlgorithm()) {
@@ -26,7 +26,7 @@ public class SecretPanelFactory {
             case "RS256":
                 return new RS256Panel();
             default:
-                return new UnrecognitedSecretPanel();
+                return new UnrecognizedSecretPanel();
         }
     }
 

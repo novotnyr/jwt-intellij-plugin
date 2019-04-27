@@ -69,7 +69,7 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
                 }
             }
         });
-        this.jwtPanel.addPropertyChangeListener("jwt", new PropertyChangeListener() {
+        this.jwtPanel.addJwtListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 Jwt jwt = (Jwt) evt.getNewValue();
@@ -79,7 +79,7 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
 
         JBSplitter splitter = new JBSplitter(true, 0.5f);
         splitter.setFirstComponent(this.encodedJwtPanel);
-        splitter.setSecondComponent(this.jwtPanel);
+        splitter.setSecondComponent(this.jwtPanel.getRootPanel());
 
         setContent(splitter);
     }
