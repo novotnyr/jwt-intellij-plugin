@@ -64,12 +64,12 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
                             .createHtmlTextBalloonBuilder(e.getMessage(), MessageType.ERROR, null)
                             .setFadeoutTime(7500)
                             .createBalloon()
-                            .show(RelativePoint.getNorthWestOf(JwtExplorer.this.jwtPanel.getSecretTextField()),
+                            .show(RelativePoint.getNorthWestOf(JwtExplorer.this.jwtPanel.getSecretPanel().getBaloonableComponent()),
                                     Balloon.Position.atRight);
                 }
             }
         });
-        this.jwtPanel.addPropertyChangeListener("jwt", new PropertyChangeListener() {
+        this.jwtPanel.addJwtListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 Jwt jwt = (Jwt) evt.getNewValue();
@@ -79,7 +79,7 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
 
         JBSplitter splitter = new JBSplitter(true, 0.5f);
         splitter.setFirstComponent(this.encodedJwtPanel);
-        splitter.setSecondComponent(this.jwtPanel);
+        splitter.setSecondComponent(this.jwtPanel.getRootPanel());
 
         setContent(splitter);
     }
@@ -94,7 +94,7 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
                     Jwt jwt = dialog.getJwt();
                     JwtExplorer.this.jwt = jwt;
                     JwtExplorer.this.encodedJwtPanel.setJwt(jwt);
-                    JwtExplorer.this.jwtPanel.setSigningCredentials(dialog.getSigningCredentials());
+                    JwtExplorer.this.jwtPanel.setSignatureContext(dialog.getSignatureContext());
                     JwtExplorer.this.jwtPanel.setJwt(jwt);
                 }
             }

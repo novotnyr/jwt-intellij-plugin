@@ -7,6 +7,7 @@ import com.auth0.jwt.impl.PublicClaims;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.core.ser.PayloadSerializer;
 import org.apache.commons.codec.binary.Base64;
 
@@ -35,8 +36,8 @@ public class JwtBuilder {
         return this;
     }
 
-    public String sign(String algorithmName, Object securityContexts) {
-        Algorithm algorithm = this.algorithmResolver.resolve(algorithmName, securityContexts);
+    public String sign(String algorithmName, SignatureContext signatureContext) {
+        Algorithm algorithm = this.algorithmResolver.resolve(algorithmName, signatureContext);
         this.headerClaims.put(PublicClaims.ALGORITHM, algorithm.getName());
         this.headerClaims.put(PublicClaims.TYPE, "JWT");
         String signingKeyId = algorithm.getSigningKeyId();

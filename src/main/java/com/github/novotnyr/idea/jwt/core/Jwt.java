@@ -7,6 +7,7 @@ import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.novotnyr.idea.jwt.ClaimUtils;
+import com.github.novotnyr.idea.jwt.SignatureContext;
 
 import java.lang.reflect.Constructor;
 import java.util.Collections;
@@ -23,7 +24,7 @@ public class Jwt {
 
     private List<NamedClaim<?>> payloadClaims = new LinkedList<>();
 
-    private SigningCredentials signingCredentials;
+    private SignatureContext signatureContext;
 
     private String jwtString;
 
@@ -138,15 +139,15 @@ public class Jwt {
         for (NamedClaim<?> payloadClaim : this.payloadClaims) {
             builder.withClaim(payloadClaim);
         }
-        this.jwtString = builder.sign(this.algorithm, this.signingCredentials);
+        this.jwtString = builder.sign(this.algorithm, this.signatureContext);
     }
 
     public void rebuild() {
         updatePayload(null);
     }
 
-    public void setSigningCredentials(SigningCredentials signingCredentials) {
-        this.signingCredentials = signingCredentials;
+    public void setSignatureContext(SignatureContext signatureContext) {
+        this.signatureContext = signatureContext;
     }
 
     public void setAlgorithm(String algorithm) {
@@ -184,14 +185,14 @@ public class Jwt {
         Jwt jwt = (Jwt) o;
         return Objects.equals(getHeaderClaims(), jwt.getHeaderClaims()) &&
                 Objects.equals(getPayloadClaims(), jwt.getPayloadClaims()) &&
-                Objects.equals(signingCredentials, jwt.signingCredentials) &&
+                Objects.equals(signatureContext, jwt.signatureContext) &&
                 Objects.equals(jwtString, jwt.jwtString) &&
                 Objects.equals(getAlgorithm(), jwt.getAlgorithm());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getHeaderClaims(), getPayloadClaims(), signingCredentials, jwtString, getAlgorithm());
+        return Objects.hash(getHeaderClaims(), getPayloadClaims(), signatureContext, jwtString, getAlgorithm());
     }
 
     public boolean isEmpty() {

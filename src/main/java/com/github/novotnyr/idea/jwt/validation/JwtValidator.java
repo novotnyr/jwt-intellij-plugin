@@ -5,11 +5,12 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.SignatureVerificationException;
 import com.auth0.jwt.impl.PublicClaims;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.github.novotnyr.idea.jwt.SignatureContext;
+import com.github.novotnyr.idea.jwt.core.AlgorithmResolver;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -34,44 +35,22 @@ public class JwtValidator {
         return this;
     }
 
-    public void validate(Jwt jwt, Object validationContext) {
+    public void validate(Jwt jwt, SignatureContext signatureContext) {
         DecodedJWT decodedJWT = JWT.decode(jwt.toString());
-        validate(decodedJWT, validationContext);
+        validate(decodedJWT, signatureContext);
     }
 
-    private void validate(DecodedJWT jwt, Object validationContext) {
+    private void validate(DecodedJWT jwt, SignatureContext signatureContext) {
         validateClaims(jwt);
-
-        String algorithmString = jwt.getAlgorithm();
-        Algorithm algorithm = null;
-        switch (algorithmString) {
-            case "HS256" : {
-                if (validationContext instanceof byte[]) {
-                    byte[] byteArraySecret = (byte[]) validationContext;
-                    algorithm = Algorithm.HMAC256(byteArraySecret);
-                } else if (validationContext instanceof String) {
-                    try {
-                        String secret = (String) validationContext;
-                        algorithm = Algorithm.HMAC256(secret);
-                    } catch (UnsupportedEncodingException e) {
-                        // UTF-8 should be supported everywhere on JVM, so this
-                        // won't happen
-                        logger.error("Unsupported encoding", e);
-                        throw new UnknownAlgorithmException(algorithmString);
-                    }
-                }
-                break;
-            }
-            default:
-                globalErrors.add(SignatureError.forUnknownAlgorithm(algorithmString));
-                return;
-        }
         try {
+            Algorithm algorithm = AlgorithmResolver.resolve(jwt.getAlgorithm(), signatureContext);
             algorithm.verify(jwt);
         } catch (SignatureVerificationException e) {
             globalErrors.add(new SignatureError());
         } catch (IllegalArgumentException e) {
             globalErrors.add(SignatureError.forEmptySecret());
+        } catch (UnknownAlgorithmException e) {
+            globalErrors.add(SignatureError.forUnknownAlgorithm(jwt.getAlgorithm()));
         }
     }
 
