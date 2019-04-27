@@ -8,7 +8,6 @@ import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry;
 import com.github.novotnyr.idea.jwt.ui.ClaimTableTransferHandler;
 import com.github.novotnyr.idea.jwt.ui.UiUtils;
-import com.github.novotnyr.idea.jwt.ui.secretpanel.HS256Panel;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SignatureContextChangedListener;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
@@ -59,8 +58,7 @@ public class JwtPanel extends JPanel implements DataProvider {
 
     private JLabel signatureLabel = new JLabel("Sign/verify signature with secret:");
 
-    // TODO create instance
-    private SecretPanel secretPanel = new HS256Panel();
+    private SecretPanel secretPanel = new UnrecognitedSecretPanel();
 
     private JButton validateButton = new JButton("Validate");
 
@@ -73,6 +71,8 @@ public class JwtPanel extends JPanel implements DataProvider {
     private AbstractActionButtonController removeClaimActionButtonController;
 
     private boolean jwtUpdateInProgress;
+
+    private GridBagConstraints secretPanelLayoutConstraints;
 
     public JwtPanel() {
         setLayout(new GridBagLayout());
@@ -112,10 +112,15 @@ public class JwtPanel extends JPanel implements DataProvider {
         add(this.signatureLabel, cc);
 
         cc.gridy++;
+        cc.weighty = 1;
+        cc.fill = GridBagConstraints.BOTH;
+        this.secretPanelLayoutConstraints = (GridBagConstraints) cc.clone();
         add(this.secretPanel.getRoot(), cc);
         configureSecretTextFieldListeners(this.secretPanel);
 
         cc.gridy++;
+        cc.weighty = 0;
+        cc.fill = GridBagConstraints.HORIZONTAL;
         add(this.validateButton, cc);
         this.validateButton.setEnabled(false);
         this.validateButton.addActionListener(new ActionListener() {
@@ -340,6 +345,7 @@ public class JwtPanel extends JPanel implements DataProvider {
         AnActionEvent event = AnActionEvent.createFromDataContext("place", null, dataContext);
         this.addClaimActionButtonController.isEnabled(event);
         this.editClaimActionButtonUpdater.isEnabled(event);
+        this.validateButton.setEnabled(secretIsPresent);
     }
 
     @Nullable
@@ -396,6 +402,25 @@ public class JwtPanel extends JPanel implements DataProvider {
         this.claimsTable.setModel(this.claimsTableModel);
         this.claimsTable.setDefaultRenderer(Object.class, this.claimsTableModel);
 
+        configureSecretPanel(jwt);
+    }
+
+    private void configureSecretPanel(Jwt jwt) {
+        SecretPanel newSecretPanel = SecretPanelFactory.getInstance().newSecretPanel(jwt);
+        if (isSameSecretPanel(newSecretPanel)) {
+            return;
+        }
+
+        this.secretPanel.removeSignatureContextChangedListener();
+        remove(this.secretPanel.getRoot());
+
+        add(newSecretPanel.getRoot(), this.secretPanelLayoutConstraints);
+        this.secretPanel = newSecretPanel;
+        configureSecretTextFieldListeners(this.secretPanel);
+    }
+
+    private boolean isSameSecretPanel(SecretPanel newSecretPanel) {
+        return newSecretPanel.getClass().getName().equals(this.secretPanel.getClass().getName());
     }
 
     private List<ClaimError> validateClaims(Jwt jwt) {

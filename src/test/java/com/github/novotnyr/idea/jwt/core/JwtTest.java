@@ -1,6 +1,7 @@
 package com.github.novotnyr.idea.jwt.core;
 
 import com.auth0.jwt.JWT;
+import com.github.novotnyr.idea.jwt.HS256SignatureContext;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -11,7 +12,7 @@ public class JwtTest {
     @Test
     public void test() throws Exception {
         Jwt jwt = new Jwt();
-        jwt.setSignatureContext(new StringSecret("secret"));
+        jwt.setSignatureContext(new HS256SignatureContext("secret"));
         jwt.setAlgorithm("HS256");
         jwt.setPayloadClaim(new StringClaim("wai", "test"));
 
@@ -35,7 +36,7 @@ public class JwtTest {
     @Test
     public void testDate() throws Exception {
         Jwt jwt = new Jwt();
-        jwt.setSignatureContext(new StringSecret("secret"));
+        jwt.setSignatureContext(new HS256SignatureContext("secret"));
         jwt.setAlgorithm("HS256");
         jwt.setPayloadClaim(new DateClaim("dat", new Date(1500814917000L)));
 

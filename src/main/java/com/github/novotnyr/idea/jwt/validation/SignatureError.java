@@ -5,7 +5,7 @@ public class SignatureError extends GlobalError {
         super("Signature failed");
     }
 
-    private SignatureError(String message) {
+    public SignatureError(String message) {
         super(message);
     }
 

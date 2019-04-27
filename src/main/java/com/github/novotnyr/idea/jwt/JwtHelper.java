@@ -23,6 +23,11 @@ public class JwtHelper {
         return new String(buf, StandardCharsets.UTF_8);
     }
 
+    public static String base64(byte[] buffer) {
+        return Base64.getEncoder().encodeToString(buffer);
+    }
+
+
     public static String prettyUnbase64Json(String base64json) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();

@@ -9,6 +9,7 @@ import com.intellij.ui.awt.RelativePoint;
 
 import javax.annotation.Nonnull;
 import javax.swing.JComponent;
+import javax.swing.text.JTextComponent;
 
 public abstract class SecretPanel {
     private SignatureContextChangedListener signatureContextChangedListener;
@@ -54,5 +55,13 @@ public abstract class SecretPanel {
 
     public void setSignatureContextChangedListener(@Nonnull SignatureContextChangedListener listener) {
         this.signatureContextChangedListener = listener;
+    }
+
+    public void removeSignatureContextChangedListener() {
+        this.signatureContextChangedListener = null;
+    }
+
+    protected boolean hasText(JTextComponent textComponent) {
+        return textComponent.getText() != null && !textComponent.getText().isEmpty();
     }
 }

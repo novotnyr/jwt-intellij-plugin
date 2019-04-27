@@ -2,6 +2,7 @@ package com.github.novotnyr.idea.jwt.core;
 
 import com.auth0.jwt.algorithms.Algorithm;
 import com.github.novotnyr.idea.jwt.HS256SignatureContext;
+import com.github.novotnyr.idea.jwt.RS256SignatureContext;
 import com.github.novotnyr.idea.jwt.SecretNotSpecifiedException;
 import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.validation.UnknownAlgorithmException;
@@ -29,6 +30,15 @@ public class AlgorithmResolver {
                         logger.error("Unsupported encoding", e);
                         throw new UnknownAlgorithmException(algorithmName);
                     }
+                }
+                break;
+            }
+            case "RS256" : {
+                if(signatureContext == null) {
+                    throw new SecretNotSpecifiedException();
+                } else if (signatureContext instanceof RS256SignatureContext) {
+                    RS256SignatureContext keyPairContext = (RS256SignatureContext) signatureContext;
+                    algorithm = Algorithm.RSA256(keyPairContext.getPublicKey(), keyPairContext.getPrivateKey());
                 }
                 break;
             }
