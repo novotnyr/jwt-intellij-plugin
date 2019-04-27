@@ -1,11 +1,11 @@
-package com.github.novotnyr.idea.jwt.core;
+package com.github.novotnyr.idea.jwt;
 
 import java.util.Objects;
 
-public class StringSecret implements SigningCredentials {
+public class HS256SignatureContext implements SignatureContext {
     private final String secret;
 
-    public StringSecret(String secret) {
+    public HS256SignatureContext(String secret) {
         this.secret = secret;
     }
 
@@ -14,10 +14,15 @@ public class StringSecret implements SigningCredentials {
     }
 
     @Override
+    public boolean isEmpty() {
+        return this.secret == null || this.secret.isEmpty();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof StringSecret)) return false;
-        StringSecret that = (StringSecret) o;
+        if (!(o instanceof HS256SignatureContext)) return false;
+        HS256SignatureContext that = (HS256SignatureContext) o;
         return Objects.equals(getSecret(), that.getSecret());
     }
 
@@ -26,4 +31,3 @@ public class StringSecret implements SigningCredentials {
         return Objects.hash(getSecret());
     }
 }
-

@@ -1,9 +1,9 @@
 package com.github.novotnyr.idea.jwt.ui;
 
+import com.github.novotnyr.idea.jwt.HS256SignatureContext;
+import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.JwtFactory;
-import com.github.novotnyr.idea.jwt.core.SigningCredentials;
-import com.github.novotnyr.idea.jwt.core.StringSecret;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.ValidationInfo;
@@ -44,19 +44,15 @@ public class NewJwtDialog extends DialogWrapper {
     }
 
     public Jwt getJwt() {
-        return this.jwtFactory.newJwt(getAlgorithm(), getSigningCredentials(), isAddingIat());
+        return this.jwtFactory.newJwt(getAlgorithm(), getSignatureContext(), isAddingIat());
     }
 
     private String getAlgorithm() {
         return this.algorithmTextField.getText();
     }
 
-    private String getSigningSecret() {
-        return this.signingSecretTextField.getText();
-    }
-
-    public SigningCredentials getSigningCredentials() {
-        return new StringSecret(getSigningSecret());
+    public SignatureContext getSignatureContext() {
+        return new HS256SignatureContext(this.signingSecretTextField.getText());
     }
 
     public boolean isAddingIat() {

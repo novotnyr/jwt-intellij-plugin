@@ -5,11 +5,12 @@ import com.github.novotnyr.idea.jwt.action.AddClaimActionButtonController;
 import com.github.novotnyr.idea.jwt.action.EditClaimActionButtonUpdater;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
-import com.github.novotnyr.idea.jwt.core.SigningCredentials;
-import com.github.novotnyr.idea.jwt.core.StringSecret;
 import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry;
 import com.github.novotnyr.idea.jwt.ui.ClaimTableTransferHandler;
 import com.github.novotnyr.idea.jwt.ui.UiUtils;
+import com.github.novotnyr.idea.jwt.ui.secretpanel.HS256Panel;
+import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
+import com.github.novotnyr.idea.jwt.ui.secretpanel.SignatureContextChangedListener;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.github.novotnyr.idea.jwt.validation.JwtValidator;
 import com.intellij.icons.AllIcons;
@@ -18,15 +19,10 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
-import com.intellij.openapi.ui.MessageType;
-import com.intellij.openapi.ui.popup.Balloon;
-import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.AnActionButtonRunnable;
-import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.ToolbarDecorator;
-import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.TextTransferable;
@@ -38,8 +34,6 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.JTextField;
-import javax.swing.event.DocumentEvent;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -65,7 +59,8 @@ public class JwtPanel extends JPanel implements DataProvider {
 
     private JLabel signatureLabel = new JLabel("Sign/verify signature with secret:");
 
-    private JTextField secretTextField = new JTextField();
+    // TODO create instance
+    private SecretPanel secretPanel = new HS256Panel();
 
     private JButton validateButton = new JButton("Validate");
 
@@ -117,8 +112,8 @@ public class JwtPanel extends JPanel implements DataProvider {
         add(this.signatureLabel, cc);
 
         cc.gridy++;
-        add(this.secretTextField, cc);
-        configureSecretTextFieldListeners(this.secretTextField);
+        add(this.secretPanel.getRoot(), cc);
+        configureSecretTextFieldListeners(this.secretPanel);
 
         cc.gridy++;
         add(this.validateButton, cc);
@@ -137,6 +132,7 @@ public class JwtPanel extends JPanel implements DataProvider {
             }
         }.installOn(this.claimsTable);
     }
+
 
     private void initializeClaimsTableModel(JBTable claimsTable) {
         this.claimsTableModel = new JwtClaimsTableModel(Jwt.EMPTY);
@@ -223,11 +219,11 @@ public class JwtPanel extends JPanel implements DataProvider {
         this.claimsTable.setComponentPopupMenu(popupMenu);
     }
 
-    private void configureSecretTextFieldListeners(JTextField secretTextField) {
-        secretTextField.getDocument().addDocumentListener(new DocumentAdapter() {
+    private void configureSecretTextFieldListeners(SecretPanel secretPanel) {
+        this.secretPanel.setSignatureContextChangedListener(new SignatureContextChangedListener() {
             @Override
-            protected void textChanged(DocumentEvent documentEvent) {
-                onSecretTextFieldTextChanged(documentEvent);
+            public void onSignatureContextChanged(SignatureContext newSignatureContext) {
+                refreshClaimsTableControllers(newSignatureContext.isEmpty());
             }
         });
     }
@@ -266,34 +262,20 @@ public class JwtPanel extends JPanel implements DataProvider {
     private void onValidateButtonClick(ActionEvent e) {
         JwtValidator jwtValidator = new JwtValidator();
 
-        String secret = this.secretTextField.getText();
+        SignatureContext secret = this.secretPanel.getSignatureContext();
         jwtValidator.validate(this.jwt, secret);
         this.claimsTableModel.setClaimErrors(jwtValidator.getClaimErrors());
         if(jwtValidator.hasSignatureError()) {
-            JBPopupFactory.getInstance()
-                    .createHtmlTextBalloonBuilder(jwtValidator.getSignatureError().getMessage(), MessageType.ERROR, null)
-                    .setFadeoutTime(7500)
-                    .createBalloon()
-                    .show(RelativePoint.getNorthWestOf(this.secretTextField),
-                            Balloon.Position.atRight);
+            this.secretPanel.notifySignatureErrors(jwtValidator.getSignatureError());
         } else {
-            JBPopupFactory.getInstance()
-                    .createHtmlTextBalloonBuilder("Signature is valid", MessageType.INFO, null)
-                    .setFadeoutTime(7500)
-                    .createBalloon()
-                    .show(RelativePoint.getNorthWestOf(this.secretTextField),
-                            Balloon.Position.atRight);
+            this.secretPanel.notifySignatureValid();
+
         }
     }
 
     private boolean onClaimsTableDoubleClick(MouseEvent mouseEvent) {
         if(!hasSecret()) {
-            JBPopupFactory.getInstance()
-                    .createHtmlTextBalloonBuilder("Cannot edit claims when a secret is empty", MessageType.WARNING, null)
-                    .setFadeoutTime(7500)
-                    .createBalloon()
-                    .show(RelativePoint.getNorthWestOf(this.secretTextField),
-                            Balloon.Position.atRight);
+            this.secretPanel.notifyEmptySignature();
             return true;
         }
 
@@ -323,7 +305,7 @@ public class JwtPanel extends JPanel implements DataProvider {
     private void onRemoveClaim() {
         int selectedRow = this.claimsTable.getSelectedRow();
         NamedClaim<?> claim = this.claimsTableModel.getClaimAt(selectedRow);
-        this.jwt.setSigningCredentials(new StringSecret(getSecret()));
+        this.jwt.setSignatureContext(getSignatureContext());
         this.jwt.removeClaim(claim.getName());
 
         refreshJwt();
@@ -334,16 +316,10 @@ public class JwtPanel extends JPanel implements DataProvider {
         ClaimDialog claimDialog = new ClaimDialog(claim, mode);
         if(claimDialog.showAndGet()) {
             NamedClaim<?> updatedClaim = claimDialog.getClaim();
-            this.jwt.setSigningCredentials(new StringSecret(getSecret()));
+            this.jwt.setSignatureContext(getSignatureContext());
             this.jwt.setPayloadClaim(updatedClaim);
             refreshJwt();
         }
-    }
-
-    private void onSecretTextFieldTextChanged(DocumentEvent documentEvent) {
-        final boolean secretIsPresent = documentEvent.getDocument().getLength() > 0;
-
-        refreshClaimsTableControllers(secretIsPresent);
     }
 
     private void refreshClaimsTableControllers(final boolean secretIsPresent) {
@@ -370,7 +346,7 @@ public class JwtPanel extends JPanel implements DataProvider {
     @Override
     public Object getData(String dataId) {
         if (Constants.DataKeys.SECRET.is(dataId)) {
-            return this.getSecret();
+            return this.secretPanel.getSignatureContext();
         }
         if (PlatformDataKeys.SELECTED_ITEM.is(dataId)) {
             int selectedRow = this.claimsTable.getSelectedRow();
@@ -429,32 +405,25 @@ public class JwtPanel extends JPanel implements DataProvider {
         return new JwtValidator().validateClaims(jwt).getClaimErrors();
     }
 
-    public String getSecret() {
-        return this.secretTextField.getText();
+
+    public void setSignatureContext(SignatureContext signatureContext) {
+        this.secretPanel.setSignatureContext(signatureContext);
     }
 
-    public void setSecret(String secret) {
-        this.secretTextField.setText(secret);
+    private boolean hasSecret() {
+        return this.secretPanel.hasSecret();
     }
 
-    public void setSigningCredentials(SigningCredentials signingCredentials) {
-        if (signingCredentials instanceof StringSecret) {
-            StringSecret stringSecret = (StringSecret) signingCredentials;
-            this.secretTextField.setText(stringSecret.getSecret());
-        }
-    }
-
-
-    public boolean hasSecret() {
-        return getSecret() != null && ! getSecret().isEmpty();
-    }
-
-    public JTextField getSecretTextField() {
-        return secretTextField;
+    public SecretPanel getSecretPanel() {
+        return this.secretPanel;
     }
 
     private boolean isRemoveClaimActionEnabled() {
         return hasSecret() && claimsTable.getSelectedRows().length > 0;
+    }
+
+    private SignatureContext getSignatureContext() {
+        return this.getSecretPanel().getSignatureContext();
     }
 
     public void reset() {

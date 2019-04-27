@@ -1,6 +1,7 @@
 package com.github.novotnyr.idea.jwt.core;
 
 import com.auth0.jwt.algorithms.Algorithm;
+import com.github.novotnyr.idea.jwt.HS256SignatureContext;
 import com.github.novotnyr.idea.jwt.SecretNotSpecifiedException;
 import com.github.novotnyr.idea.jwt.validation.UnknownAlgorithmException;
 import org.slf4j.Logger;
@@ -11,6 +12,7 @@ import java.io.UnsupportedEncodingException;
 public class AlgorithmResolver {
     public static final Logger logger = LoggerFactory.getLogger(Algorithm.class);
 
+    // TODO search duplicates
     public static Algorithm resolve(String algorithmName, Object securityContext) {
         Algorithm algorithm = null;
         switch (algorithmName) {
@@ -20,9 +22,9 @@ public class AlgorithmResolver {
                 } else if (securityContext instanceof byte[]) {
                     byte[] byteArraySecret = (byte[]) securityContext;
                     algorithm = Algorithm.HMAC256(byteArraySecret);
-                } else if (securityContext instanceof StringSecret) {
+                } else if (securityContext instanceof HS256SignatureContext) {
                     try {
-                        String secret = ((StringSecret) securityContext).getSecret();
+                        String secret = ((HS256SignatureContext) securityContext).getSecret();
                         algorithm = Algorithm.HMAC256(secret);
                     } catch (UnsupportedEncodingException e) {
                         // UTF-8 should be supported everywhere on JVM, so this

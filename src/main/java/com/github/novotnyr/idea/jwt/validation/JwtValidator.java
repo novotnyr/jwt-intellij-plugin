@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.SignatureVerificationException;
 import com.auth0.jwt.impl.PublicClaims;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.github.novotnyr.idea.jwt.HS256SignatureContext;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +54,16 @@ public class JwtValidator {
                     try {
                         String secret = (String) validationContext;
                         algorithm = Algorithm.HMAC256(secret);
+                    } catch (UnsupportedEncodingException e) {
+                        // UTF-8 should be supported everywhere on JVM, so this
+                        // won't happen
+                        logger.error("Unsupported encoding", e);
+                        throw new UnknownAlgorithmException(algorithmString);
+                    }
+                } else if (validationContext instanceof HS256SignatureContext) {
+                    try {
+                        HS256SignatureContext signatureContext = (HS256SignatureContext) validationContext;
+                        algorithm = Algorithm.HMAC256(signatureContext.getSecret());
                     } catch (UnsupportedEncodingException e) {
                         // UTF-8 should be supported everywhere on JVM, so this
                         // won't happen

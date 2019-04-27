@@ -11,7 +11,7 @@ public class JwtTest {
     @Test
     public void test() throws Exception {
         Jwt jwt = new Jwt();
-        jwt.setSigningCredentials(new StringSecret("secret"));
+        jwt.setSignatureContext(new StringSecret("secret"));
         jwt.setAlgorithm("HS256");
         jwt.setPayloadClaim(new StringClaim("wai", "test"));
 
@@ -35,7 +35,7 @@ public class JwtTest {
     @Test
     public void testDate() throws Exception {
         Jwt jwt = new Jwt();
-        jwt.setSigningCredentials(new StringSecret("secret"));
+        jwt.setSignatureContext(new StringSecret("secret"));
         jwt.setAlgorithm("HS256");
         jwt.setPayloadClaim(new DateClaim("dat", new Date(1500814917000L)));
 
