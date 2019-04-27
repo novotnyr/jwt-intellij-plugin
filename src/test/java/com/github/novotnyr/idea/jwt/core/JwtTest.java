@@ -1,7 +1,7 @@
 package com.github.novotnyr.idea.jwt.core;
 
 import com.auth0.jwt.JWT;
-import com.github.novotnyr.idea.jwt.HS256SignatureContext;
+import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
 import org.junit.Assert;
 import org.junit.Test;
 

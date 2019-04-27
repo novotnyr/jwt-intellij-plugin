@@ -1,4 +1,4 @@
-package com.github.novotnyr.idea.jwt.ui.secretpanel;
+package com.github.novotnyr.idea.jwt.core;
 
 import com.github.novotnyr.idea.jwt.SignatureContext;
 

@@ -1,4 +1,6 @@
-package com.github.novotnyr.idea.jwt;
+package com.github.novotnyr.idea.jwt.hs256;
+
+import com.github.novotnyr.idea.jwt.SignatureContext;
 
 import java.util.Objects;
 

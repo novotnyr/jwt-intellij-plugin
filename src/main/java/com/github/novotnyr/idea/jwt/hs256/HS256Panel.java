@@ -1,8 +1,10 @@
-package com.github.novotnyr.idea.jwt.ui.secretpanel;
+package com.github.novotnyr.idea.jwt.hs256;
 
-import com.github.novotnyr.idea.jwt.HS256SignatureContext;
 import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.ui.SecretPanelDelegatingDocumentAdapter;
+import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
+import com.github.novotnyr.idea.jwt.ui.secretpanel.SignatureContextChangedListener;
+import com.github.novotnyr.idea.jwt.core.UnsupportedSignatureContext;
 
 import javax.annotation.Nonnull;
 import javax.swing.JComponent;
