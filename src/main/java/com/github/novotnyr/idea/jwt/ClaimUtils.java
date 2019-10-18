@@ -13,6 +13,7 @@ import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry.DataType;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class ClaimUtils {
 
@@ -31,6 +32,10 @@ public class ClaimUtils {
         }
         List<Object> objects = claimValue.asList(Object.class);
         if (objects != null) {
+            return new RawClaim(claimName, claimValue);
+        }
+        Map<String, Object> map = claimValue.asMap();
+        if (map != null) {
             return new RawClaim(claimName, claimValue);
         }
 
