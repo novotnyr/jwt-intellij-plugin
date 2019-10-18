@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.github.novotnyr'
-version '0.6-SNAPSHOT'
+version '0.6'
 
 sourceCompatibility = 1.7
 
@@ -29,7 +29,7 @@ intellij {
 patchPluginXml {
     sinceBuild '143'
     changeNotes """
-        <li>Add support for RS256 algorithm.</li>
+        <li>Support map-like assertions (contributed by <i>espartero</i>)</li>
       """
 }
 
