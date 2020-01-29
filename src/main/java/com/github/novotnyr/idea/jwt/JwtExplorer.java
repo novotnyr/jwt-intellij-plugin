@@ -2,6 +2,7 @@ package com.github.novotnyr.idea.jwt;
 
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.SignatureVerificationException;
+import com.github.novotnyr.idea.jwt.action.CreateScratchFileAction;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.ui.ClipboardUtils;
 import com.github.novotnyr.idea.jwt.ui.NewJwtDialog;
@@ -114,6 +115,13 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
                 e.getPresentation().setEnabled(!JwtExplorer.this.jwt.isEmpty());
             }
         });
+        group.add(new CreateScratchFileAction() {
+            @Override
+            protected Jwt getJwt() {
+                return JwtExplorer.this.jwt;
+            }
+        });
+
         group.add(new AnAction("Reset", "Reset All Fields", AllIcons.General.Reset) {
             @Override
             public void actionPerformed(AnActionEvent anActionEvent) {
