@@ -45,5 +45,11 @@ public class BooleanClaimPanel extends AbstractClaimPanel<BooleanClaim, Boolean>
         return this.trueRadioButton.isSelected();
     }
 
+    @Override
+    public void setReadOnly(boolean readOnly) {
+        super.setReadOnly(readOnly);
+        this.trueRadioButton.setEnabled(!readOnly);
+        this.falseRadioButton.setEnabled(!readOnly);
+    }
 }
 

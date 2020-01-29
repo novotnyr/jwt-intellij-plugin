@@ -124,4 +124,12 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, Date> {
     public void setValidationInfo(ValidationInfo validationInfo) {
         this.validationInfo = validationInfo;
     }
+
+    @Override
+    public void setReadOnly(boolean readOnly) {
+        super.setReadOnly(readOnly);
+        this.nowButton.setEnabled(!readOnly);
+        this.add15MinutesButton.setEnabled(!readOnly);
+        this.subtract15MinutesButton.setEnabled(!readOnly);
+    }
 }

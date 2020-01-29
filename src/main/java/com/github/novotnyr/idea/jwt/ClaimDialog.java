@@ -118,6 +118,7 @@ public class ClaimDialog extends DialogWrapper {
 
             add(this.claimValueTextLabel, cColumn1);
             add(this.nestedClaimPanel = createNestedPanel(), cColumns2);
+            this.nestedClaimPanel.setReadOnly(this.mode == Mode.VIEW);
 
             this.claimNameTextField.setText(claim.getName());
         }
@@ -152,6 +153,6 @@ public class ClaimDialog extends DialogWrapper {
     }
 
     public enum Mode {
-        NEW, EDIT
+        NEW, EDIT, VIEW
     }
 }

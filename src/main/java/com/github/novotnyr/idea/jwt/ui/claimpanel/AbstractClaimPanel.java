@@ -13,6 +13,8 @@ public abstract class AbstractClaimPanel<T extends NamedClaim<?>, V> extends JPa
 
     protected ValidationInfo validationInfo;
 
+    protected boolean readOnly;
+
     public AbstractClaimPanel(T value) {
         this.value = value;
         initialize();
@@ -24,5 +26,14 @@ public abstract class AbstractClaimPanel<T extends NamedClaim<?>, V> extends JPa
 
     public ValidationInfo getValidationInfo() {
         return this.validationInfo;
+    }
+
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
+        this.claimValueTextField.setEditable(!readOnly);
+    }
+
+    public boolean isReadOnly() {
+        return readOnly;
     }
 }

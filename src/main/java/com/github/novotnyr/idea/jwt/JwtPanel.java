@@ -41,6 +41,9 @@ import java.beans.PropertyChangeSupport;
 import java.util.Collections;
 import java.util.List;
 
+import static com.github.novotnyr.idea.jwt.ClaimDialog.Mode.EDIT;
+import static com.github.novotnyr.idea.jwt.ClaimDialog.Mode.VIEW;
+
 public class JwtPanel implements DataProvider {
     private PropertyChangeSupport propertyChangeSupport;
 
@@ -211,7 +214,7 @@ public class JwtPanel implements DataProvider {
 
     private void editClaimAtRow(int row) {
         NamedClaim<?> claim = this.claimsTableModel.getClaimAt(row);
-        showClaimDialog(claim, ClaimDialog.Mode.EDIT);
+        showClaimDialog(claim, hasSecret() ? EDIT : VIEW);
     }
 
 
@@ -257,7 +260,6 @@ public class JwtPanel implements DataProvider {
     private boolean onClaimsTableDoubleClick(MouseEvent mouseEvent) {
         if(!hasSecret()) {
             this.secretPanel.notifyEmptySignature();
-            return true;
         }
 
         int selectedRow = this.claimsTable.rowAtPoint(mouseEvent.getPoint());
@@ -353,7 +355,7 @@ public class JwtPanel implements DataProvider {
             // this means that change in claims triggered
             // a change in String representation that
             // again triggered a change in claims
-            // In such case, do nothing
+            // In such cacse, do nothing
             return;
         }
 
