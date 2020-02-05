@@ -2,8 +2,8 @@ package com.github.novotnyr.idea.jwt.action;
 
 import com.github.novotnyr.idea.jwt.JwtHelper;
 import com.github.novotnyr.idea.jwt.core.Jwt;
+import com.github.novotnyr.idea.jwt.ui.Icons;
 import com.github.novotnyr.idea.jwt.ui.editor.EditorReformatter;
-import com.intellij.icons.AllIcons;
 import com.intellij.ide.scratch.ScratchRootType;
 import com.intellij.json.JsonLanguage;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -22,7 +22,7 @@ public abstract class CreateScratchFileAction extends AnAction {
     private String extension = EXTENSION;
 
     public CreateScratchFileAction() {
-        super("Create scratch file from payload", "Create scratch file from payload", AllIcons.Actions.ShowViewer);
+        super("Create scratch file from payload", "Create scratch file from payload", Icons.createScratchFile());
     }
 
     @Override
