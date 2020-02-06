@@ -10,3 +10,4 @@ fabric.properties
 .idea/
 .gradle/
 build/
+gradle.properties
