@@ -52,9 +52,10 @@ public class RS256SignatureContext implements SignatureContext {
 
         public RS256SignatureContext build() {
             RS256SignatureContext signatureContext = new RS256SignatureContext();
-            signatureContext.privateKey = RsaUtils.getPrivateKey(this.privateKey);
             signatureContext.publicKey = RsaUtils.getPublicKey(this.publicKey);
-
+            if (this.privateKey != null) {
+                signatureContext.privateKey = RsaUtils.getPrivateKey(this.privateKey);
+            }
             return signatureContext;
         }
     }

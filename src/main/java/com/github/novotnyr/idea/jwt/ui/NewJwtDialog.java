@@ -19,6 +19,8 @@ import java.awt.BorderLayout;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 
+import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.MUTABLE;
+
 public class NewJwtDialog extends DialogWrapper {
     private final JwtFactory jwtFactory = JwtFactory.getInstance();
 
@@ -62,10 +64,10 @@ public class NewJwtDialog extends DialogWrapper {
     @Nullable
     @Override
     protected ValidationInfo doValidate() {
-        if (this.secretPanel.hasSecret()) {
+        if (MUTABLE == this.secretPanel.getStatus()) {
             return super.doValidate();
         }
-        ValidationInfo validationInfo = new ValidationInfo("Missing secret", this.secretPanel.getBaloonableComponent());
+        ValidationInfo validationInfo = new ValidationInfo("Missing secret or keypair", this.secretPanel.getBaloonableComponent());
         return validationInfo;
     }
 

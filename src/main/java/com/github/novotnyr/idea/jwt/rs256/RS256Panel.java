@@ -2,6 +2,7 @@ package com.github.novotnyr.idea.jwt.rs256;
 
 import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.SignatureContextException;
+import com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SignatureContextChangedListener;
 import com.github.novotnyr.idea.jwt.core.UnsupportedSignatureContext;
@@ -13,6 +14,10 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.event.DocumentEvent;
+
+import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.MUTABLE;
+import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.NONE;
+import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.VALID;
 
 public class RS256Panel extends SecretPanel {
     private JPanel root;
@@ -27,20 +32,32 @@ public class RS256Panel extends SecretPanel {
     }
 
     @Override
-    public boolean hasSecret() {
-        return hasText(this.privateKeyTextArea) && hasText(this.publicKeyTextArea);
+    public JwtStatus getStatus() {
+        JwtStatus status = NONE;
+        if (hasText(this.publicKeyTextArea)) {
+            status = VALID;
+            if (hasText(this.privateKeyTextArea)) {
+                status = MUTABLE;
+            }
+        }
+        return status;
     }
 
     @Override
     public SignatureContext getSignatureContext() {
-        if (!hasSecret()) {
-            return SignatureContext.EMPTY;
+        switch (getStatus()) {
+            case VALID:
+                return new RS256SignatureContext.Builder()
+                        .withPublicKey(this.publicKeyTextArea.getText())
+                        .build();
+            case MUTABLE:
+                return new RS256SignatureContext.Builder()
+                        .withPrivateKey(this.privateKeyTextArea.getText())
+                        .withPublicKey(this.publicKeyTextArea.getText())
+                        .build();
+            default:
+                return SignatureContext.EMPTY;
         }
-
-        return new RS256SignatureContext.Builder()
-                .withPrivateKey(this.privateKeyTextArea.getText())
-                .withPublicKey(this.publicKeyTextArea.getText())
-                .build();
     }
 
     @Override

@@ -36,7 +36,7 @@ public abstract class SecretPanel {
 
     public void notifyEmptySignature() {
         JBPopupFactory.getInstance()
-                .createHtmlTextBalloonBuilder("Cannot edit claims when a secret is empty", MessageType.WARNING, null)
+                .createHtmlTextBalloonBuilder("Cannot edit claims when a secret or keypair is not provided", MessageType.WARNING, null)
                 .setFadeoutTime(7500)
                 .createBalloon()
                 .show(RelativePoint.getNorthWestOf(getBaloonableComponent()),
@@ -49,7 +49,7 @@ public abstract class SecretPanel {
 
     public abstract SignatureContext getSignatureContext();
 
-    public abstract boolean hasSecret();
+    public abstract JwtStatus getStatus();
 
     public abstract void setSignatureContext(SignatureContext signatureContext);
 
@@ -64,4 +64,5 @@ public abstract class SecretPanel {
     protected boolean hasText(JTextComponent textComponent) {
         return textComponent.getText() != null && !textComponent.getText().isEmpty();
     }
+
 }

@@ -43,6 +43,7 @@ import java.util.List;
 
 import static com.github.novotnyr.idea.jwt.ClaimDialog.Mode.EDIT;
 import static com.github.novotnyr.idea.jwt.ClaimDialog.Mode.VIEW;
+import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.MUTABLE;
 
 public class JwtPanel implements DataProvider {
     private PropertyChangeSupport propertyChangeSupport;
@@ -207,14 +208,14 @@ public class JwtPanel implements DataProvider {
         this.secretPanel.setSignatureContextChangedListener(new SignatureContextChangedListener() {
             @Override
             public void onSignatureContextChanged(SignatureContext newSignatureContext) {
-                refreshClaimsTableControllers(!newSignatureContext.isEmpty());
+                refreshClaimsTableControllers();
             }
         });
     }
 
     private void editClaimAtRow(int row) {
         NamedClaim<?> claim = this.claimsTableModel.getClaimAt(row);
-        showClaimDialog(claim, hasSecret() ? EDIT : VIEW);
+        showClaimDialog(claim, isEditable() ? EDIT : VIEW);
     }
 
 
@@ -258,7 +259,7 @@ public class JwtPanel implements DataProvider {
     }
 
     private boolean onClaimsTableDoubleClick(MouseEvent mouseEvent) {
-        if(!hasSecret()) {
+        if(!isEditable()) {
             this.secretPanel.notifyEmptySignature();
         }
 
@@ -305,13 +306,13 @@ public class JwtPanel implements DataProvider {
         }
     }
 
-    private void refreshClaimsTableControllers(final boolean secretIsPresent) {
+    private void refreshClaimsTableControllers() {
         DataContext dataContext = new DataContext() {
             @Nullable
             @Override
             public Object getData(String dataId) {
-                if (Constants.DataKeys.SECRET_IS_PRESENT.is(dataId)) {
-                    return secretIsPresent;
+                if (Constants.DataKeys.JWT_STATUS.is(dataId)) {
+                    return JwtPanel.this.getSecretPanel().getStatus();
                 }
                 if (Constants.DataKeys.JWT.is(dataId)) {
                     return JwtPanel.this.jwt;
@@ -323,7 +324,7 @@ public class JwtPanel implements DataProvider {
         AnActionEvent event = AnActionEvent.createFromDataContext("place", null, dataContext);
         this.addClaimActionButtonController.isEnabled(event);
         this.editClaimActionButtonUpdater.isEnabled(event);
-        this.validateButton.setEnabled(secretIsPresent);
+        this.validateButton.setEnabled(isValidatable());
     }
 
     @Nullable
@@ -367,12 +368,12 @@ public class JwtPanel implements DataProvider {
             this.headerLabel.setVisible(false);
             this.payloadLabel.setVisible(false);
             this.validateButton.setEnabled(false);
-            refreshClaimsTableControllers(hasSecret());
+            refreshClaimsTableControllers();
         } else {
             this.headerLabel.setVisible(true);
             this.payloadLabel.setVisible(true);
             this.validateButton.setEnabled(true);
-            refreshClaimsTableControllers(hasSecret());
+            refreshClaimsTableControllers();
         }
 
         this.claimsTableModel = new JwtClaimsTableModel(jwt);
@@ -415,16 +416,28 @@ public class JwtPanel implements DataProvider {
         this.secretPanel.setSignatureContext(signatureContext);
     }
 
+    /*
     private boolean hasSecret() {
         return this.secretPanel.hasSecret();
     }
+
+     */
+
+    private boolean isEditable() {
+        return MUTABLE == this.secretPanel.getStatus();
+    }
+
+    private boolean isValidatable() {
+        return this.secretPanel.getStatus().isValidatable();
+    }
+
 
     public SecretPanel getSecretPanel() {
         return this.secretPanel;
     }
 
     private boolean isRemoveClaimActionEnabled() {
-        return hasSecret() && claimsTable.getSelectedRows().length > 0;
+        return isEditable() && claimsTable.getSelectedRows().length > 0;
     }
 
     private SignatureContext getSignatureContext() {

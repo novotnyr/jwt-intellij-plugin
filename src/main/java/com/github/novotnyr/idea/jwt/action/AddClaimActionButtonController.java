@@ -3,6 +3,7 @@ package com.github.novotnyr.idea.jwt.action;
 import com.github.novotnyr.idea.jwt.Constants;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry;
+import com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
@@ -16,6 +17,8 @@ import javax.swing.JComponent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.MUTABLE;
 
 public class AddClaimActionButtonController implements AnActionButtonRunnable, AnActionButtonUpdater {
 
@@ -67,10 +70,11 @@ public class AddClaimActionButtonController implements AnActionButtonRunnable, A
 
     @Override
     public boolean isEnabled(AnActionEvent event) {
-        Boolean secretIsPresent = event.getData(Constants.DataKeys.SECRET_IS_PRESENT);
+        JwtStatus jwtStatus = event.getData(Constants.DataKeys.JWT_STATUS);
         Jwt jwt = event.getData(Constants.DataKeys.JWT);
-        if (secretIsPresent != null && jwt != null) {
-            this.enabled = secretIsPresent && !jwt.isEmpty();
+        boolean isEditable = MUTABLE.equals(jwtStatus);
+        if (jwt != null) {
+            this.enabled = isEditable && !jwt.isEmpty();
             return this.enabled;
         }
         return this.enabled;
