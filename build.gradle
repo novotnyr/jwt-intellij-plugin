@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.github.novotnyr'
-version '0.8-SNAPSHOT'
+version '0.8'
 
 sourceCompatibility = 1.7
 
@@ -29,10 +29,8 @@ intellij {
 patchPluginXml {
     sinceBuild '143'
     changeNotes """
-        <li>Allow scrollbars in text area of encoded JWT</li>
-        <li>Use syntax highlighting in raw claims editor</li>
-        <li>Display claim values dialog even if secret or key is unavailable.</li>
-        <li>Export JWT payload into scratch editor as JSON</li>
+        <li>RS256-based token can be validated with public key even when private key is missing</li>
+        <li>Improve compatibility with 2020.1 platforms</li>
       """
 }
 
