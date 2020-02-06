@@ -416,13 +416,6 @@ public class JwtPanel implements DataProvider {
         this.secretPanel.setSignatureContext(signatureContext);
     }
 
-    /*
-    private boolean hasSecret() {
-        return this.secretPanel.hasSecret();
-    }
-
-     */
-
     private boolean isEditable() {
         return MUTABLE == this.secretPanel.getStatus();
     }
