@@ -36,3 +36,6 @@ patchPluginXml {
       """
 }
 
+publishPlugin {
+    token intellijPublishToken
+}
