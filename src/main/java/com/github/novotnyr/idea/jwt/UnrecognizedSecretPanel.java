@@ -1,5 +1,6 @@
 package com.github.novotnyr.idea.jwt;
 
+import com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SignatureContextChangedListener;
 
@@ -9,6 +10,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import java.awt.BorderLayout;
+
+import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.NONE;
 
 public class UnrecognizedSecretPanel extends SecretPanel {
     @Override
@@ -21,8 +24,8 @@ public class UnrecognizedSecretPanel extends SecretPanel {
     }
 
     @Override
-    public boolean hasSecret() {
-        return false;
+    public JwtStatus getStatus() {
+        return NONE;
     }
 
     @Override

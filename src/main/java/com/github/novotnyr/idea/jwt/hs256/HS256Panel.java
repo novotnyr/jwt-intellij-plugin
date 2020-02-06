@@ -1,15 +1,19 @@
 package com.github.novotnyr.idea.jwt.hs256;
 
 import com.github.novotnyr.idea.jwt.SignatureContext;
+import com.github.novotnyr.idea.jwt.core.UnsupportedSignatureContext;
 import com.github.novotnyr.idea.jwt.ui.SecretPanelDelegatingDocumentAdapter;
+import com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SignatureContextChangedListener;
-import com.github.novotnyr.idea.jwt.core.UnsupportedSignatureContext;
 
 import javax.annotation.Nonnull;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+
+import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.MUTABLE;
+import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.NONE;
 
 public class HS256Panel extends SecretPanel {
     private JPanel root;
@@ -17,12 +21,12 @@ public class HS256Panel extends SecretPanel {
 
     private SecretPanelDelegatingDocumentAdapter secretTextFieldDocumentListener;
 
-    public void setSecret(String secret) {
-        this.secretTextField.setText(secret);
-    }
-
     private String getSecret() {
         return this.secretTextField.getText();
+    }
+
+    public void setSecret(String secret) {
+        this.secretTextField.setText(secret);
     }
 
     public JPanel getRoot() {
@@ -44,8 +48,9 @@ public class HS256Panel extends SecretPanel {
     }
 
     @Override
-    public boolean hasSecret() {
-        return getSecret() != null && ! getSecret().isEmpty();
+    public JwtStatus getStatus() {
+        boolean hasSecret = getSecret() != null && !getSecret().isEmpty();
+        return hasSecret ? MUTABLE : NONE;
     }
 
     @Override
