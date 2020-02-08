@@ -1,10 +1,10 @@
 <idea-plugin>
-  <id>com.github.novotnyr.jwt-intellij-plugin</id>
-  <name>JWT (JSON Web Token) Analyzer</name>
-  <version>0.5-SNAPSHOT</version>
-  <vendor email="novotnr0@gmail.com" url="https://github.com/novotnyr/jwt-intellij-plugin">Róbert Novotný</vendor>
+    <id>com.github.novotnyr.jwt-intellij-plugin</id>
+    <name>JWT (JSON Web Token) Analyzer</name>
+    <version>0.5-SNAPSHOT</version>
+    <vendor email="novotnr0@gmail.com" url="https://github.com/novotnyr/jwt-intellij-plugin">Róbert Novotný</vendor>
 
-  <description><![CDATA[
+    <description><![CDATA[
     JSON Web Token Parser and Analyzer.
     <ul>
       <li>Visualize JWT contents in a tabular form</li>
@@ -15,16 +15,18 @@
     </ul>
     ]]></description>
 
-  <idea-version since-build="143.0"/>
+    <idea-version since-build="143.0"/>
 
-  <depends>com.intellij.modules.lang</depends>
+    <depends>com.intellij.modules.lang</depends>
 
-  <extensions defaultExtensionNs="com.intellij">
-    <toolWindow id="JWT" anchor="right" factoryClass="com.github.novotnyr.idea.jwt.ToolWindowFactory"/>
-  </extensions>
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="JWT" anchor="right" factoryClass="com.github.novotnyr.idea.jwt.ToolWindowFactory"/>
+        <projectConfigurable instance="com.github.novotnyr.idea.jwt.ui.preferences.PreferencesConfigurable" groupId="tools"/>
+        <projectService serviceImplementation="com.github.novotnyr.idea.jwt.ui.preferences.PluginPreferences"/>
+    </extensions>
 
-  <actions>
-    <!-- Add your actions here -->
-  </actions>
+    <actions>
+        <!-- Add your actions here -->
+    </actions>
 
 </idea-plugin>

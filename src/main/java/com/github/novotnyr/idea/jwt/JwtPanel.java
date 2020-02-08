@@ -7,6 +7,7 @@ import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry;
 import com.github.novotnyr.idea.jwt.ui.ClaimTableTransferHandler;
+import com.github.novotnyr.idea.jwt.ui.IdePreferenceNewSignatureContextProvider;
 import com.github.novotnyr.idea.jwt.ui.UiUtils;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SignatureContextChangedListener;
@@ -18,6 +19,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
+import com.intellij.openapi.project.Project;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.AnActionButtonRunnable;
 import com.intellij.ui.DoubleClickListener;
@@ -46,6 +48,9 @@ import static com.github.novotnyr.idea.jwt.ClaimDialog.Mode.VIEW;
 import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.MUTABLE;
 
 public class JwtPanel implements DataProvider {
+    @Nullable
+    private Project project;
+
     private PropertyChangeSupport propertyChangeSupport;
 
     private JPanel rootPanel;
@@ -368,12 +373,10 @@ public class JwtPanel implements DataProvider {
             this.headerLabel.setVisible(false);
             this.payloadLabel.setVisible(false);
             this.validateButton.setEnabled(false);
-            refreshClaimsTableControllers();
         } else {
             this.headerLabel.setVisible(true);
             this.payloadLabel.setVisible(true);
             this.validateButton.setEnabled(true);
-            refreshClaimsTableControllers();
         }
 
         this.claimsTableModel = new JwtClaimsTableModel(jwt);
@@ -382,6 +385,8 @@ public class JwtPanel implements DataProvider {
         this.claimsTable.setDefaultRenderer(Object.class, this.claimsTableModel);
 
         configureSecretPanel(jwt);
+
+        refreshClaimsTableControllers();
     }
 
     private void replaceSecretPanelContent(SecretPanel secretPanel) {
@@ -390,7 +395,7 @@ public class JwtPanel implements DataProvider {
     }
 
     private void configureSecretPanel(Jwt jwt) {
-        SecretPanel newSecretPanel = SecretPanelFactory.getInstance().newSecretPanel(jwt);
+        SecretPanel newSecretPanel = SecretPanelFactory.getInstance().newSecretPanel(jwt, getInitialSignatureContext(jwt));
         if (isSameSecretPanel(newSecretPanel)) {
             return;
         }
@@ -398,6 +403,14 @@ public class JwtPanel implements DataProvider {
         replaceSecretPanelContent(newSecretPanel);
         this.secretPanel = newSecretPanel;
         configureSecretTextFieldListeners(this.secretPanel);
+    }
+
+    private SignatureContext getInitialSignatureContext(Jwt jwt) {
+        if (this.project == null) {
+            return SignatureContext.EMPTY;
+        }
+        return new IdePreferenceNewSignatureContextProvider(this.project)
+                .createSignatureContext(jwt.getAlgorithm());
     }
 
     private boolean isSameSecretPanel(SecretPanel newSecretPanel) {
@@ -443,5 +456,9 @@ public class JwtPanel implements DataProvider {
 
     public void addJwtListener(PropertyChangeListener listener) {
         this.propertyChangeSupport.addPropertyChangeListener("jwt", listener);
+    }
+
+    public void setProject(@Nullable Project project) {
+        this.project = project;
     }
 }

@@ -2,10 +2,10 @@ package com.github.novotnyr.idea.jwt.rs256;
 
 import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.SignatureContextException;
+import com.github.novotnyr.idea.jwt.core.UnsupportedSignatureContext;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SignatureContextChangedListener;
-import com.github.novotnyr.idea.jwt.core.UnsupportedSignatureContext;
 import com.github.novotnyr.idea.jwt.validation.SignatureError;
 import com.intellij.ui.DocumentAdapter;
 
@@ -25,6 +25,12 @@ public class RS256Panel extends SecretPanel {
     private JTextArea privateKeyTextArea;
 
     private DelegatingDocumentListener documentListener;
+
+    public RS256Panel(SignatureContext initialSignatureContext) {
+        if (initialSignatureContext instanceof RS256SignatureContext) {
+            setSignatureContext(initialSignatureContext);
+        }
+    }
 
     @Override
     public JComponent getRoot() {

@@ -17,6 +17,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         JwtExplorer jwtExplorer = new JwtExplorer();
+        jwtExplorer.setProject(project);
 
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
         Content content = contentFactory.createContent(jwtExplorer, "", false);

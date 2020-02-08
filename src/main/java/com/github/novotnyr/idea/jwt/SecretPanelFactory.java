@@ -18,24 +18,24 @@ public class SecretPanelFactory {
     }
 
     @Nonnull
-    public SecretPanel newSecretPanel(@Nonnull String algorithmName) {
+    public SecretPanel newSecretPanel(@Nonnull String algorithmName, SignatureContext initialSignatureContext) {
         switch (algorithmName) {
             case "HS256":
                 return new HS256Panel();
             case "RS256":
-                return new RS256Panel();
+                return new RS256Panel(initialSignatureContext);
             default:
                 return new UnrecognizedSecretPanel();
         }
     }
 
     @Nonnull
-    public SecretPanel newSecretPanel(Jwt jwt) {
+    public SecretPanel newSecretPanel(Jwt jwt, SignatureContext initialSignatureContext) {
         if (jwt == null || jwt.getAlgorithm() == null) {
             return new UnrecognizedSecretPanel();
         }
 
-        return newSecretPanel(jwt.getAlgorithm());
+        return newSecretPanel(jwt.getAlgorithm(), initialSignatureContext);
     }
 
 }

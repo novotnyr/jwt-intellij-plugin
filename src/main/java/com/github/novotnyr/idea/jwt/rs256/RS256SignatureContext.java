@@ -27,6 +27,9 @@ public class RS256SignatureContext implements SignatureContext {
     }
 
     public String getPrivateKeyString() {
+        if (this.privateKey == null) {
+            return "";
+        }
         return RsaUtils.toString(this.privateKey);
     }
 

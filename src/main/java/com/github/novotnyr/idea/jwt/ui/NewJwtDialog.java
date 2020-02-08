@@ -1,5 +1,6 @@
 package com.github.novotnyr.idea.jwt.ui;
 
+import com.github.novotnyr.idea.jwt.NewSignatureContextProvider;
 import com.github.novotnyr.idea.jwt.SecretPanelFactory;
 import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.core.Jwt;
@@ -24,6 +25,8 @@ import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.MUTABLE;
 public class NewJwtDialog extends DialogWrapper {
     private final JwtFactory jwtFactory = JwtFactory.getInstance();
 
+    private final NewSignatureContextProvider newSignatureContextProvider;
+
     private static final String[] ALGORITHMS = {"HS256", "RS256"};
 
     private JComboBox<String> algorithmComboBox;
@@ -34,6 +37,9 @@ public class NewJwtDialog extends DialogWrapper {
 
     public NewJwtDialog(@Nullable Project project) {
         super(project);
+
+        this.newSignatureContextProvider = new IdePreferenceNewSignatureContextProvider(project);
+
         algorithmComboBox.setModel(new DefaultComboBoxModel<>(ALGORITHMS));
         algorithmComboBox.addItemListener(new ItemListener() {
             @Override
@@ -49,7 +55,8 @@ public class NewJwtDialog extends DialogWrapper {
     }
 
     private void onAlgorithmComboBoxItemSelected(String algorithmName) {
-        this.secretPanel = SecretPanelFactory.getInstance().newSecretPanel(algorithmName);
+        SignatureContext initialSignatureContext = newSignatureContextProvider.createSignatureContext(algorithmName);
+        this.secretPanel = SecretPanelFactory.getInstance().newSecretPanel(algorithmName, initialSignatureContext);
         this.secretPanelContainer.removeAll();
         this.secretPanelContainer.add(secretPanel.getRoot(), BorderLayout.CENTER);
         this.secretPanelContainer.revalidate();
