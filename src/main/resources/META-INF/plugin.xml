@@ -12,6 +12,7 @@
       <li>Verify validity of timestamp-based claims</li>
       <li>Visualize timestamp-based claims in unix / ISO / human relative format</li>
       <li>Edit claim values: dedicated editor for string, timestamp, boolean, numeric and raw JSON values</li>
+      <li>Set default keypair for RS256 validation in Preferences.</li>
     </ul>
     ]]></description>
 

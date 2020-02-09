@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.github.novotnyr'
-version '0.9-SNAPSHOT'
+version '0.9'
 
 sourceCompatibility = 1.8
 
@@ -29,8 +29,10 @@ intellij {
 patchPluginXml {
     sinceBuild '144'
     changeNotes """
-        <li>RS256-based token can be validated with public key even when private key is missing</li>
-        <li>Improve compatibility with 2020.1 platforms</li>
+        <ul>
+        <li>Declare project-wise RS256 keypair files for JWT signatures. In <i>Preferences</i> (Tools / JWT), set path to a public key and a RSA private key. These will be used as default keypair in JWT validation.</li>
+        <li>Set minimum level to IntelliJ IDEA 16 or newer.</li>
+        </ul>
       """
 }
 
