@@ -6,7 +6,7 @@ plugins {
 group 'com.github.novotnyr'
 version '0.9-SNAPSHOT'
 
-sourceCompatibility = 1.7
+sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
