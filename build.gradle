@@ -27,7 +27,7 @@ intellij {
     updateSinceUntilBuild false
 }
 patchPluginXml {
-    sinceBuild '143'
+    sinceBuild '144'
     changeNotes """
         <li>RS256-based token can be validated with public key even when private key is missing</li>
         <li>Improve compatibility with 2020.1 platforms</li>
