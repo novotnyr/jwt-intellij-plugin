@@ -10,7 +10,6 @@ import com.github.novotnyr.idea.jwt.ui.ClaimTableTransferHandler;
 import com.github.novotnyr.idea.jwt.ui.IdePreferenceNewSignatureContextProvider;
 import com.github.novotnyr.idea.jwt.ui.UiUtils;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
-import com.github.novotnyr.idea.jwt.ui.secretpanel.SignatureContextChangedListener;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.github.novotnyr.idea.jwt.validation.JwtValidator;
 import com.intellij.icons.AllIcons;
@@ -21,7 +20,6 @@ import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.AnActionButton;
-import com.intellij.ui.AnActionButtonRunnable;
 import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
@@ -36,7 +34,6 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -91,19 +88,14 @@ public class JwtPanel implements DataProvider {
         this.claimsTable.setName(Constants.CLAIMS_TABLE_NAME);
 
         initializeClaimsTableModel(this.claimsTable);
-        configureClaimsTablePopup(this.claimsTable);
+        configureClaimsTablePopup();
         configureClipboardCopy(this.claimsTable);
 
         replaceSecretPanelContent(this.secretPanel);
-        configureSecretTextFieldListeners(this.secretPanel);
+        configureSecretTextFieldListeners();
 
         this.validateButton.setEnabled(false);
-        this.validateButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                onValidateButtonClick(e);
-            }
-        });
+        this.validateButton.addActionListener(this::onValidateButtonClick);
 
         new DoubleClickListener() {
             @Override
@@ -130,7 +122,7 @@ public class JwtPanel implements DataProvider {
     }
 
 
-    private void configureClipboardCopy(JBTable claimsTable) {
+    private void configureClipboardCopy(@SuppressWarnings("unused") JBTable claimsTable) {
         this.claimsTable.setTransferHandler(new ClaimTableTransferHandler());
     }
 
@@ -169,12 +161,7 @@ public class JwtPanel implements DataProvider {
                         return !JwtPanel.this.jwt.getPayloadClaims().isEmpty();
                     }
                 })
-                .setEditAction(new AnActionButtonRunnable() {
-                    @Override
-                    public void run(AnActionButton anActionButton) {
-                        onEditAction(anActionButton);
-                    }
-                })
+                .setEditAction(this::onEditAction)
                 .setEditActionUpdater(this.editClaimActionButtonUpdater)
                 .setAddAction(this.addClaimActionButtonController)
                 .setAddActionUpdater(this.addClaimActionButtonController)
@@ -185,17 +172,12 @@ public class JwtPanel implements DataProvider {
     }
 
 
-    private void configureClaimsTablePopup(JBTable table) {
+    private void configureClaimsTablePopup() {
         JPopupMenu popupMenu = new JPopupMenu();
         UiUtils.configureTableRowSelectionOnPopup(popupMenu);
 
         JMenuItem copyValueMenuItem = new JMenuItem("Copy value (as string)");
-        copyValueMenuItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JwtPanel.this.onCopyValueMenuItemActionPerformed(e);
-            }
-        });
+        copyValueMenuItem.addActionListener(JwtPanel.this::onCopyValueMenuItemActionPerformed);
         popupMenu.add(copyValueMenuItem);
 
         JMenuItem copyAsKeyAndValueMenuItem = new JMenuItem(new AbstractAction("Copy value (as key=value)") {
@@ -209,13 +191,8 @@ public class JwtPanel implements DataProvider {
         this.claimsTable.setComponentPopupMenu(popupMenu);
     }
 
-    private void configureSecretTextFieldListeners(SecretPanel secretPanel) {
-        this.secretPanel.setSignatureContextChangedListener(new SignatureContextChangedListener() {
-            @Override
-            public void onSignatureContextChanged(SignatureContext newSignatureContext) {
-                refreshClaimsTableControllers();
-            }
-        });
+    private void configureSecretTextFieldListeners() {
+        this.secretPanel.setSignatureContextChangedListener(newSignatureContext -> refreshClaimsTableControllers());
     }
 
     private void editClaimAtRow(int row) {
@@ -224,7 +201,7 @@ public class JwtPanel implements DataProvider {
     }
 
 
-    private void onCopyAsJsonActionPerformed(AnActionEvent anActionEvent) {
+    private void onCopyAsJsonActionPerformed(@SuppressWarnings("unused") AnActionEvent anActionEvent) {
         if (this.jwt == null || this.jwt.isEmpty()) {
             return;
         }
@@ -233,14 +210,14 @@ public class JwtPanel implements DataProvider {
     }
 
 
-    public void onCopyValueMenuItemActionPerformed(ActionEvent e) {
+    public void onCopyValueMenuItemActionPerformed(@SuppressWarnings("unused") ActionEvent e) {
         int selectedRowIndex = this.claimsTable.getSelectedRow();
         Object claimValue = this.claimsTableModel.getValueAt(selectedRowIndex, 1);
         TextTransferable textTransferable = new TextTransferable(claimValue.toString());
         CopyPasteManagerEx.getInstanceEx().setContents(textTransferable);
     }
 
-    public void onCopyKeyAndValueMenuItemActionPerformed(ActionEvent e) {
+    public void onCopyKeyAndValueMenuItemActionPerformed(@SuppressWarnings("unused") ActionEvent e) {
         int selectedRowIndex = this.claimsTable.getSelectedRow();
         Object claimName = this.claimsTableModel.getValueAt(selectedRowIndex, 0);
         Object claimValue = this.claimsTableModel.getValueAt(selectedRowIndex, 1);
@@ -249,7 +226,7 @@ public class JwtPanel implements DataProvider {
         CopyPasteManagerEx.getInstanceEx().setContents(textTransferable);
     }
 
-    private void onValidateButtonClick(ActionEvent e) {
+    private void onValidateButtonClick(@SuppressWarnings("unused") ActionEvent e) {
         JwtValidator jwtValidator = new JwtValidator();
 
         SignatureContext secret = this.secretPanel.getSignatureContext();
@@ -277,7 +254,7 @@ public class JwtPanel implements DataProvider {
         return true;
     }
 
-    private void onEditAction(AnActionButton anActionButton) {
+    private void onEditAction(@SuppressWarnings("unused") AnActionButton anActionButton) {
         int selectedRow = this.claimsTable.getSelectedRow();
         if (selectedRow < 0) {
             return;
@@ -312,18 +289,14 @@ public class JwtPanel implements DataProvider {
     }
 
     private void refreshClaimsTableControllers() {
-        DataContext dataContext = new DataContext() {
-            @Nullable
-            @Override
-            public Object getData(String dataId) {
-                if (Constants.DataKeys.JWT_STATUS.is(dataId)) {
-                    return JwtPanel.this.getSecretPanel().getStatus();
-                }
-                if (Constants.DataKeys.JWT.is(dataId)) {
-                    return JwtPanel.this.jwt;
-                }
-                return null;
+        DataContext dataContext = dataId -> {
+            if (Constants.DataKeys.JWT_STATUS.is(dataId)) {
+                return JwtPanel.this.getSecretPanel().getStatus();
             }
+            if (Constants.DataKeys.JWT.is(dataId)) {
+                return JwtPanel.this.jwt;
+            }
+            return null;
         };
 
         AnActionEvent event = AnActionEvent.createFromDataContext("place", null, dataContext);
@@ -402,7 +375,7 @@ public class JwtPanel implements DataProvider {
         this.secretPanel.removeSignatureContextChangedListener();
         replaceSecretPanelContent(newSecretPanel);
         this.secretPanel = newSecretPanel;
-        configureSecretTextFieldListeners(this.secretPanel);
+        configureSecretTextFieldListeners();
     }
 
     private SignatureContext getInitialSignatureContext(Jwt jwt) {

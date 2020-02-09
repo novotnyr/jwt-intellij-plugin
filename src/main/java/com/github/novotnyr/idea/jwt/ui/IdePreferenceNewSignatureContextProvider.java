@@ -6,13 +6,14 @@ import com.github.novotnyr.idea.jwt.SignatureAlgorithm;
 import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.rs256.RS256SignatureContext;
 import com.github.novotnyr.idea.jwt.ui.preferences.PluginPreferences;
-import com.google.common.io.Files;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class IdePreferenceNewSignatureContextProvider implements NewSignatureContextProvider {
     protected final Logger log = Logger.getInstance("#" + IdePreferenceNewSignatureContextProvider.class.getName());
@@ -29,27 +30,22 @@ public class IdePreferenceNewSignatureContextProvider implements NewSignatureCon
         if (!SignatureAlgorithm.RS256.equals(algorithm)) {
             return (T) SignatureContext.EMPTY;
         }
-        try {
-            if (isEmptyPrivateKeyFile() && isEmptyPublicKeyFile()) {
-                return (T) EditableKeyPairSignatureContext.INSTANCE;
-            }
-            PluginPreferences pluginPreferences = PluginPreferences.getInstance(this.project);
-
-            String publicKey = loadPublicKey(pluginPreferences);
-            String privateKey = loadPrivateKey(pluginPreferences);
-
-            RS256SignatureContext.Builder builder = new RS256SignatureContext.Builder();
-            if (publicKey != null) {
-                builder.withPublicKey(publicKey);
-            }
-            if (privateKey != null) {
-                builder.withPrivateKey(privateKey);
-            }
-            return (T) builder.build();
-        } catch (IOException e) {
-            log.warn("Cannot load signature context", e);
+        if (isEmptyPrivateKeyFile() && isEmptyPublicKeyFile()) {
             return (T) EditableKeyPairSignatureContext.INSTANCE;
         }
+        PluginPreferences pluginPreferences = PluginPreferences.getInstance(this.project);
+
+        String publicKey = loadPublicKey(pluginPreferences);
+        String privateKey = loadPrivateKey(pluginPreferences);
+
+        RS256SignatureContext.Builder builder = new RS256SignatureContext.Builder();
+        if (publicKey != null) {
+            builder.withPublicKey(publicKey);
+        }
+        if (privateKey != null) {
+            builder.withPrivateKey(privateKey);
+        }
+        return (T) builder.build();
     }
 
     private PluginPreferences getPreferences() {
@@ -80,7 +76,7 @@ public class IdePreferenceNewSignatureContextProvider implements NewSignatureCon
         }
     }
 
-    private String loadPublicKey(PluginPreferences pluginPreferences) throws IOException {
+    private String loadPublicKey(PluginPreferences pluginPreferences) {
         try {
             return load(pluginPreferences.getRs256PublicKeyFile());
         } catch (IOException | IllegalArgumentException e) {
@@ -89,11 +85,11 @@ public class IdePreferenceNewSignatureContextProvider implements NewSignatureCon
         }
     }
 
-    private String load(String filePath) throws IOException {
-        if (filePath == null || filePath.isEmpty()) {
+    private String load(String file) throws IOException {
+        if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Empty file path");
         }
-        File file = new File(filePath);
-        return Files.toString(file, StandardCharsets.UTF_8);
+        Path path = Paths.get(file);
+        return new String(Files.readAllBytes(path));
     }
 }

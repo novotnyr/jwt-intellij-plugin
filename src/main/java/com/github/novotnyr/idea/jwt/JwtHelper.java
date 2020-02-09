@@ -7,14 +7,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 public class JwtHelper {
-    public static DecodedJWT decodeHmac256(String token) throws JWTVerificationException,
-            UnsupportedEncodingException
-    {
+    public static DecodedJWT decodeHmac256(String token) throws JWTVerificationException {
         return JWT.decode(token);
     }
 

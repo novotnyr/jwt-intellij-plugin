@@ -14,7 +14,7 @@ import java.io.UnsupportedEncodingException;
 public class AlgorithmResolver {
     public static final Logger logger = LoggerFactory.getLogger(Algorithm.class);
 
-    public static Algorithm resolve(String algorithmName, SignatureContext signatureContext) {
+    public Algorithm resolve(String algorithmName, SignatureContext signatureContext) {
         Algorithm algorithm = null;
         switch (algorithmName) {
             case "HS256" : {

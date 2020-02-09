@@ -10,7 +10,6 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.event.DocumentEvent;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Date;
 
 public class DateClaimPanel extends AbstractClaimPanel<DateClaim, Date> {
@@ -49,25 +48,10 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, Date> {
         });
         onClaimValueTextFieldChanged();
 
-        this.nowButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                nowButtonClicked(e);
-            }
-        });
-        this.add15MinutesButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                add15MinutesButtonClicked(e);
-            }
-        });
+        this.nowButton.addActionListener(this::nowButtonClicked);
+        this.add15MinutesButton.addActionListener(this::add15MinutesButtonClicked);
 
-        this.subtract15MinutesButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                subtract15MinutesButtonClicked(e);
-            }
-        });
+        this.subtract15MinutesButton.addActionListener(this::subtract15MinutesButtonClicked);
     }
 
     private void nowButtonClicked(ActionEvent e) {

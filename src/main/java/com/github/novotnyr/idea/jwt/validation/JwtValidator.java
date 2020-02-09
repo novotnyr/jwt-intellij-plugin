@@ -18,6 +18,8 @@ import java.util.List;
 public class JwtValidator {
     public final Logger logger = LoggerFactory.getLogger(getClass());
 
+    private final AlgorithmResolver algorithmResolver = new AlgorithmResolver();
+
     private List<GlobalError> globalErrors = new ArrayList<>();
 
     private List<ClaimError> claimErrors = new ArrayList<>();
@@ -43,7 +45,7 @@ public class JwtValidator {
     private void validate(DecodedJWT jwt, SignatureContext signatureContext) {
         validateClaims(jwt);
         try {
-            Algorithm algorithm = AlgorithmResolver.resolve(jwt.getAlgorithm(), signatureContext);
+            Algorithm algorithm = this.algorithmResolver.resolve(jwt.getAlgorithm(), signatureContext);
             algorithm.verify(jwt);
         } catch (SignatureVerificationException e) {
             globalErrors.add(new SignatureError());

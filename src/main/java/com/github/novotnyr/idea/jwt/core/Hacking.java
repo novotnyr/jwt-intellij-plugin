@@ -23,7 +23,7 @@ public class Hacking {
             Object payload = payloadField.get(decodedJwt);
             Field treeField = payload.getClass().getDeclaredField("tree");
             treeField.setAccessible(true);
-            Map<String, JsonNode> tree = (Map<String, JsonNode>) treeField.get(payload);
+            @SuppressWarnings("unchecked") Map<String, JsonNode> tree = (Map<String, JsonNode>) treeField.get(payload);
             Map<String, Claim> claims = new LinkedHashMap<>();
             for (String name : tree.keySet()) {
                 claims.put(name, _claimFromNode(tree.get(name)));
@@ -38,8 +38,7 @@ public class Hacking {
         try {
             Field dataField = claim.getClass().getDeclaredField("data");
             dataField.setAccessible(true);
-            JsonNode data = (JsonNode) dataField.get(claim);
-            return data;
+            return (JsonNode) dataField.get(claim);
         } catch (Exception e) {
             throw new IllegalArgumentException("Reflection failed on JWT Claim " + claim.toString(), e);
         }

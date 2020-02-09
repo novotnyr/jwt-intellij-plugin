@@ -67,7 +67,7 @@ public class ClaimDialog extends DialogWrapper {
         return claim;
     }
 
-    private class ClaimPanel extends JPanel {
+    private static class ClaimPanel extends JPanel {
         protected NamedClaim<?> claim;
 
         protected Mode mode;

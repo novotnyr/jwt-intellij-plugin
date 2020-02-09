@@ -2,7 +2,6 @@ package com.github.novotnyr.idea.jwt.ui.preferences;
 
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.options.Configurable;
-import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextBrowseFolderListener;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
@@ -47,7 +46,7 @@ public class PreferencesConfigurable implements Configurable {
     }
 
     @Override
-    public void apply() throws ConfigurationException {
+    public void apply() {
         PluginPreferences pluginPreferences = PluginPreferences.getInstance(project);
         pluginPreferences.setRs256PublicKeyFile(this.rs256PublicKeyTextField.getText());
         pluginPreferences.setRs256PrivateKeyFile(this.rs256PrivateKeyTextField.getText());

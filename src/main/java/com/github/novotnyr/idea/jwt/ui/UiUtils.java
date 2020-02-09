@@ -13,14 +13,11 @@ public class UiUtils {
         popupMenu.addPopupMenuListener(new PopupMenuListenerAdapter() {
             @Override
             public void popupMenuWillBecomeVisible(final PopupMenuEvent e) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        JTable table = (JTable) popupMenu.getInvoker();
-                        int rowAtPoint = table.rowAtPoint(SwingUtilities.convertPoint(popupMenu, new Point(0, 0), table));
-                        if (rowAtPoint > -1) {
-                            table.setRowSelectionInterval(rowAtPoint, rowAtPoint);
-                        }
+                SwingUtilities.invokeLater(() -> {
+                    JTable table = (JTable) popupMenu.getInvoker();
+                    int rowAtPoint = table.rowAtPoint(SwingUtilities.convertPoint(popupMenu, new Point(0, 0), table));
+                    if (rowAtPoint > -1) {
+                        table.setRowSelectionInterval(rowAtPoint, rowAtPoint);
                     }
                 });
             }

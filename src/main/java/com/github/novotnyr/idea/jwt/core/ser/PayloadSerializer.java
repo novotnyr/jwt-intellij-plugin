@@ -58,6 +58,7 @@ public class PayloadSerializer extends StdSerializer<ClaimsHolder> {
         gen.writeObject(safePayload);
     }
 
+    @SuppressWarnings("unchecked")
     protected Map<String, Object> getClaims(ClaimsHolder holder) {
         try {
             Field claims = holder.getClass().getDeclaredField("claims");

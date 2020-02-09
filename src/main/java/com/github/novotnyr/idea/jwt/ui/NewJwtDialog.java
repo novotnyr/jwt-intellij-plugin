@@ -18,7 +18,6 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
 import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 
 import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.MUTABLE;
 
@@ -41,12 +40,9 @@ public class NewJwtDialog extends DialogWrapper {
         this.newSignatureContextProvider = new IdePreferenceNewSignatureContextProvider(project);
 
         algorithmComboBox.setModel(new DefaultComboBoxModel<>(ALGORITHMS));
-        algorithmComboBox.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent event) {
-                if (event.getStateChange() == ItemEvent.SELECTED) {
-                    onAlgorithmComboBoxItemSelected((String) event.getItem());
-                }
+        algorithmComboBox.addItemListener(event -> {
+            if (event.getStateChange() == ItemEvent.SELECTED) {
+                onAlgorithmComboBoxItemSelected((String) event.getItem());
             }
         });
         algorithmComboBox.setSelectedItem("HS256");
@@ -74,8 +70,7 @@ public class NewJwtDialog extends DialogWrapper {
         if (MUTABLE == this.secretPanel.getStatus()) {
             return super.doValidate();
         }
-        ValidationInfo validationInfo = new ValidationInfo("Missing secret or keypair", this.secretPanel.getBaloonableComponent());
-        return validationInfo;
+        return new ValidationInfo("Missing secret or keypair", this.secretPanel.getBaloonableComponent());
     }
 
     public Jwt getJwt() {

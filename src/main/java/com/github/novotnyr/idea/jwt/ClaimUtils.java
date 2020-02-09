@@ -68,9 +68,6 @@ public class ClaimUtils {
     public static NamedClaim<?> copyClaim(NamedClaim<?> templateClaim, String name, Object value) {
         if(templateClaim instanceof DateClaim) {
             Date date = null;
-            if(value == null) {
-                date = null;
-            }
             if(value instanceof String) {
                 date = DateUtils.toDate((String) value);
             } else if (value instanceof Long) {

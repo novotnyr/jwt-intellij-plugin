@@ -33,7 +33,7 @@ public abstract class RsaUtils {
     }
 
     public static RSAPublicKey getPublicKey(String publicKeyPem) {
-        try(PEMParser pemParser = new PEMParser(new StringReader(publicKeyPem));) {
+        try(PEMParser pemParser = new PEMParser(new StringReader(publicKeyPem))) {
             JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
             SubjectPublicKeyInfo publicKeyInfo = (SubjectPublicKeyInfo) pemParser.readObject();
             return (RSAPublicKey) converter.getPublicKey(publicKeyInfo);
@@ -44,7 +44,7 @@ public abstract class RsaUtils {
 
     public static String toString(RSAPrivateKey rsaPrivateKey) {
         StringWriter out = new StringWriter();
-        try(JcaPEMWriter pemWriter = new JcaPEMWriter(out);) {
+        try(JcaPEMWriter pemWriter = new JcaPEMWriter(out)) {
             pemWriter.writeObject(rsaPrivateKey);
             pemWriter.flush();
             return out.toString();
@@ -55,7 +55,7 @@ public abstract class RsaUtils {
 
     public static String toString(RSAPublicKey rsaPublicKey) {
         StringWriter out = new StringWriter();
-        try(JcaPEMWriter pemWriter = new JcaPEMWriter(out);) {
+        try(JcaPEMWriter pemWriter = new JcaPEMWriter(out)) {
             pemWriter.writeObject(rsaPublicKey);
             pemWriter.flush();
             return out.toString();
