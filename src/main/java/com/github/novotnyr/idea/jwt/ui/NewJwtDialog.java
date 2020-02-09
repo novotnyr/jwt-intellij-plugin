@@ -56,7 +56,7 @@ public class NewJwtDialog extends DialogWrapper {
 
     private void onAlgorithmComboBoxItemSelected(String algorithmName) {
         SignatureContext initialSignatureContext = newSignatureContextProvider.createSignatureContext(algorithmName);
-        this.secretPanel = SecretPanelFactory.getInstance().newSecretPanel(algorithmName, initialSignatureContext);
+        this.secretPanel = SecretPanelFactory.getInstance().getSecretPanel(algorithmName, initialSignatureContext);
         this.secretPanelContainer.removeAll();
         this.secretPanelContainer.add(secretPanel.getRoot(), BorderLayout.CENTER);
         this.secretPanelContainer.revalidate();

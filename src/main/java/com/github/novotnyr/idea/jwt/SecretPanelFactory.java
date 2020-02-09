@@ -6,9 +6,16 @@ import com.github.novotnyr.idea.jwt.rs256.RS256Panel;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 
 import javax.annotation.Nonnull;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static com.github.novotnyr.idea.jwt.SignatureAlgorithm.HS256;
+import static com.github.novotnyr.idea.jwt.SignatureAlgorithm.RS256;
 
 public class SecretPanelFactory {
     private static SecretPanelFactory INSTANCE = new SecretPanelFactory();
+
+    private Map<String, SecretPanel> panelCache = new LinkedHashMap<>();
 
     private SecretPanelFactory() {
     }
@@ -18,24 +25,30 @@ public class SecretPanelFactory {
     }
 
     @Nonnull
-    public SecretPanel newSecretPanel(@Nonnull String algorithmName, SignatureContext initialSignatureContext) {
+    public SecretPanel getSecretPanel(@Nonnull String algorithmName, SignatureContext initialSignatureContext) {
         switch (algorithmName) {
-            case "HS256":
-                return new HS256Panel();
-            case "RS256":
-                return new RS256Panel(initialSignatureContext);
+            case HS256:
+                if (!this.panelCache.containsKey(HS256)) {
+                    this.panelCache.put(HS256, new HS256Panel());
+                }
+                return this.panelCache.get(HS256);
+            case RS256:
+                if (!this.panelCache.containsKey(RS256)) {
+                    this.panelCache.put(RS256, new RS256Panel(initialSignatureContext));
+                }
+                return this.panelCache.get(RS256);
             default:
                 return new UnrecognizedSecretPanel();
         }
     }
 
     @Nonnull
-    public SecretPanel newSecretPanel(Jwt jwt, SignatureContext initialSignatureContext) {
+    public SecretPanel getSecretPanel(Jwt jwt, SignatureContext initialSignatureContext) {
         if (jwt == null || jwt.getAlgorithm() == null) {
             return new UnrecognizedSecretPanel();
         }
 
-        return newSecretPanel(jwt.getAlgorithm(), initialSignatureContext);
+        return getSecretPanel(jwt.getAlgorithm(), initialSignatureContext);
     }
 
 }
