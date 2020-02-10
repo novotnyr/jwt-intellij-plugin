@@ -7,6 +7,7 @@ import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.bouncycastle.util.encoders.DecoderException;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -29,16 +30,20 @@ public abstract class RsaUtils {
             return (RSAPrivateKey) keyPair.getPrivate();
         } catch (IOException e) {
             throw new SignatureContextException("Unable to parse RSA private key from string", e);
+        } catch (IllegalArgumentException | NullPointerException | DecoderException e) {
+            throw new SignatureContextException("Unable to parse RSA private key from string. Input is malformed", e);
         }
     }
 
     public static RSAPublicKey getPublicKey(String publicKeyPem) {
-        try(PEMParser pemParser = new PEMParser(new StringReader(publicKeyPem))) {
+        try (PEMParser pemParser = new PEMParser(new StringReader(publicKeyPem))) {
             JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
             SubjectPublicKeyInfo publicKeyInfo = (SubjectPublicKeyInfo) pemParser.readObject();
             return (RSAPublicKey) converter.getPublicKey(publicKeyInfo);
         } catch (IOException e) {
             throw new SignatureContextException("Unable to parse RSA public key from string", e);
+        } catch (IllegalArgumentException | NullPointerException | DecoderException e) {
+            throw new SignatureContextException("Unable to parse RSA public key from string. Input is malformed", e);
         }
     }
 
