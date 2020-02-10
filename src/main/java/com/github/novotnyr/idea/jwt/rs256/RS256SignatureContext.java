@@ -43,6 +43,8 @@ public class RS256SignatureContext implements SignatureContext {
 
         private String privateKey;
 
+        private boolean sanitizingWhitespace = true;
+
         public Builder withPublicKey(final String publicKey) {
             this.publicKey = publicKey;
             return this;
@@ -55,11 +57,18 @@ public class RS256SignatureContext implements SignatureContext {
 
         public RS256SignatureContext build() {
             RS256SignatureContext signatureContext = new RS256SignatureContext();
-            signatureContext.publicKey = RsaUtils.getPublicKey(this.publicKey);
+            signatureContext.publicKey = RsaUtils.getPublicKey(sanitizeWhitespace(this.publicKey));
             if (this.privateKey != null) {
-                signatureContext.privateKey = RsaUtils.getPrivateKey(this.privateKey);
+                signatureContext.privateKey = RsaUtils.getPrivateKey(sanitizeWhitespace(this.privateKey));
             }
             return signatureContext;
+        }
+
+        private String sanitizeWhitespace(String publicKey) {
+            if (!sanitizingWhitespace) {
+                return publicKey;
+            }
+            return RsaUtils.sanitizeWhitespace(publicKey);
         }
     }
 }

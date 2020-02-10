@@ -68,4 +68,8 @@ public abstract class RsaUtils {
             throw new SignatureContextException("Unable to write RSA public key from string", e);
         }
     }
+
+    public static String sanitizeWhitespace(String input) {
+        return input.replace("\\n", "\n");
+    }
 }
