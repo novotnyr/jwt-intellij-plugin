@@ -31,14 +31,21 @@ import java.util.Collections;
 import java.util.function.BiFunction;
 
 public class FormatOnPasteEditorActionHandler extends EditorActionHandler implements EditorTextInsertHandler {
+    private final EditorActionHandler delegateActionHandler;
     private final BiFunction<String, String, String> formatter;
 
-    public FormatOnPasteEditorActionHandler(BiFunction<String, String, String> formatter) {
+    public FormatOnPasteEditorActionHandler(EditorActionHandler delegateActionHandler, BiFunction<String, String, String> formatter) {
+        this.delegateActionHandler = delegateActionHandler;
         this.formatter = formatter;
     }
 
     @Override
     protected void doExecute(@NotNull Editor editor, @Nullable Caret caret, DataContext dataContext) {
+        if (!supports(editor)) {
+            delegateActionHandler.execute(editor, caret, dataContext);
+            return;
+        }
+
         String clipboardString = getClipboardString(editor);
         if (clipboardString == null) {
             return;
@@ -92,6 +99,10 @@ public class FormatOnPasteEditorActionHandler extends EditorActionHandler implem
         } finally {
             document.stopGuardedBlockChecking();
         }
+    }
+
+    protected boolean supports(Editor editor) {
+        return true;
     }
 
     @Nullable
