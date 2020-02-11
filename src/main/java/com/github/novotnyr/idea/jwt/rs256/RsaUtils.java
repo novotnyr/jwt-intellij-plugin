@@ -25,7 +25,11 @@ public abstract class RsaUtils {
     public static RSAPrivateKey getPrivateKey(String privateKeyPem) {
         try(PEMParser pemParser = new PEMParser(new StringReader(privateKeyPem))) {
             JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
-            PEMKeyPair pemKeyPair = (PEMKeyPair) pemParser.readObject();
+            Object pemKeyPairObject = pemParser.readObject();
+            if (pemKeyPairObject instanceof SubjectPublicKeyInfo) {
+                throw new SignatureContextException("Input is an RSA Public Key, but private key is expected");
+            }
+            PEMKeyPair pemKeyPair = (PEMKeyPair) pemKeyPairObject;
             KeyPair keyPair = converter.getKeyPair(pemKeyPair);
             return (RSAPrivateKey) keyPair.getPrivate();
         } catch (IOException e) {
