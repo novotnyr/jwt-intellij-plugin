@@ -26,6 +26,9 @@ public class NewJwtDialog extends DialogWrapper {
 
     private final NewSignatureContextProvider newSignatureContextProvider;
 
+    @Nullable
+    private final Project project;
+
     private static final String[] ALGORITHMS = {"HS256", "RS256"};
 
     private JComboBox<String> algorithmComboBox;
@@ -38,6 +41,7 @@ public class NewJwtDialog extends DialogWrapper {
         super(project);
 
         this.newSignatureContextProvider = new IdePreferenceNewSignatureContextProvider(project);
+        this.project = project;
 
         algorithmComboBox.setModel(new DefaultComboBoxModel<>(ALGORITHMS));
         algorithmComboBox.addItemListener(event -> {
@@ -52,7 +56,8 @@ public class NewJwtDialog extends DialogWrapper {
 
     private void onAlgorithmComboBoxItemSelected(String algorithmName) {
         SignatureContext initialSignatureContext = newSignatureContextProvider.createSignatureContext(algorithmName);
-        this.secretPanel = SecretPanelFactory.getInstance().getSecretPanel(algorithmName, initialSignatureContext);
+        this.secretPanel = SecretPanelFactory.getInstance().getSecretPanel(project, algorithmName, initialSignatureContext);
+        this.secretPanel.setProject(this.project);
         this.secretPanelContainer.removeAll();
         this.secretPanelContainer.add(secretPanel.getRoot(), BorderLayout.CENTER);
         this.secretPanelContainer.revalidate();

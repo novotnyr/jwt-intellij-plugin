@@ -368,10 +368,11 @@ public class JwtPanel implements DataProvider {
     }
 
     private void configureSecretPanel(Jwt jwt) {
-        SecretPanel newSecretPanel = SecretPanelFactory.getInstance().getSecretPanel(jwt, getInitialSignatureContext(jwt));
+        SecretPanel newSecretPanel = SecretPanelFactory.getInstance().getSecretPanel(project, jwt, getInitialSignatureContext(jwt));
         if (isSameSecretPanel(newSecretPanel)) {
             return;
         }
+        newSecretPanel.setProject(this.project);
         this.secretPanel.removeSignatureContextChangedListener();
         replaceSecretPanelContent(newSecretPanel);
         this.secretPanel = newSecretPanel;

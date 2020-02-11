@@ -2,6 +2,7 @@ package com.github.novotnyr.idea.jwt.ui.secretpanel;
 
 import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.validation.SignatureError;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
@@ -9,11 +10,15 @@ import com.intellij.ui.TextAccessor;
 import com.intellij.ui.awt.RelativePoint;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.swing.JComponent;
 import javax.swing.text.JTextComponent;
 
 public abstract class SecretPanel {
     private SignatureContextChangedListener signatureContextChangedListener;
+
+    @Nullable
+    private Project project;
 
     public abstract JComponent getRoot();
 
@@ -70,4 +75,12 @@ public abstract class SecretPanel {
         return textAccessor.getText() != null && !textAccessor.getText().isEmpty();
     }
 
+    @Nullable
+    public Project getProject() {
+        return project;
+    }
+
+    public void setProject(@Nullable Project project) {
+        this.project = project;
+    }
 }

@@ -4,6 +4,7 @@ import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.hs256.HS256Panel;
 import com.github.novotnyr.idea.jwt.rs256.RS256Panel;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
+import com.intellij.openapi.project.Project;
 
 import javax.annotation.Nonnull;
 import java.util.LinkedHashMap;
@@ -25,7 +26,7 @@ public class SecretPanelFactory {
     }
 
     @Nonnull
-    public SecretPanel getSecretPanel(@Nonnull String algorithmName, SignatureContext initialSignatureContext) {
+    public SecretPanel getSecretPanel(Project project, @Nonnull String algorithmName, SignatureContext initialSignatureContext) {
         switch (algorithmName) {
             case HS256:
                 if (!this.panelCache.containsKey(HS256)) {
@@ -34,7 +35,7 @@ public class SecretPanelFactory {
                 return this.panelCache.get(HS256);
             case RS256:
                 if (!this.panelCache.containsKey(RS256)) {
-                    this.panelCache.put(RS256, new RS256Panel(initialSignatureContext));
+                    this.panelCache.put(RS256, new RS256Panel(project, initialSignatureContext));
                 }
                 return this.panelCache.get(RS256);
             default:
@@ -42,13 +43,11 @@ public class SecretPanelFactory {
         }
     }
 
-    @Nonnull
-    public SecretPanel getSecretPanel(Jwt jwt, SignatureContext initialSignatureContext) {
+    public SecretPanel getSecretPanel(Project project, Jwt jwt, SignatureContext initialSignatureContext) {
         if (jwt == null || jwt.getAlgorithm() == null) {
             return new UnrecognizedSecretPanel();
         }
 
-        return getSecretPanel(jwt.getAlgorithm(), initialSignatureContext);
+        return getSecretPanel(project, jwt.getAlgorithm(), initialSignatureContext);
     }
-
 }
