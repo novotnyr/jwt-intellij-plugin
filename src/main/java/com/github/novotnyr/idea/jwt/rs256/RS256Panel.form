@@ -17,7 +17,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="fe60f" class="javax.swing.JTextArea" binding="publicKeyTextArea">
+          <component id="abb9" class="com.intellij.ui.EditorTextField" binding="publicKeyTextField" custom-create="true">
             <constraints/>
             <properties>
               <text value=""/>

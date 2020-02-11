@@ -5,6 +5,7 @@ import com.github.novotnyr.idea.jwt.validation.SignatureError;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
+import com.intellij.ui.TextAccessor;
 import com.intellij.ui.awt.RelativePoint;
 
 import javax.annotation.Nonnull;
@@ -63,6 +64,10 @@ public abstract class SecretPanel {
 
     protected boolean hasText(JTextComponent textComponent) {
         return textComponent.getText() != null && !textComponent.getText().isEmpty();
+    }
+
+    protected boolean hasText(TextAccessor textAccessor) {
+        return textAccessor.getText() != null && !textAccessor.getText().isEmpty();
     }
 
 }
