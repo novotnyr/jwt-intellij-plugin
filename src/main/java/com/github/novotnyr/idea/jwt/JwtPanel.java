@@ -226,17 +226,20 @@ public class JwtPanel implements DataProvider {
         CopyPasteManagerEx.getInstanceEx().setContents(textTransferable);
     }
 
-    private void onValidateButtonClick(@SuppressWarnings("unused") ActionEvent e) {
-        JwtValidator jwtValidator = new JwtValidator();
+    private void onValidateButtonClick(@SuppressWarnings("unused") ActionEvent event) {
+        try {
+            JwtValidator jwtValidator = new JwtValidator();
 
-        SignatureContext secret = this.secretPanel.getSignatureContext();
-        jwtValidator.validate(this.jwt, secret);
-        this.claimsTableModel.setClaimErrors(jwtValidator.getClaimErrors());
-        if(jwtValidator.hasSignatureError()) {
-            this.secretPanel.notifySignatureErrors(jwtValidator.getSignatureError());
-        } else {
-            this.secretPanel.notifySignatureValid();
-
+            SignatureContext secret = this.secretPanel.getSignatureContext();
+            jwtValidator.validate(this.jwt, secret);
+            this.claimsTableModel.setClaimErrors(jwtValidator.getClaimErrors());
+            if(jwtValidator.hasSignatureError()) {
+                this.secretPanel.notifySignatureErrors(jwtValidator.getSignatureError());
+            } else {
+                this.secretPanel.notifySignatureValid();
+            }
+        } catch (SignatureContextException e) {
+            this.secretPanel.notifySecurityContextException(e);
         }
     }
 

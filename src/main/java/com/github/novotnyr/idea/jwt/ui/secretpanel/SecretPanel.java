@@ -1,6 +1,7 @@
 package com.github.novotnyr.idea.jwt.ui.secretpanel;
 
 import com.github.novotnyr.idea.jwt.SignatureContext;
+import com.github.novotnyr.idea.jwt.SignatureContextException;
 import com.github.novotnyr.idea.jwt.validation.SignatureError;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
@@ -43,6 +44,16 @@ public abstract class SecretPanel {
     public void notifyEmptySignature() {
         JBPopupFactory.getInstance()
                 .createHtmlTextBalloonBuilder("Cannot edit claims when a secret or keypair is not provided", MessageType.WARNING, null)
+                .setFadeoutTime(7500)
+                .createBalloon()
+                .show(RelativePoint.getNorthWestOf(getBaloonableComponent()),
+                        Balloon.Position.atRight);
+    }
+
+
+    public void notifySecurityContextException(SignatureContextException e) {
+        JBPopupFactory.getInstance()
+                .createHtmlTextBalloonBuilder("There is an issue with secret, private key or public key: " + e.getMessage(), MessageType.ERROR, null)
                 .setFadeoutTime(7500)
                 .createBalloon()
                 .show(RelativePoint.getNorthWestOf(getBaloonableComponent()),
