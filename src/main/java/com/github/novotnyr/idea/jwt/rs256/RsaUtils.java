@@ -9,7 +9,11 @@ import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.util.encoders.DecoderException;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.security.KeyPair;
@@ -22,8 +26,22 @@ public abstract class RsaUtils {
         Security.addProvider(new BouncyCastleProvider());
     }
 
+    public static RSAPrivateKey getPrivateKey(File privateKeyPemFile) {
+        try(FileReader reader = new FileReader(privateKeyPemFile)) {
+            return getPrivateKey(reader);
+        } catch (FileNotFoundException e) {
+            throw new SignatureContextException("Private key PEM file not found: " + privateKeyPemFile, e);
+        } catch (IOException e) {
+            throw new SignatureContextException("Unable to parse RSA private key from file", e);
+        }
+    }
+
     public static RSAPrivateKey getPrivateKey(String privateKeyPem) {
-        try(PEMParser pemParser = new PEMParser(new StringReader(privateKeyPem))) {
+        return getPrivateKey(new StringReader(privateKeyPem));
+    }
+
+    public static RSAPrivateKey getPrivateKey(Reader privateKeyPem) {
+        try(PEMParser pemParser = new PEMParser(privateKeyPem)) {
             JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
             Object pemKeyPairObject = pemParser.readObject();
             if (pemKeyPairObject instanceof SubjectPublicKeyInfo) {
@@ -33,22 +51,42 @@ public abstract class RsaUtils {
             KeyPair keyPair = converter.getKeyPair(pemKeyPair);
             return (RSAPrivateKey) keyPair.getPrivate();
         } catch (IOException e) {
-            throw new SignatureContextException("Unable to parse RSA private key from string", e);
+            throw new SignatureContextException("Unable to parse RSA private key", e);
         } catch (IllegalArgumentException | NullPointerException | DecoderException e) {
-            throw new SignatureContextException("Unable to parse RSA private key from string. Input is malformed", e);
+            throw new SignatureContextException("Unable to parse RSA private key. Input is malformed", e);
         }
     }
 
     public static RSAPublicKey getPublicKey(String publicKeyPem) {
-        try (PEMParser pemParser = new PEMParser(new StringReader(publicKeyPem))) {
+        return getPublicKey(new StringReader(publicKeyPem));
+    }
+
+    public static RSAPublicKey getPublicKey(File publicKeyPemFile) {
+        try(FileReader publicKeyPemReader = new FileReader(publicKeyPemFile)) {
+            return getPublicKey(publicKeyPemReader);
+        } catch (FileNotFoundException e) {
+            throw new SignatureContextException("Public key PEM file not found: " + publicKeyPemFile, e);
+        } catch (IOException e) {
+            throw new SignatureContextException("Unable to parse RSA public key from file", e);
+        }
+    }
+
+    public static RSAPublicKey getPublicKey(Reader reader) {
+        try (PEMParser pemParser = new PEMParser(reader)) {
             JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
-            SubjectPublicKeyInfo publicKeyInfo = (SubjectPublicKeyInfo) pemParser.readObject();
+            Object publicKeyInfoObject = pemParser.readObject();
+            if (publicKeyInfoObject instanceof PEMKeyPair) {
+                throw new SignatureContextException("Input is a private key, but a public key PEM is expected");
+            }
+            SubjectPublicKeyInfo publicKeyInfo = (SubjectPublicKeyInfo) publicKeyInfoObject;
+
             return (RSAPublicKey) converter.getPublicKey(publicKeyInfo);
         } catch (IOException e) {
-            throw new SignatureContextException("Unable to parse RSA public key from string", e);
+            throw new SignatureContextException("Unable to parse RSA public key", e);
         } catch (IllegalArgumentException | NullPointerException | DecoderException e) {
-            throw new SignatureContextException("Unable to parse RSA public key from string. Input is malformed", e);
+            throw new SignatureContextException("Unable to parse RSA public key. Input is malformed", e);
         }
+
     }
 
     public static String toString(RSAPrivateKey rsaPrivateKey) {
