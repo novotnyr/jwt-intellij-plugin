@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.github.novotnyr'
-version '0.10-SNAPSHOT'
+version '0.10'
 
 sourceCompatibility = 1.8
 
@@ -30,8 +30,10 @@ patchPluginXml {
     sinceBuild '144'
     changeNotes """
         <ul>
-        <li>Declare project-wise RS256 keypair files for JWT signatures. In <i>Preferences</i> (Tools / JWT), set path to a public key and a RSA private key. These will be used as default keypair in JWT validation.</li>
-        <li>Set minimum level to IntelliJ IDEA 16 or newer.</li>
+        <li>Support one-line private and public keys, separated with explicit '\n'. 
+        This allows to import keys from various APIs that are collapsed to single lines.'</li>
+        <li>Improve error handling in private and public keys. 
+        Both explicit keys and file-based keys are lead to better common error messages.</li>
         </ul>
       """
 }
