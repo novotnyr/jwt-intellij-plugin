@@ -17,3 +17,11 @@ An IntelliJ IDEA plugin for JSON Web Tokens (JWT)
 
 ## Screenshots
 ![Screenshot](screenshot.png)
+
+## Usage
+
+After installation, toggle the JWT tool window via a button in the right section of the IDE window.
+
+![JWT Tool Window](screenshot-intellij-right-panel.png)
+
+Alternatively, you can display the JWT tool window via menu *View → Tool Windows → JWT*.
