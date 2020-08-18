@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.github.novotnyr'
-version '0.11-SNAPSHOT'
+version '0.11'
 
 sourceCompatibility = 1.8
 
@@ -30,10 +30,7 @@ patchPluginXml {
     sinceBuild '144'
     changeNotes """
         <ul>
-        <li>Support one-line private and public keys, separated with explicit '\n'. 
-        This allows to import keys from various APIs that are collapsed to single lines.'</li>
-        <li>Improve error handling in private and public keys. 
-        Both explicit keys and file-based keys are lead to better common error messages.</li>
+        <li>Fix clipboard handling of private keys</li>
         </ul>
       """
 }
