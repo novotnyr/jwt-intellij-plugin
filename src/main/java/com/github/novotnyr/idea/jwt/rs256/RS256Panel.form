@@ -27,7 +27,7 @@
             <properties/>
             <border type="none" title="RSA Private Key"/>
             <children>
-              <component id="ceb7d" class="com.intellij.ui.EditorTextField" binding="privateKeyEditorTextField">
+              <component id="ceb7d" class="com.intellij.ui.EditorTextField" binding="privateKeyEditorTextField" custom-create="true">
                 <constraints/>
                 <properties/>
               </component>
