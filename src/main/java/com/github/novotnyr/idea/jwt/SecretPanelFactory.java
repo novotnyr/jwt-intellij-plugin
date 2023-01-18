@@ -14,9 +14,9 @@ import java.util.Map;
 import static com.github.novotnyr.idea.jwt.SignatureAlgorithm.*;
 
 public class SecretPanelFactory {
-    private static SecretPanelFactory INSTANCE = new SecretPanelFactory();
+    private static final SecretPanelFactory INSTANCE = new SecretPanelFactory();
 
-    private Map<String, SecretPanel> panelCache = new LinkedHashMap<>();
+    private final Map<String, SecretPanel> panelCache = new LinkedHashMap<>();
 
     private SecretPanelFactory() {
     }
