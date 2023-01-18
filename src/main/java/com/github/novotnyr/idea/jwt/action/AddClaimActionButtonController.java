@@ -6,7 +6,7 @@ import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.ui.popup.JBPopup;
-import com.intellij.openapi.ui.popup.JBPopupFactory;
+import com.intellij.openapi.ui.popup.PopupChooserBuilder;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.AnActionButtonRunnable;
 import com.intellij.ui.AnActionButtonUpdater;
@@ -31,8 +31,7 @@ public class AddClaimActionButtonController implements AnActionButtonRunnable, A
         Collection<DataTypeRegistry.DataType> dataTypes = this.dataTypeRegistry.getDataTypes();
         final JBList<String> list = new JBList<>(render(dataTypes));
 
-        JBPopup popup = JBPopupFactory.getInstance()
-                .createListPopupBuilder(list)
+        JBPopup popup = new PopupChooserBuilder<>(list)
                 .setItemChoosenCallback(() -> onItemChosen(list))
                 .createPopup();
 
