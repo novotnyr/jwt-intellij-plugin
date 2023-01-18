@@ -31,6 +31,7 @@ patchPluginXml {
     changeNotes """
         <ul>
         <li>Support HMACSHA384 (HS384) algorithms</li>
+        <li>Support Private Keys in PKCS#8 format (<code>BEGIN PRIVATE KEY</code>)</li>        
         </ul>
       """
 }
