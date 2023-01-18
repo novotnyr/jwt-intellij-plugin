@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.asymmetric.rsa.KeyFactorySpi;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMException;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
@@ -49,12 +50,9 @@ public abstract class RsaUtils {
             if (pemKeyPairObject instanceof SubjectPublicKeyInfo) {
                 throw new SignatureContextException("Input is an RSA Public Key, but private key is expected");
             } else if (pemKeyPairObject instanceof PrivateKeyInfo) {
-                PrivateKeyInfo privateKeyInfo = (PrivateKeyInfo) pemKeyPairObject;
-                return (RSAPrivateKey) new KeyFactorySpi().generatePrivate(privateKeyInfo);
+                return extractPrivateKeyFromPkcs8((PrivateKeyInfo) pemKeyPairObject);
             } else if (pemKeyPairObject instanceof PEMKeyPair) {
-                PEMKeyPair pemKeyPair = (PEMKeyPair) pemKeyPairObject;
-                KeyPair keyPair = converter.getKeyPair(pemKeyPair);
-                return (RSAPrivateKey) keyPair.getPrivate();
+                return extractPrivateKeyFromPkcs1(converter, (PEMKeyPair) pemKeyPairObject);
             } else {
                 throw new SignatureContextException("Unsupported RSA private key type. Is this PKCS#8 or PKCS#1 Private Key?");
             }
@@ -63,6 +61,16 @@ public abstract class RsaUtils {
         } catch (IllegalArgumentException | NullPointerException | DecoderException e) {
             throw new SignatureContextException("Unable to parse RSA private key. Input is malformed", e);
         }
+    }
+
+    private static RSAPrivateKey extractPrivateKeyFromPkcs1(JcaPEMKeyConverter converter, PEMKeyPair pemKeyPairObject) throws PEMException {
+        PEMKeyPair pemKeyPair = pemKeyPairObject;
+        KeyPair keyPair = converter.getKeyPair(pemKeyPair);
+        return (RSAPrivateKey) keyPair.getPrivate();
+    }
+
+    private static RSAPrivateKey extractPrivateKeyFromPkcs8(PrivateKeyInfo pkcs8PrivateKey) throws IOException {
+        return (RSAPrivateKey) new KeyFactorySpi().generatePrivate(pkcs8PrivateKey);
     }
 
     public static RSAPublicKey getPublicKey(String publicKeyPem) {
