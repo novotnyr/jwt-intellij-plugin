@@ -14,7 +14,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler;
 import com.intellij.openapi.editor.actionSystem.EditorActionManager;
 import com.intellij.openapi.editor.ex.util.EditorUtil;
-import com.intellij.openapi.fileTypes.StdFileTypes;
+import com.intellij.openapi.fileTypes.FileTypes;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.EditorTextField;
 
@@ -23,9 +23,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import java.util.Objects;
 
-import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.MUTABLE;
-import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.NONE;
-import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.VALID;
+import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.*;
 
 public class RS256Panel extends SecretPanel {
     private final SignatureContext initialSignatureContext;
@@ -134,10 +132,10 @@ public class RS256Panel extends SecretPanel {
     }
 
     private void createUIComponents() {
-        this.publicKeyEditorTextField = new EditorTextField("", project, StdFileTypes.PLAIN_TEXT);
+        this.publicKeyEditorTextField = new EditorTextField("", project, FileTypes.PLAIN_TEXT);
         this.publicKeyEditorTextField.setOneLineMode(false);
 
-        this.privateKeyEditorTextField = new EditorTextField("", project, StdFileTypes.PLAIN_TEXT);
+        this.privateKeyEditorTextField = new EditorTextField("", project, FileTypes.PLAIN_TEXT);
         this.privateKeyEditorTextField.setOneLineMode(false);
     }
 }
