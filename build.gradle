@@ -30,7 +30,7 @@ patchPluginXml {
     sinceBuild '144'
     changeNotes """
         <ul>
-        <li>/li>
+        <li>Support HMACSHA384 (HS384) algorithms/li>
         </ul>
       """
 }
