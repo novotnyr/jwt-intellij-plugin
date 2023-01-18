@@ -1,7 +1,9 @@
 package com.github.novotnyr.idea.jwt.rs256;
 
 import com.github.novotnyr.idea.jwt.SignatureContextException;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jcajce.provider.asymmetric.rsa.KeyFactorySpi;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
@@ -46,10 +48,16 @@ public abstract class RsaUtils {
             Object pemKeyPairObject = pemParser.readObject();
             if (pemKeyPairObject instanceof SubjectPublicKeyInfo) {
                 throw new SignatureContextException("Input is an RSA Public Key, but private key is expected");
+            } else if (pemKeyPairObject instanceof PrivateKeyInfo) {
+                PrivateKeyInfo privateKeyInfo = (PrivateKeyInfo) pemKeyPairObject;
+                return (RSAPrivateKey) new KeyFactorySpi().generatePrivate(privateKeyInfo);
+            } else if (pemKeyPairObject instanceof PEMKeyPair) {
+                PEMKeyPair pemKeyPair = (PEMKeyPair) pemKeyPairObject;
+                KeyPair keyPair = converter.getKeyPair(pemKeyPair);
+                return (RSAPrivateKey) keyPair.getPrivate();
+            } else {
+                throw new SignatureContextException("Unsupported RSA private key type. Is this PKCS#8 or PKCS#1 Private Key?");
             }
-            PEMKeyPair pemKeyPair = (PEMKeyPair) pemKeyPairObject;
-            KeyPair keyPair = converter.getKeyPair(pemKeyPair);
-            return (RSAPrivateKey) keyPair.getPrivate();
         } catch (IOException e) {
             throw new SignatureContextException("Unable to parse RSA private key", e);
         } catch (IllegalArgumentException | NullPointerException | DecoderException e) {
