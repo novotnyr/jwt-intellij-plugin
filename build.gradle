@@ -27,7 +27,7 @@ intellij {
     updateSinceUntilBuild false
 }
 patchPluginXml {
-    sinceBuild '144'
+    sinceBuild '203'
     changeNotes """
         <ul>
         <li>Require at least IntelliJ 2020.3</li>
