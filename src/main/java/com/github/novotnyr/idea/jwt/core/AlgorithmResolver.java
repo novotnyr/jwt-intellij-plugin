@@ -1,10 +1,12 @@
 package com.github.novotnyr.idea.jwt.core;
 
 import com.auth0.jwt.algorithms.Algorithm;
-import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
-import com.github.novotnyr.idea.jwt.rs256.RS256SignatureContext;
 import com.github.novotnyr.idea.jwt.SecretNotSpecifiedException;
+import com.github.novotnyr.idea.jwt.SignatureAlgorithm;
 import com.github.novotnyr.idea.jwt.SignatureContext;
+import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
+import com.github.novotnyr.idea.jwt.hs384.HS384SignatureContext;
+import com.github.novotnyr.idea.jwt.rs256.RS256SignatureContext;
 import com.github.novotnyr.idea.jwt.validation.UnknownAlgorithmException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +26,22 @@ public class AlgorithmResolver {
                     try {
                         String secret = ((HS256SignatureContext) signatureContext).getSecret();
                         algorithm = Algorithm.HMAC256(secret);
+                    } catch (UnsupportedEncodingException e) {
+                        // UTF-8 should be supported everywhere on JVM, so this
+                        // won't happen
+                        logger.error("Unsupported encoding", e);
+                        throw new UnknownAlgorithmException(algorithmName);
+                    }
+                }
+                break;
+            }
+            case SignatureAlgorithm.HS384: {
+                if(signatureContext == null) {
+                    throw new SecretNotSpecifiedException();
+                } else if (signatureContext instanceof HS384SignatureContext) {
+                    try {
+                        String secret = ((HS384SignatureContext) signatureContext).getSecret();
+                        algorithm = Algorithm.HMAC384(secret);
                     } catch (UnsupportedEncodingException e) {
                         // UTF-8 should be supported everywhere on JVM, so this
                         // won't happen

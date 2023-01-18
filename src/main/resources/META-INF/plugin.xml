@@ -8,7 +8,7 @@
     JSON Web Token Parser and Analyzer.
     <ul>
       <li>Visualize JWT contents in a tabular form</li>
-      <li>Verify signature (HS256 and RS256 support)</li>
+      <li>Verify signature (HS256, HS384 and RS256 support)</li>
       <li>Verify validity of timestamp-based claims</li>
       <li>Visualize timestamp-based claims in unix / ISO / human relative format</li>
       <li>Edit claim values: dedicated editor for string, timestamp, boolean, numeric and raw JSON values</li>

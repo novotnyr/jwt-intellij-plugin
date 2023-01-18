@@ -29,7 +29,7 @@ public class NewJwtDialog extends DialogWrapper {
     @Nullable
     private final Project project;
 
-    private static final String[] ALGORITHMS = {"HS256", "RS256"};
+    private static final String[] ALGORITHMS = {"HS256", "RS256", "HS384"};
 
     private JComboBox<String> algorithmComboBox;
     private JPanel rootPanel;
