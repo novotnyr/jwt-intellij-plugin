@@ -9,11 +9,11 @@ import java.lang.reflect.Method;
 
 public abstract class Icons {
     public static Icon createScratchFile() {
-        return IconLoader.getIcon("/icons/openNewTab.svg");
+        return IconLoader.getIcon("/icons/openNewTab.svg", Icons.class);
     }
 
     public static Icon export() {
-        Icon icon = IconLoader.getIcon("/actions/export.png");
+        Icon icon = IconLoader.getIcon("/actions/export.png", Icons.class);
         //noinspection ConstantConditions
         if (icon != null) {
             return icon;
