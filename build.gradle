@@ -23,7 +23,7 @@ dependencies {
 }
 
 intellij {
-    version '2018.1'
+    version '2020.3'
     updateSinceUntilBuild false
 }
 patchPluginXml {
