@@ -19,7 +19,7 @@ public class AlgorithmResolver {
     public Algorithm resolve(String algorithmName, SignatureContext signatureContext) {
         Algorithm algorithm = null;
         switch (algorithmName) {
-            case "HS256" : {
+            case SignatureAlgorithm.HS256: {
                 if(signatureContext == null) {
                     throw new SecretNotSpecifiedException();
                 } else if (signatureContext instanceof HS256SignatureContext) {
@@ -51,7 +51,7 @@ public class AlgorithmResolver {
                 }
                 break;
             }
-            case "RS256" : {
+            case SignatureAlgorithm.RS256: {
                 if(signatureContext == null) {
                     throw new SecretNotSpecifiedException();
                 } else if (signatureContext instanceof RS256SignatureContext) {
