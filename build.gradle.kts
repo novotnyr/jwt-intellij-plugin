@@ -16,7 +16,7 @@ dependencies {
     implementation("org.ocpsoft.prettytime:prettytime:4.0.2.Final")
     implementation("org.bouncycastle:bcpkix-jdk15on:1.61")
 
-    testImplementation("junit:junit:4.12")
+    testImplementation("junit:junit:4.13.2")
 }
 
 intellij {
