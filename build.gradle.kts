@@ -20,8 +20,8 @@ dependencies {
 }
 
 intellij {
-    version.set("2021.1")
-    type.set("IC")
+    version = "2021.1"
+    type = "IC"
 }
 
 tasks {
@@ -31,7 +31,7 @@ tasks {
     }
 
     patchPluginXml {
-        sinceBuild.set("211")
+        sinceBuild = "211"
     }
 
     buildSearchableOptions {
@@ -40,6 +40,6 @@ tasks {
 
     publishPlugin {
         val intellijPublishToken: String by project
-        token.set(intellijPublishToken)
+        token = intellijPublishToken
     }
 }
