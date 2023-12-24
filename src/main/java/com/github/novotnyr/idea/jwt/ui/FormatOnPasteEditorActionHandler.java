@@ -122,12 +122,12 @@ public class FormatOnPasteEditorActionHandler extends EditorActionHandler implem
         return null;
     }
 
-    @Override
-    public void execute(Editor editor, DataContext dataContext, Producer<Transferable> producer) {
-        doExecute(editor, null, dataContext);
-    }
-
     public static String sanitize(String rawClipboard, String formattedClipboard) {
         return RsaUtils.sanitizeWhitespace(formattedClipboard);
+    }
+
+    @Override
+    public void execute(Editor editor, DataContext dataContext, @Nullable Producer<? extends Transferable> producer) {
+        doExecute(editor, null, dataContext);
     }
 }
