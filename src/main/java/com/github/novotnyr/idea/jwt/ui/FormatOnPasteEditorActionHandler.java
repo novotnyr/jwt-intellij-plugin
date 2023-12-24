@@ -122,7 +122,7 @@ public class FormatOnPasteEditorActionHandler extends EditorActionHandler implem
         return null;
     }
 
-    public static String sanitize(String rawClipboard, String formattedClipboard) {
+    public static String sanitize(@SuppressWarnings("unused") String rawClipboard, String formattedClipboard) {
         return RsaUtils.sanitizeWhitespace(formattedClipboard);
     }
 
