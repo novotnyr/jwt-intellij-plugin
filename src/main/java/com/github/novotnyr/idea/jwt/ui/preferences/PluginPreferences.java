@@ -1,7 +1,6 @@
 package com.github.novotnyr.idea.jwt.ui.preferences;
 
 import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
@@ -16,7 +15,7 @@ public class PluginPreferences implements PersistentStateComponent<PluginPrefere
     private String rs256PublicKeyFile;
 
     public static PluginPreferences getInstance(Project project) {
-        return ServiceManager.getService(project, PluginPreferences.class);
+        return project.getService(PluginPreferences.class);
     }
 
     @Nullable
