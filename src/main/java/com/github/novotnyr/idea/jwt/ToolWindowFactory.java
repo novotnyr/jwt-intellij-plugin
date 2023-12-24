@@ -24,13 +24,13 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
 
         if(toolWindow instanceof ToolWindowEx) {
             ToolWindowEx extendedToolWindow = (ToolWindowEx) toolWindow;
-            extendedToolWindow.setAdditionalGearActions(getToolWindowActionGroup(jwtExplorer));
+            extendedToolWindow.setAdditionalGearActions(getToolWindowActionGroup());
         }
 
         content.setDisposer(jwtExplorer);
     }
 
-    private ActionGroup getToolWindowActionGroup(JwtExplorer jwtExplorer) {
+    private ActionGroup getToolWindowActionGroup() {
         DefaultActionGroup actionGroup = new DefaultActionGroup("Timestamp format", true);
         actionGroup.add(new CheckboxAction("Unix timestamp") {
             @Override
