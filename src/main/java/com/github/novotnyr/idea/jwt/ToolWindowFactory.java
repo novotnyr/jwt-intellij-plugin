@@ -34,34 +34,34 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
         DefaultActionGroup actionGroup = new DefaultActionGroup("Timestamp format", true);
         actionGroup.add(new CheckboxAction("Unix timestamp") {
             @Override
-            public boolean isSelected(AnActionEvent anActionEvent) {
+            public boolean isSelected(@NotNull AnActionEvent anActionEvent) {
                 return Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.RAW;
             }
 
             @Override
-            public void setSelected(AnActionEvent anActionEvent, boolean state) {
+            public void setSelected(@NotNull AnActionEvent anActionEvent, boolean state) {
                 Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.RAW);
             }
         });
         actionGroup.add(new CheckboxAction("ISO") {
             @Override
-            public boolean isSelected(AnActionEvent anActionEvent) {
+            public boolean isSelected(@NotNull AnActionEvent anActionEvent) {
                 return Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.ISO;
             }
 
             @Override
-            public void setSelected(AnActionEvent anActionEvent, boolean state) {
+            public void setSelected(@NotNull AnActionEvent anActionEvent, boolean state) {
                 Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.ISO);
             }
         });
         actionGroup.add(new CheckboxAction("Relative") {
             @Override
-            public boolean isSelected(AnActionEvent anActionEvent) {
+            public boolean isSelected(@NotNull AnActionEvent anActionEvent) {
                 return Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.RELATIVE;
             }
 
             @Override
-            public void setSelected(AnActionEvent anActionEvent, boolean state) {
+            public void setSelected(@NotNull AnActionEvent anActionEvent, boolean state) {
                 Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.RELATIVE);
             }
         });
