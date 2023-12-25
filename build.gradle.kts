@@ -31,7 +31,7 @@ tasks {
     }
 
     patchPluginXml {
-        sinceBuild = "211.*"
+        sinceBuild = "211"
         untilBuild = "233.*"
     }
 
