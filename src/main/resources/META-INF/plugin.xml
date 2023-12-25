@@ -21,7 +21,8 @@
     <depends>com.intellij.modules.lang</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="JWT" anchor="right" factoryClass="com.github.novotnyr.idea.jwt.ToolWindowFactory"/>
+        <toolWindow id="JWT" anchor="right" factoryClass="com.github.novotnyr.idea.jwt.ToolWindowFactory"
+                    icon="/icons/toolwindow-icon.svg" />
         <projectConfigurable instance="com.github.novotnyr.idea.jwt.ui.preferences.PreferencesConfigurable" groupId="tools"/>
         <projectService serviceImplementation="com.github.novotnyr.idea.jwt.ui.preferences.PluginPreferences"/>
     </extensions>
