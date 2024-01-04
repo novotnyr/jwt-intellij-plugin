@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.github.novotnyr"
-version = "0.13-SNAPSHOT"
+version = "0.13"
 
 repositories {
     mavenCentral()
@@ -33,6 +33,12 @@ tasks {
     patchPluginXml {
         sinceBuild = "211"
         untilBuild = "233.*"
+        changeNotes = """
+            <ul>
+            <li>Introduce tool window icon</li>
+            <li>Improve compatibility with the latest platforms</li>
+            </ul>
+        """.trimIndent()
     }
 
     buildSearchableOptions {
