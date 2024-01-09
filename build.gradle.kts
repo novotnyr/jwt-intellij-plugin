@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.github.novotnyr"
-version = "0.13"
+version = "0.14-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -35,8 +35,7 @@ tasks {
         untilBuild = "233.*"
         changeNotes = """
             <ul>
-            <li>Introduce tool window icon</li>
-            <li>Improve compatibility with the latest platforms</li>
+            <li></li>
             </ul>
         """.trimIndent()
     }
