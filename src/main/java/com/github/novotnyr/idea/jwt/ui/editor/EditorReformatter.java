@@ -12,15 +12,13 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 
-import static com.twelvemonkeys.lang.SystemUtil.isClassAvailable;
-
 public class EditorReformatter {
 
     public static final String FILE_IN_EDITOR_PROCESSOR_CLASS_NAME = "com.intellij.codeInsight.actions.FileInEditorProcessor";
 
     @SuppressWarnings("MissingRecentApi")
     public void reformatActiveEditor(Project project, VirtualFile virtualFile) {
-        if (!isClassAvailable(FILE_IN_EDITOR_PROCESSOR_CLASS_NAME)) {
+        if (!isFileInEditorProcessorAvailable()) {
             return;
         }
         PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
@@ -39,4 +37,13 @@ public class EditorReformatter {
         new FileInEditorProcessor(psiFile, selectedTextEditor, currentRunOptions).processCode();
     }
 
+    private boolean isFileInEditorProcessorAvailable() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Class.forName(FILE_IN_EDITOR_PROCESSOR_CLASS_NAME, false, classLoader);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }
