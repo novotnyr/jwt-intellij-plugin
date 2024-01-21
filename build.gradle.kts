@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.github.novotnyr"
-version = "0.14-SNAPSHOT"
+version = "0.14"
 
 repositories {
     mavenCentral()
@@ -35,7 +35,7 @@ tasks {
         untilBuild = "233.*"
         changeNotes = """
             <ul>
-            <li></li>
+            <li>Make compatible with 2023.3</li>
             </ul>
         """.trimIndent()
     }
