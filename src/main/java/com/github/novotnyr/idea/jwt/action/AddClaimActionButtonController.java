@@ -32,7 +32,7 @@ public class AddClaimActionButtonController implements AnActionButtonRunnable, A
         final JBList<String> list = new JBList<>(render(dataTypes));
 
         JBPopup popup = new PopupChooserBuilder<>(list)
-                .setItemChoosenCallback(() -> onItemChosen(list))
+                .setItemChosenCallback(s -> onItemChosen(list))
                 .createPopup();
 
         final RelativePoint popupPoint = button.getPreferredPopupPoint();
