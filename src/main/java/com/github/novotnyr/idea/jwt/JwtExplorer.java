@@ -21,7 +21,6 @@ import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.JBSplitter;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.util.ui.JBUI;
-import org.apache.commons.lang.StringUtils;
 
 public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
 
