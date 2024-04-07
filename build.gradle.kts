@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.github.novotnyr"
-version = "0.15"
+version = "0.16-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -35,8 +35,7 @@ tasks {
         untilBuild = "241.*"
         changeNotes = """
             <ul>
-            <li>Make compatible with 2024.1</li>
-            <li>Require at least 2022.1</li>
+            <li></li>
             </ul>
         """.trimIndent()
     }
