@@ -10,10 +10,8 @@ import com.intellij.openapi.ui.popup.PopupChooserBuilder;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.AnActionButtonRunnable;
 import com.intellij.ui.AnActionButtonUpdater;
-import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBList;
 
-import javax.swing.JComponent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -35,13 +33,7 @@ public class AddClaimActionButtonController implements AnActionButtonRunnable, A
                 .setItemChosenCallback(s -> onItemChosen(list))
                 .createPopup();
 
-        final RelativePoint popupPoint = button.getPreferredPopupPoint();
-        if (popupPoint != null) {
-            popup.show(popupPoint);
-        } else {
-            JComponent contextComponent = button.getContextComponent();
-            popup.showInCenterOf(contextComponent);
-        }
+        popup.show(button.getPreferredPopupPoint());
     }
 
     private List<String> render(Collection<DataTypeRegistry.DataType> dataTypes) {
