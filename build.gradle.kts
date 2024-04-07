@@ -35,7 +35,8 @@ tasks {
         untilBuild = "241.*"
         changeNotes = """
             <ul>
-            <li></li>
+            <li>Make compatible with 2024.1</li>
+            <li>Require at least 2022.1</li>
             </ul>
         """.trimIndent()
     }
