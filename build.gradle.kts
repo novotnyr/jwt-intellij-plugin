@@ -20,7 +20,7 @@ dependencies {
 }
 
 intellij {
-    version = "2021.1"
+    version = "2022.1"
     type = "IC"
 }
 
