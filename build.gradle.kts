@@ -43,7 +43,6 @@ intellijPlatform {
         val intellijPublishToken: String by project
         token = intellijPublishToken
     }
-    buildSearchableOptions = false
 }
 
 tasks {
