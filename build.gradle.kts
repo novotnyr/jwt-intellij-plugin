@@ -1,6 +1,6 @@
 plugins {
     id("java")
-    id("org.jetbrains.intellij") version "1.17.3"
+    id("org.jetbrains.intellij.platform") version "2.0.0-beta1"
 }
 
 group = "com.github.novotnyr"
@@ -8,6 +8,9 @@ version = "0.16-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
 dependencies {
@@ -17,35 +20,35 @@ dependencies {
     implementation("org.bouncycastle:bcpkix-jdk15on:1.61")
 
     testImplementation("junit:junit:4.13.2")
-}
 
-intellij {
-    version = "2022.1"
-    type = "IC"
-}
-
-tasks {
-    withType<JavaCompile> {
-        sourceCompatibility = "11"
-        targetCompatibility = "11"
+    intellijPlatform {
+        intellijIdeaCommunity("2022.3.3")
+        instrumentationTools()
     }
+}
 
-    patchPluginXml {
-        sinceBuild = "221"
-        untilBuild = "241.*"
+intellijPlatform {
+    pluginConfiguration {
+        ideaVersion {
+            sinceBuild = "223"
+            untilBuild = "233.*"
+        }
         changeNotes = """
             <ul>
             <li></li>
             </ul>
         """.trimIndent()
     }
-
-    buildSearchableOptions {
-        enabled = false
-    }
-
-    publishPlugin {
+    publishing {
         val intellijPublishToken: String by project
         token = intellijPublishToken
+    }
+    buildSearchableOptions = false
+}
+
+tasks {
+    withType<JavaCompile> {
+        sourceCompatibility = "17"
+        targetCompatibility = "17"
     }
 }
