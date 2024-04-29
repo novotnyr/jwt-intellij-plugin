@@ -51,9 +51,8 @@ intellijPlatform {
     }
 }
 
-tasks {
-    withType<JavaCompile> {
-        sourceCompatibility = "17"
-        targetCompatibility = "17"
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
