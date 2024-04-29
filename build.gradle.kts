@@ -24,6 +24,7 @@ dependencies {
     intellijPlatform {
         intellijIdeaCommunity("2022.3.3")
         instrumentationTools()
+        pluginVerifier()
     }
 }
 
@@ -42,6 +43,11 @@ intellijPlatform {
     publishing {
         val intellijPublishToken: String by project
         token = intellijPublishToken
+    }
+    verifyPlugin {
+        ides {
+            recommended()
+        }
     }
 }
 
