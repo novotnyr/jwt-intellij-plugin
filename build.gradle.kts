@@ -1,6 +1,6 @@
 plugins {
     id("java")
-    id("org.jetbrains.intellij.platform") version "2.0.0-beta1"
+    id("org.jetbrains.intellij.platform") version "2.0.0-SNAPSHOT"
 }
 
 group = "com.github.novotnyr"
