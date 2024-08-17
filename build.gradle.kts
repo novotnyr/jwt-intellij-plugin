@@ -44,7 +44,7 @@ intellijPlatform {
         val intellijPublishToken: String by project
         token = intellijPublishToken
     }
-    verifyPlugin {
+    pluginVerification {
         ides {
             recommended()
         }
