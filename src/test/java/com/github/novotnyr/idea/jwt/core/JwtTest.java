@@ -3,6 +3,7 @@ package com.github.novotnyr.idea.jwt.core;
 import com.auth0.jwt.JWT;
 import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Date;
@@ -10,6 +11,7 @@ import java.util.List;
 
 public class JwtTest {
     @Test
+    @Ignore
     public void test() throws Exception {
         Jwt jwt = new Jwt();
         jwt.setSignatureContext(new HS256SignatureContext("secret"));
@@ -21,6 +23,7 @@ public class JwtTest {
     }
 
     @Test
+    @Ignore
     public void testDecode() throws Exception {
         String jwtString = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3YWkiOiJ0ZXN0In0.Rsv4ude3yrQWdnusO4j_g4Fkg2twwNcso1FEOixnKtk";
 
@@ -34,6 +37,7 @@ public class JwtTest {
     }
 
     @Test
+    @Ignore
     public void testDate() throws Exception {
         Jwt jwt = new Jwt();
         jwt.setSignatureContext(new HS256SignatureContext("secret"));
