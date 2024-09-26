@@ -302,7 +302,7 @@ public class JwtPanel implements DataProvider {
             return null;
         };
 
-        AnActionEvent event = AnActionEvent.createFromDataContext("place", null, dataContext);
+        AnActionEvent event = AnActionEvent.createFromInputEvent(null, "place", null, dataContext);
         this.addClaimActionButtonController.isEnabled(event);
         this.editClaimActionButtonUpdater.isEnabled(event);
         this.validateButton.setEnabled(isValidatable());
