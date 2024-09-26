@@ -14,6 +14,7 @@ import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.github.novotnyr.idea.jwt.validation.JwtValidator;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.CopyPasteManagerEx;
+import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.DataProvider;
@@ -24,6 +25,7 @@ import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.TextTransferable;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.AbstractAction;
@@ -150,15 +152,16 @@ public class JwtPanel implements DataProvider {
 
         this.claimsTablePanel = ToolbarDecorator.createDecorator(this.claimsTable)
                 .disableUpDownActions()
-                .addExtraAction(new AnActionButton("Copy payload as JSON", AllIcons.FileTypes.Json) {
+                .addExtraAction(new AnAction("Copy payload as JSON", null, AllIcons.FileTypes.Json) {
                     @Override
-                    public void actionPerformed(AnActionEvent anActionEvent) {
+                    public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
                         onCopyAsJsonActionPerformed(anActionEvent);
                     }
 
                     @Override
-                    public boolean isEnabled() {
-                        return !JwtPanel.this.jwt.getPayloadClaims().isEmpty();
+                    public void update(@NotNull AnActionEvent e) {
+                        e.getPresentation()
+                         .setEnabled(!JwtPanel.this.jwt.getPayloadClaims().isEmpty());
                     }
                 })
                 .setEditAction(this::onEditAction)
