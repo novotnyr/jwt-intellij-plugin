@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.github.novotnyr"
-version = "0.17-SNAPSHOT"
+version = "0.17"
 
 repositories {
     mavenCentral()
@@ -36,8 +36,7 @@ intellijPlatform {
         }
         changeNotes = """
             <ul>
-            <li>Make compatible with 2024.2</li>
-            <li>Require at least 2022.3</li>
+            <li>Make compatible with 2024.3</li>
             </ul>
         """.trimIndent()
     }
