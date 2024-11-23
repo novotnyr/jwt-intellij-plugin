@@ -1,6 +1,7 @@
 package com.github.novotnyr.idea.jwt;
 
 import com.intellij.openapi.actionSystem.ActionGroup;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.ex.CheckboxAction;
@@ -50,6 +51,11 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
             public void setSelected(@NotNull AnActionEvent anActionEvent, boolean state) {
                 Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.RAW);
             }
+
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.BGT;
+            }
         });
         actionGroup.add(new CheckboxAction("ISO") {
             @Override
@@ -61,6 +67,11 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
             public void setSelected(@NotNull AnActionEvent anActionEvent, boolean state) {
                 Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.ISO);
             }
+
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.BGT;
+            }
         });
         actionGroup.add(new CheckboxAction("Relative") {
             @Override
@@ -71,6 +82,11 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
             @Override
             public void setSelected(@NotNull AnActionEvent anActionEvent, boolean state) {
                 Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.RELATIVE);
+            }
+
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.BGT;
             }
         });
 

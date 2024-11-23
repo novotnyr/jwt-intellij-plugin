@@ -14,6 +14,7 @@ import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.github.novotnyr.idea.jwt.validation.JwtValidator;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.CopyPasteManagerEx;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataContext;
@@ -162,6 +163,11 @@ public class JwtPanel implements DataProvider {
                     public void update(@NotNull AnActionEvent e) {
                         e.getPresentation()
                          .setEnabled(!JwtPanel.this.jwt.getPayloadClaims().isEmpty());
+                    }
+
+                    @Override
+                    public @NotNull ActionUpdateThread getActionUpdateThread() {
+                        return ActionUpdateThread.BGT;
                     }
                 })
                 .setEditAction(this::onEditAction)

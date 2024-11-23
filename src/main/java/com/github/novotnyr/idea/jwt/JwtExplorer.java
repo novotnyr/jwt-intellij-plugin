@@ -10,6 +10,7 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
@@ -21,6 +22,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.JBSplitter;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.util.ui.JBUI;
+import org.jetbrains.annotations.NotNull;
 
 public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
 
@@ -105,11 +107,21 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
             public void update(AnActionEvent e) {
                 e.getPresentation().setEnabled(!JwtExplorer.this.jwt.isEmpty());
             }
+
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.BGT;
+            }
         });
         group.add(new CreateScratchFileAction() {
             @Override
             protected Jwt getJwt() {
                 return JwtExplorer.this.jwt;
+            }
+
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
             }
         });
 
