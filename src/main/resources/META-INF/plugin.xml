@@ -19,6 +19,7 @@
     <idea-version since-build="211.0"/>
 
     <depends>com.intellij.modules.lang</depends>
+    <depends>com.intellij.modules.json</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="JWT" anchor="right" factoryClass="com.github.novotnyr.idea.jwt.ToolWindowFactory"
