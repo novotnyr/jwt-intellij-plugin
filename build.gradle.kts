@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.github.novotnyr"
-version = "0.18-SNAPSHOT"
+version = "0.18"
 
 repositories {
     mavenCentral()
@@ -36,7 +36,7 @@ intellijPlatform {
         }
         changeNotes = """
             <ul>
-            <li>Make compatible with 2024.3</li>
+            <li>Fix error popups with undeclared thread in Actions</li>
             </ul>
         """.trimIndent()
     }
