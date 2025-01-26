@@ -32,7 +32,7 @@ intellijPlatform {
     pluginConfiguration {
         ideaVersion {
             sinceBuild = "223"
-            untilBuild = "243.*"
+            untilBuild = "251.*"
         }
         changeNotes = """
             <ul>
