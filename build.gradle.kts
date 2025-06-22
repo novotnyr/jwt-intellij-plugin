@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.github.novotnyr"
-version = "0.20"
+version = "0.21-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -35,7 +35,7 @@ intellijPlatform {
         }
         changeNotes = """
             <ul>
-            <li>Make compatible with Platform 2025.2</li>
+            <li></li>
             </ul>
         """.trimIndent()
     }
