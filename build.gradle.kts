@@ -22,7 +22,7 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
 
     intellijPlatform {
-        intellijIdeaCommunity("2022.3.3")
+        intellijIdeaCommunity("2023.1.7")
         pluginVerifier()
     }
 }
@@ -30,12 +30,13 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "223"
-            untilBuild = "252.*"
+            sinceBuild = "231"
+            untilBuild = "253.*"
         }
         changeNotes = """
             <ul>
-            <li></li>
+            <li>Require at least Platform 2023.1</li>
+            <li>Make compatible with Platform 2025.3</li>
             </ul>
         """.trimIndent()
     }
