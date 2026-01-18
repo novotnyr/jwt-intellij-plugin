@@ -17,8 +17,9 @@ import com.intellij.openapi.editor.ex.util.EditorUtil;
 import com.intellij.openapi.fileTypes.FileTypes;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.EditorTextField;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import java.util.Objects;
@@ -101,7 +102,7 @@ public class RS256Panel extends SecretPanel {
     }
 
     @Override
-    public void setSignatureContextChangedListener(@Nonnull SignatureContextChangedListener listener) {
+    public void setSignatureContextChangedListener(@NonNull SignatureContextChangedListener listener) {
         super.setSignatureContextChangedListener(listener);
 
         this.documentListener = new DelegatingDocumentListener<SignatureContextChangedListener>(listener) {
@@ -127,7 +128,7 @@ public class RS256Panel extends SecretPanel {
     }
 
     @Override
-    public void setProject(@javax.annotation.Nullable Project project) {
+    public void setProject(@Nullable Project project) {
         this.project = project;
     }
 

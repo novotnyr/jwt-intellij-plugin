@@ -9,9 +9,9 @@ import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.TextAccessor;
 import com.intellij.ui.awt.RelativePoint;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.swing.JComponent;
 import javax.swing.text.JTextComponent;
 
@@ -70,7 +70,7 @@ public abstract class SecretPanel {
 
     public abstract void setSignatureContext(SignatureContext signatureContext);
 
-    public void setSignatureContextChangedListener(@Nonnull SignatureContextChangedListener listener) {
+    public void setSignatureContextChangedListener(@NonNull SignatureContextChangedListener listener) {
         this.signatureContextChangedListener = listener;
     }
 

@@ -6,8 +6,8 @@ import com.github.novotnyr.idea.jwt.hs384.HS384Panel;
 import com.github.novotnyr.idea.jwt.rs256.RS256Panel;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 import com.intellij.openapi.project.Project;
+import org.jspecify.annotations.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -25,8 +25,8 @@ public class SecretPanelFactory {
         return INSTANCE;
     }
 
-    @Nonnull
-    public SecretPanel getSecretPanel(Project project, @Nonnull String algorithmName, SignatureContext initialSignatureContext) {
+    @NonNull
+    public SecretPanel getSecretPanel(Project project, @NonNull String algorithmName, SignatureContext initialSignatureContext) {
         switch (algorithmName) {
             case HS256:
                 if (!this.panelCache.containsKey(HS256)) {

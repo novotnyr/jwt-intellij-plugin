@@ -3,8 +3,8 @@ package com.github.novotnyr.idea.jwt;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SignatureContextChangedListener;
+import org.jspecify.annotations.NonNull;
 
-import javax.annotation.Nonnull;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -39,7 +39,7 @@ public class UnrecognizedSecretPanel extends SecretPanel {
     }
 
     @Override
-    public void setSignatureContextChangedListener(@Nonnull SignatureContextChangedListener listener) {
+    public void setSignatureContextChangedListener(@NonNull SignatureContextChangedListener listener) {
         super.setSignatureContextChangedListener(listener);
         listener.onSignatureContextChanged(SignatureContext.EMPTY);
     }
