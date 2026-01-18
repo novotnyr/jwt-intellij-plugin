@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.github.novotnyr"
-version = "0.21"
+version = "0.22-SNAPSHOT"
 
 repositories {
     mavenCentral()
