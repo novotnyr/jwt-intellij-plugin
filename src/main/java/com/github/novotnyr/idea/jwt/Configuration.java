@@ -1,22 +1,17 @@
 package com.github.novotnyr.idea.jwt;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public enum Configuration {
     INSTANCE;
+
+    private static final List<String> TIMESTAMP_DATE_FIELDS = List.of("exp", "nbf", "iat");
 
     public enum TimestampFormat {
         RAW, ISO, RELATIVE
     }
 
     private TimestampFormat timestampFormat = TimestampFormat.ISO;
-
-    private List<String> timestampDateFields = new ArrayList<String>() {{
-        add("exp");
-        add("nbf");
-        add("iat");
-    }};
 
     public TimestampFormat getTimestampFormat() {
         return timestampFormat;
@@ -27,6 +22,6 @@ public enum Configuration {
     }
 
     public List<String> getTimestampDateFields() {
-        return timestampDateFields;
+        return TIMESTAMP_DATE_FIELDS;
     }
 }
