@@ -23,7 +23,7 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
 
     intellijPlatform {
-        intellijIdeaCommunity("2023.1.7")
+        intellijIdeaCommunity("2024.2")
         pluginVerifier()
     }
 }
@@ -31,7 +31,7 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "231"
+            sinceBuild = "242"
         }
         changeNotes = """
             <ul>
@@ -51,6 +51,6 @@ intellijPlatform {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
