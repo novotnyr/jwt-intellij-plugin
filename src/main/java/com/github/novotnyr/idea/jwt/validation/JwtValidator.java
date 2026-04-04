@@ -1,9 +1,9 @@
 package com.github.novotnyr.idea.jwt.validation;
 
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.RegisteredClaims;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.SignatureVerificationException;
-import com.auth0.jwt.impl.PublicClaims;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.core.AlgorithmResolver;
@@ -30,9 +30,9 @@ public class JwtValidator {
     }
 
     private JwtValidator validateClaims(DecodedJWT jwt) {
-        assertInFuture(jwt, PublicClaims.EXPIRES_AT);
-        assertInPast(jwt, PublicClaims.ISSUED_AT);
-        assertInPast(jwt, PublicClaims.NOT_BEFORE);
+        assertInFuture(jwt, RegisteredClaims.EXPIRES_AT);
+        assertInPast(jwt, RegisteredClaims.ISSUED_AT);
+        assertInPast(jwt, RegisteredClaims.NOT_BEFORE);
 
         return this;
     }

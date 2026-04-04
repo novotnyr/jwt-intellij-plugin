@@ -1,6 +1,5 @@
 package com.github.novotnyr.idea.jwt.core;
 
-import com.auth0.jwt.impl.NullClaim;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -45,22 +44,21 @@ public class Hacking {
     }
 
     private static Claim _claimFromNode(JsonNode node) {
-        if (node == null || node.isNull() || node.isMissingNode()) {
-            return new NullClaim();
+        if (NullClaim.supports(node)) {
+            return NullClaim.of(node);
+        } else {
+            return _newJsonNodeClaim(node);
         }
-        return _newJsonNodeClaim(node);
     }
 
     private static Claim _newJsonNodeClaim(JsonNode node) {
         try {
             //noinspection JavaReflectionMemberAccess
             Constructor<?> constructor = Class.forName("com.auth0.jwt.impl.JsonNodeClaim")
-                    .getDeclaredConstructor(JsonNode.class);
-            constructor.setAccessible(true);
+                                              .getConstructor(JsonNode.class);
             return (Claim) constructor.newInstance(node);
         } catch (Exception e) {
-            return new NullClaim();
+            return NullClaim.EMPTY_AND_MISSING;
         }
     }
-
 }

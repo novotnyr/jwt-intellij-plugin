@@ -1,9 +1,10 @@
 package com.github.novotnyr.idea.jwt.core;
 
+import com.auth0.jwt.HeaderParams;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.impl.ClaimsHolder;
-import com.auth0.jwt.impl.PublicClaims;
+import com.auth0.jwt.impl.PayloadClaimsHolder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -38,16 +39,16 @@ public class JwtBuilder {
 
     public String sign(String algorithmName, SignatureContext signatureContext) {
         Algorithm algorithm = this.algorithmResolver.resolve(algorithmName, signatureContext);
-        this.headerClaims.put(PublicClaims.ALGORITHM, algorithm.getName());
-        this.headerClaims.put(PublicClaims.TYPE, "JWT");
+        this.headerClaims.put(HeaderParams.ALGORITHM, algorithm.getName());
+        this.headerClaims.put(HeaderParams.TYPE, "JWT");
         String signingKeyId = algorithm.getSigningKeyId();
         if (signingKeyId != null) {
-            this.headerClaims.put(PublicClaims.KEY_ID, signingKeyId);
+            this.headerClaims.put(HeaderParams.KEY_ID, signingKeyId);
         }
 
         try {
             String headerJson = this.mapper.writeValueAsString(this.headerClaims);
-            String payloadJson = this.mapper.writeValueAsString(new ClaimsHolder(this.payloadClaims));
+            String payloadJson = this.mapper.writeValueAsString(new PayloadClaimsHolder(this.payloadClaims));
 
             String header = Base64.encodeBase64URLSafeString(headerJson.getBytes(StandardCharsets.UTF_8));
             String payload = Base64.encodeBase64URLSafeString(payloadJson.getBytes(StandardCharsets.UTF_8));

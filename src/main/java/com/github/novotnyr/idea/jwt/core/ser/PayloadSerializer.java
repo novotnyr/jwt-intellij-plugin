@@ -1,7 +1,7 @@
 package com.github.novotnyr.idea.jwt.core.ser;
 
+import com.auth0.jwt.RegisteredClaims;
 import com.auth0.jwt.impl.ClaimsHolder;
-import com.auth0.jwt.impl.PublicClaims;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
@@ -28,7 +28,7 @@ public class PayloadSerializer extends StdSerializer<ClaimsHolder> {
         Map<Object, Object> safePayload = new LinkedHashMap<>();
         for (Map.Entry<String, Object> e : getClaims(holder).entrySet()) {
             switch (e.getKey()) {
-                case PublicClaims.AUDIENCE:
+                case RegisteredClaims.AUDIENCE:
                     if (e.getValue() instanceof String) {
                         safePayload.put(e.getKey(), e.getValue());
                         break;
@@ -40,9 +40,9 @@ public class PayloadSerializer extends StdSerializer<ClaimsHolder> {
                         safePayload.put(e.getKey(), audArray);
                     }
                     break;
-                case PublicClaims.EXPIRES_AT:
-                case PublicClaims.ISSUED_AT:
-                case PublicClaims.NOT_BEFORE:
+                case RegisteredClaims.EXPIRES_AT:
+                case RegisteredClaims.ISSUED_AT:
+                case RegisteredClaims.NOT_BEFORE:
                     safePayload.put(e.getKey(), dateToSeconds((Date) e.getValue()));
                     break;
                 default:

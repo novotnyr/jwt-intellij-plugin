@@ -12,8 +12,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
-
 public class AlgorithmResolver {
     public static final Logger logger = LoggerFactory.getLogger(Algorithm.class);
 
@@ -27,30 +25,16 @@ public class AlgorithmResolver {
                 if(signatureContext == null) {
                     throw new SecretNotSpecifiedException();
                 } else if (signatureContext instanceof HS256SignatureContext) {
-                    try {
-                        String secret = ((HS256SignatureContext) signatureContext).getSecret();
-                        return Algorithm.HMAC256(secret);
-                    } catch (UnsupportedEncodingException e) {
-                        // UTF-8 should be supported everywhere on JVM, so this
-                        // won't happen
-                        logger.error("Unsupported encoding", e);
-                        throw new UnknownAlgorithmException(algorithmName);
-                    }
+                    String secret = ((HS256SignatureContext) signatureContext).getSecret();
+                    return Algorithm.HMAC256(secret);
                 }
             }
             case SignatureAlgorithm.HS384: {
                 if(signatureContext == null) {
                     throw new SecretNotSpecifiedException();
                 } else if (signatureContext instanceof HS384SignatureContext) {
-                    try {
-                        String secret = ((HS384SignatureContext) signatureContext).getSecret();
-                        return Algorithm.HMAC384(secret);
-                    } catch (UnsupportedEncodingException e) {
-                        // UTF-8 should be supported everywhere on JVM, so this
-                        // won't happen
-                        logger.error("Unsupported encoding", e);
-                        throw new UnknownAlgorithmException(algorithmName);
-                    }
+                    String secret = ((HS384SignatureContext) signatureContext).getSecret();
+                    return Algorithm.HMAC384(secret);
                 }
             }
             case SignatureAlgorithm.RS256: {
