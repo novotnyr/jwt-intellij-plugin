@@ -15,7 +15,6 @@ import com.github.novotnyr.idea.jwt.ui.claimpanel.StringClaimPanel;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.util.ui.JBUI;
-import org.apache.batik.ext.swing.GridBagConstants;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.JComponent;
@@ -113,7 +112,7 @@ public class ClaimDialog extends DialogWrapper {
         protected void initBottom(NamedClaim<?> claim, GridBagConstraints cColumn1, GridBagConstraints cColumns2) {
             cColumn1.gridy = 1;
             cColumns2.gridy = 1;
-            cColumns2.fill = GridBagConstants.BOTH;
+            cColumns2.fill = GridBagConstraints.BOTH;
             cColumns2.weighty = 1;
 
             add(this.claimValueTextLabel, cColumn1);
