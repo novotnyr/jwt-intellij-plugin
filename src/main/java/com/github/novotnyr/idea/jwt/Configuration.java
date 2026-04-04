@@ -29,9 +29,4 @@ public enum Configuration {
     public List<String> getTimestampDateFields() {
         return timestampDateFields;
     }
-
-    public void setTimestampDateFields(List<String> timestampDateFields) {
-        this.timestampDateFields = timestampDateFields;
-    }
-
 }
