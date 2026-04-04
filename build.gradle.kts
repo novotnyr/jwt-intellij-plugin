@@ -15,7 +15,7 @@ repositories {
 
 dependencies {
     implementation("org.jspecify:jspecify:1.0.0")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.8.4")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.21.2")
     implementation("com.auth0:java-jwt:4.5.1")
     implementation("org.ocpsoft.prettytime:prettytime:4.0.2.Final")
     implementation("org.bouncycastle:bcpkix-jdk15on:1.61")
