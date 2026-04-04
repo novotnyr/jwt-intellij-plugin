@@ -1,6 +1,6 @@
 plugins {
     id("java")
-    id("org.jetbrains.intellij.platform") version "2.10.0"
+    id("org.jetbrains.intellij.platform") version "2.13.1"
 }
 
 group = "com.github.novotnyr"
@@ -36,8 +36,6 @@ intellijPlatform {
         }
         changeNotes = """
             <ul>
-            <li>Require at least Platform 2023.1</li>
-            <li>Make compatible with Platform 2025.3</li>
             </ul>
         """.trimIndent()
     }
