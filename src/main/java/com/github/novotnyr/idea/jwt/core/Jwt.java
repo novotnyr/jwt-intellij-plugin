@@ -48,14 +48,6 @@ public class Jwt {
     }
 
     private Map<String, Claim> getClaims(DecodedJWT decodedJwt) {
-        try {
-            if (Hacking.isInstanceOfJWTDecoder(decodedJwt)) {
-                return Hacking.getClaims(decodedJwt);
-            }
-        } catch (Exception e) {
-            // do nothing, fall back to the regular and clean claim retrieval
-            e.printStackTrace();
-        }
         return decodedJwt.getClaims();
     }
 
