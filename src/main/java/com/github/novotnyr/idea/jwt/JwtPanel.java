@@ -56,7 +56,7 @@ public class JwtPanel implements DataProvider {
     @Nullable
     private Project project;
 
-    private PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);;
+    private PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
 
     private JPanel rootPanel = new BorderLayoutPanel();
 
@@ -68,7 +68,7 @@ public class JwtPanel implements DataProvider {
 
     private JwtClaimsTableModel claimsTableModel;
 
-    private JBTable claimsTable = new JBTable();;
+    private JBTable claimsTable = new JBTable();
 
     private JPanel claimsTablePanel;
 
