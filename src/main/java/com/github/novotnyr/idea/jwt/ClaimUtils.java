@@ -44,8 +44,7 @@ public class ClaimUtils {
     }
 
     public static boolean isDateClaim(String claimName, Claim claimValue) {
-        return claimValue.getClass() != null
-                && Configuration.INSTANCE.getTimestampDateFields().contains(claimName);
+        return Configuration.INSTANCE.getTimestampDateFields().contains(claimName);
     }
 
     public static NamedClaim<?> newEmptyClaim(DataType dataType) {

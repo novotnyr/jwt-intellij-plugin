@@ -12,8 +12,12 @@ public class DateClaim extends NamedClaim<Date> {
         if(getValue() == null) {
             return "null";
         } else {
-            return String.valueOf(this.getValue().getTime() / 1000);
+            return String.valueOf(getTimestamp());
         }
+    }
+
+    public long getTimestamp() {
+        return this.getValue().getTime() / 1000;
     }
 
     @Override
