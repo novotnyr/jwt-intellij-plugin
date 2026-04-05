@@ -72,7 +72,7 @@ public class JwtPanel implements DataProvider {
 
     private JPanel claimsTablePanel;
 
-    private JPanel secretPanelContainer = new JPanel();
+    private JPanel secretPanelContainer = new JPanel(new BorderLayout());
 
     private SecretPanel secretPanel = new UnrecognizedSecretPanel();
 
