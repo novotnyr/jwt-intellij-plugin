@@ -31,6 +31,7 @@ import com.intellij.util.ui.TextTransferable;
 import com.intellij.util.ui.components.BorderLayoutPanel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -102,7 +103,7 @@ public class JwtPanel implements DataProvider {
 
         new DoubleClickListener() {
             @Override
-            protected boolean onDoubleClick(MouseEvent mouseEvent) {
+            protected boolean onDoubleClick(@NonNull MouseEvent mouseEvent) {
                 return onClaimsTableDoubleClick(mouseEvent);
             }
         }.installOn(this.claimsTable);
@@ -163,7 +164,7 @@ public class JwtPanel implements DataProvider {
             }
 
             @Override
-            public boolean isEnabled(AnActionEvent anActionEvent) {
+            public boolean isEnabled(@NonNull AnActionEvent anActionEvent) {
                 return isRemoveClaimActionEnabled();
             }
         };
@@ -337,7 +338,7 @@ public class JwtPanel implements DataProvider {
 
     @Nullable
     @Override
-    public Object getData(String dataId) {
+    public Object getData(@NonNull String dataId) {
         if (Constants.DataKeys.SECRET.is(dataId)) {
             return this.secretPanel.getSignatureContext();
         }
