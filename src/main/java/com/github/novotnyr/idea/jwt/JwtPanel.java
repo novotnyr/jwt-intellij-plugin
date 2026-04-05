@@ -23,10 +23,9 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.DoubleClickListener;
+import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.JBSplitter;
-import com.intellij.ui.TitledSeparator;
 import com.intellij.ui.ToolbarDecorator;
-import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.TextTransferable;
 import com.intellij.util.ui.components.BorderLayoutPanel;
@@ -63,8 +62,6 @@ public class JwtPanel implements DataProvider {
     private JwtHeaderTableModel headerTableModel;
 
     private JBTable headerTable = new JBTable();
-
-    private TitledSeparator payloadLabel = new TitledSeparator("Payload");
 
     private JwtClaimsTableModel claimsTableModel;
 
@@ -119,25 +116,15 @@ public class JwtPanel implements DataProvider {
         this.rootPanel.add(this.validateButton, BorderLayout.SOUTH);
     }
 
-    /**
-     * Create a panel that contains the JWT header section.
-     * Additionally, it contains the static "Claims" label.
-     * This is to maintain a static height.
-     */
     private JComponent createHeaderTableAndClaimsLabelGroup() {
-        var panel = new BorderLayoutPanel();
-
         this.headerTable.setAutoResizeMode(JBTable.AUTO_RESIZE_ALL_COLUMNS);
         this.headerTable.setTableHeader(null);
         this.headerTable.setPreferredScrollableViewportSize(new Dimension(0, 2 * this.headerTable.getRowHeight()));
 
-        panel.addToTop(new JBScrollPane(this.headerTable));
-        panel.addToBottom(this.payloadLabel);
-
-        return panel;
+        return this.headerTable;
     }
 
-    private @Nullable JComponent createPayloadAndSecretPanels() {
+    private JComponent createPayloadAndSecretPanels() {
         var splitter = new JBSplitter(true);
         splitter.setFirstComponent(this.claimsTablePanel);
         splitter.setSecondComponent(this.secretPanelContainer);
@@ -207,6 +194,7 @@ public class JwtPanel implements DataProvider {
                 .setRemoveAction(this.removeClaimActionButtonController)
                 .setRemoveActionUpdater(this.removeClaimActionButtonController)
                 .createPanel();
+        this.claimsTablePanel.setBorder(IdeBorderFactory.createTitledBorder("Payload", false));
         return this.claimsTablePanel;
     }
 
