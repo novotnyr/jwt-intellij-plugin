@@ -40,6 +40,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeListener;
@@ -90,7 +91,6 @@ public class JwtPanel implements DataProvider {
     public JwtPanel() {
         createUIComponents();
 
-        this.payloadLabel.setVisible(false);
         this.claimsTable.setName(Constants.CLAIMS_TABLE_NAME);
 
         initializeClaimsTableModel(this.claimsTable);
@@ -129,6 +129,7 @@ public class JwtPanel implements DataProvider {
 
         this.headerTable.setAutoResizeMode(JBTable.AUTO_RESIZE_ALL_COLUMNS);
         this.headerTable.setTableHeader(null);
+        this.headerTable.setPreferredScrollableViewportSize(new Dimension(0, 2 * this.headerTable.getRowHeight()));
 
         panel.addToTop(new JBScrollPane(this.headerTable));
         panel.addToBottom(this.payloadLabel);
@@ -382,12 +383,12 @@ public class JwtPanel implements DataProvider {
         this.jwt = jwt;
         this.headerTableModel = new JwtHeaderTableModel(jwt);
         this.headerTable.setModel(this.headerTableModel);
+        this.headerTable.setPreferredScrollableViewportSize(new Dimension(0, this.headerTableModel.getRowCount() * this.headerTable.getRowHeight()));
+        this.headerTable.getParent().revalidate();
 
         if (Jwt.EMPTY.equals(jwt)) {
-            this.payloadLabel.setVisible(false);
             this.validateButton.setEnabled(false);
         } else {
-            this.payloadLabel.setVisible(true);
             this.validateButton.setEnabled(true);
         }
 
