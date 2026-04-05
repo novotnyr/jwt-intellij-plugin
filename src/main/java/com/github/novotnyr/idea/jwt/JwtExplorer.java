@@ -71,7 +71,7 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
             JwtExplorer.this.encodedJwtPanel.setJwt(jwt);
         });
 
-        JBSplitter splitter = new JBSplitter(true, 0.5f);
+        JBSplitter splitter = new JBSplitter(true, 0.2f);
         splitter.setFirstComponent(this.encodedJwtPanel);
         splitter.setSecondComponent(this.jwtPanel.getRootPanel());
 
