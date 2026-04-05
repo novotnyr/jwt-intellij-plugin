@@ -18,7 +18,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.21.2")
     implementation("com.auth0:java-jwt:4.5.1")
     implementation("org.ocpsoft.prettytime:prettytime:4.0.2.Final")
-    implementation("org.bouncycastle:bcpkix-jdk15on:1.61")
+    implementation("org.bouncycastle:bcpkix-jdk18on:1.83")
 
     testImplementation("junit:junit:4.13.2")
 
