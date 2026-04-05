@@ -34,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
 import javax.swing.AbstractAction;
+import javax.swing.SwingUtilities;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
@@ -69,6 +70,8 @@ public class JwtPanel implements DataProvider {
     private JBTable claimsTable = new JBTable();
 
     private JPanel claimsTablePanel;
+
+    private JBSplitter payloadSplitter;
 
     private JPanel secretPanelContainer = new JPanel(new BorderLayout());
 
@@ -111,6 +114,7 @@ public class JwtPanel implements DataProvider {
 
     private void createUIComponents() {
         this.claimsTablePanel = configureClaimsTableActions();
+        updateClaimsTablePreferredSize();
 
         this.rootPanel.add(createHeaderTableAndClaimsLabelGroup(), BorderLayout.NORTH);
         this.rootPanel.add(createPayloadAndSecretPanels(), BorderLayout.CENTER);
@@ -126,10 +130,10 @@ public class JwtPanel implements DataProvider {
     }
 
     private JComponent createPayloadAndSecretPanels() {
-        var splitter = new JBSplitter(true);
-        splitter.setFirstComponent(this.claimsTablePanel);
-        splitter.setSecondComponent(this.secretPanelContainer);
-        return splitter;
+        this.payloadSplitter = new JBSplitter(true);
+        this.payloadSplitter.setFirstComponent(this.claimsTablePanel);
+        this.payloadSplitter.setSecondComponent(this.secretPanelContainer);
+        return this.payloadSplitter;
     }
 
     public JPanel getRootPanel() {
@@ -381,10 +385,25 @@ public class JwtPanel implements DataProvider {
         this.claimsTableModel.setClaimErrors(validateClaims(jwt));
         this.claimsTable.setModel(this.claimsTableModel);
         this.claimsTable.setDefaultRenderer(Object.class, this.claimsTableModel);
+        this.claimsTableModel.addTableModelListener(e -> updateClaimsTablePreferredSize());
+        updateClaimsTablePreferredSize();
 
         configureSecretPanel(jwt);
 
         refreshClaimsTableControllers();
+    }
+
+    private void updateClaimsTablePreferredSize() {
+        int rowCount = this.claimsTableModel != null ? this.claimsTableModel.getRowCount() : 0;
+        int rows = rowCount == 0 ? 3 : rowCount;
+        this.claimsTable.setPreferredScrollableViewportSize(new Dimension(0, rows * this.claimsTable.getRowHeight()));
+        this.claimsTable.getParent().revalidate();
+        SwingUtilities.invokeLater(() -> {
+            if (this.payloadSplitter != null && this.payloadSplitter.getHeight() > 0) {
+                int prefHeight = this.claimsTablePanel.getPreferredSize().height;
+                this.payloadSplitter.setProportion((float) prefHeight / this.payloadSplitter.getHeight());
+            }
+        });
     }
 
     private void replaceSecretPanelContent(SecretPanel secretPanel) {
