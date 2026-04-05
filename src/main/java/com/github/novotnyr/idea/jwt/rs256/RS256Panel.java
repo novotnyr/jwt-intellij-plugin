@@ -17,25 +17,37 @@ import com.intellij.openapi.editor.ex.util.EditorUtil;
 import com.intellij.openapi.fileTypes.FileTypes;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.EditorTextField;
+import com.intellij.ui.IdeBorderFactory;
+import com.intellij.ui.JBSplitter;
+import com.intellij.ui.components.JBScrollPane;
+import com.intellij.util.ui.components.BorderLayoutPanel;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import javax.swing.JComponent;
-import javax.swing.JPanel;
 import java.util.Objects;
 
 import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.*;
 
 public class RS256Panel extends SecretPanel {
     private Project project;
-    private JPanel root;
-    private EditorTextField publicKeyEditorTextField;
-    private EditorTextField privateKeyEditorTextField;
+    private final BorderLayoutPanel root;
+    private final EditorTextField publicKeyEditorTextField;
+    private final EditorTextField privateKeyEditorTextField;
 
     private DelegatingDocumentListener<SignatureContextChangedListener> documentListener;
 
     public RS256Panel(Project project, SignatureContext initialSignatureContext) {
         this.project = project;
+
+        this.publicKeyEditorTextField = new EditorTextField("", this.project, FileTypes.PLAIN_TEXT);
+        this.publicKeyEditorTextField.setOneLineMode(false);
+
+        this.privateKeyEditorTextField = new EditorTextField("", this.project, FileTypes.PLAIN_TEXT);
+        this.privateKeyEditorTextField.setOneLineMode(false);
+
+        this.root = createUI();
+
         if (initialSignatureContext instanceof RS256SignatureContext) {
             setSignatureContext(initialSignatureContext);
         }
@@ -53,6 +65,20 @@ public class RS256Panel extends SecretPanel {
             }
         };
         actionManager.setActionHandler(IdeActions.ACTION_EDITOR_PASTE, pasteHandler);
+    }
+
+    private BorderLayoutPanel createUI() {
+        JBScrollPane publicKeyScrollPane = new JBScrollPane(this.publicKeyEditorTextField);
+        publicKeyScrollPane.setBorder(IdeBorderFactory.createTitledBorder("Public Key", false));
+
+        JBScrollPane privateKeyScrollPane = new JBScrollPane(this.privateKeyEditorTextField);
+        privateKeyScrollPane.setBorder(IdeBorderFactory.createTitledBorder("RSA Private Key", false));
+
+        JBSplitter splitter = new JBSplitter(false, 0.5f);
+        splitter.setFirstComponent(publicKeyScrollPane);
+        splitter.setSecondComponent(privateKeyScrollPane);
+
+        return new BorderLayoutPanel().addToCenter(splitter);
     }
 
     @Override
@@ -125,13 +151,5 @@ public class RS256Panel extends SecretPanel {
     @Override
     public void setProject(@Nullable Project project) {
         this.project = project;
-    }
-
-    private void createUIComponents() {
-        this.publicKeyEditorTextField = new EditorTextField("", this.project, FileTypes.PLAIN_TEXT);
-        this.publicKeyEditorTextField.setOneLineMode(false);
-
-        this.privateKeyEditorTextField = new EditorTextField("", this.project, FileTypes.PLAIN_TEXT);
-        this.privateKeyEditorTextField.setOneLineMode(false);
     }
 }
