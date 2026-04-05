@@ -21,10 +21,10 @@ public class SecretPanelDelegatingDocumentAdapter extends DocumentAdapter {
     @Override
     protected void textChanged(DocumentEvent event) {
         try {
-            this.delegate.onSignatureContextChanged(secretPanel.getSignatureContext());
+            this.delegate.onSignatureContextChanged(this.secretPanel.getSignatureContext());
         } catch (SignatureContextException e) {
             SignatureError signatureError = new SignatureError(e.getMessage());
-            secretPanel.notifySignatureErrors(signatureError);
+            this.secretPanel.notifySignatureErrors(signatureError);
         }
     }
 }

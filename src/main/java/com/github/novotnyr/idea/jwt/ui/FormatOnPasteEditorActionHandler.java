@@ -42,7 +42,7 @@ public class FormatOnPasteEditorActionHandler extends EditorActionHandler implem
     @Override
     protected void doExecute(@NotNull Editor editor, @Nullable Caret caret, DataContext dataContext) {
         if (!supports(editor)) {
-            delegateActionHandler.execute(editor, caret, dataContext);
+            this.delegateActionHandler.execute(editor, caret, dataContext);
             return;
         }
 

@@ -39,7 +39,7 @@ public abstract class CreateScratchFileAction extends AnAction {
                 .createScratchFile(project, fileName, JsonLanguage.INSTANCE, jwtPayloadString, create_if_missing);
         if (scratchVirtualFile != null) {
             FileEditorManager.getInstance(project).openFile(scratchVirtualFile, true);
-            editorReformatter.reformatActiveEditor(project, scratchVirtualFile);
+            this.editorReformatter.reformatActiveEditor(project, scratchVirtualFile);
         }
     }
 

@@ -13,15 +13,15 @@ public abstract class NamedClaim<T> {
     }
 
     public String getName() {
-        return name;
+        return this.name;
     }
 
     public T getValue() {
-        return value;
+        return this.value;
     }
 
     public String getValueString() {
-        if(value == null) {
+        if(this.value == null) {
             return "null";
         } else {
             return this.value.toString();

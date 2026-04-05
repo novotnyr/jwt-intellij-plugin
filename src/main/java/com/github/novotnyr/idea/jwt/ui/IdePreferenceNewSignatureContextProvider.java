@@ -71,7 +71,7 @@ public class IdePreferenceNewSignatureContextProvider implements NewSignatureCon
         try {
             return load(pluginPreferences.getRs256PrivateKeyFile());
         } catch (IOException | IllegalArgumentException e) {
-            log.warn("Cannot load private key: " + e.getMessage());
+            this.log.warn("Cannot load private key: " + e.getMessage());
             return null;
         }
     }
@@ -80,7 +80,7 @@ public class IdePreferenceNewSignatureContextProvider implements NewSignatureCon
         try {
             return load(pluginPreferences.getRs256PublicKeyFile());
         } catch (IOException | IllegalArgumentException e) {
-            log.warn("Cannot load public key: " + e.getMessage());
+            this.log.warn("Cannot load public key: " + e.getMessage());
             return null;
         }
     }

@@ -30,7 +30,7 @@ public class HS256Panel extends SecretPanel {
     }
 
     public JPanel getRoot() {
-        return root;
+        return this.root;
     }
 
     @Override

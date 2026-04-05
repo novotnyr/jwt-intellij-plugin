@@ -17,7 +17,7 @@ public enum Configuration {
     private TimestampFormat timestampFormat = TimestampFormat.ISO;
 
     public TimestampFormat getTimestampFormat() {
-        return timestampFormat;
+        return this.timestampFormat;
     }
 
     public void setTimestampFormat(TimestampFormat timestampFormat) {

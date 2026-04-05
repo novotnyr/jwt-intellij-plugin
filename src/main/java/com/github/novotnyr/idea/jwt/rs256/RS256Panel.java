@@ -42,16 +42,16 @@ public class RS256Panel extends SecretPanel {
             setSignatureContext(initialSignatureContext);
         }
 
-        publicKeyEditorTextField.setFont(EditorUtil.getEditorFont());
-        privateKeyEditorTextField.setFont(EditorUtil.getEditorFont());
+        this.publicKeyEditorTextField.setFont(EditorUtil.getEditorFont());
+        this.privateKeyEditorTextField.setFont(EditorUtil.getEditorFont());
 
         EditorActionManager actionManager = EditorActionManager.getInstance();
         EditorActionHandler defaultPasteHandler = actionManager.getActionHandler(IdeActions.ACTION_EDITOR_PASTE);
         FormatOnPasteEditorActionHandler pasteHandler = new FormatOnPasteEditorActionHandler(defaultPasteHandler, FormatOnPasteEditorActionHandler::sanitize) {
             @Override
             protected boolean supports(Editor editor) {
-                return (publicKeyEditorTextField.getEditor() != null && Objects.equals(publicKeyEditorTextField.getEditor(), editor))
-                        || (privateKeyEditorTextField.getEditor() != null && Objects.equals(privateKeyEditorTextField.getEditor(), editor));
+                return (RS256Panel.this.publicKeyEditorTextField.getEditor() != null && Objects.equals(RS256Panel.this.publicKeyEditorTextField.getEditor(), editor))
+                        || (RS256Panel.this.privateKeyEditorTextField.getEditor() != null && Objects.equals(RS256Panel.this.privateKeyEditorTextField.getEditor(), editor));
             }
         };
         actionManager.setActionHandler(IdeActions.ACTION_EDITOR_PASTE, pasteHandler);
@@ -133,10 +133,10 @@ public class RS256Panel extends SecretPanel {
     }
 
     private void createUIComponents() {
-        this.publicKeyEditorTextField = new EditorTextField("", project, FileTypes.PLAIN_TEXT);
+        this.publicKeyEditorTextField = new EditorTextField("", this.project, FileTypes.PLAIN_TEXT);
         this.publicKeyEditorTextField.setOneLineMode(false);
 
-        this.privateKeyEditorTextField = new EditorTextField("", project, FileTypes.PLAIN_TEXT);
+        this.privateKeyEditorTextField = new EditorTextField("", this.project, FileTypes.PLAIN_TEXT);
         this.privateKeyEditorTextField.setOneLineMode(false);
     }
 }

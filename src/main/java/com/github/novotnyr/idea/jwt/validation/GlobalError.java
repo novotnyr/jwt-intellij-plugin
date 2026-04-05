@@ -8,7 +8,7 @@ public class GlobalError {
     }
 
     public String getMessage() {
-        return message;
+        return this.message;
     }
 
     @Override

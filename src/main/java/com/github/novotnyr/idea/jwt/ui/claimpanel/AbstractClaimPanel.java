@@ -34,6 +34,6 @@ public abstract class AbstractClaimPanel<T extends NamedClaim<?>, V> extends JPa
     }
 
     public boolean isReadOnly() {
-        return readOnly;
+        return this.readOnly;
     }
 }

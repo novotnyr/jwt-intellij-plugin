@@ -27,7 +27,7 @@ public class BooleanClaimPanel extends AbstractClaimPanel<BooleanClaim, Boolean>
         add(this.trueRadioButton);
         add(this.falseRadioButton);
 
-        if(value.getValue()) {
+        if(this.value.getValue()) {
             this.trueRadioButton.setSelected(true);
             this.falseRadioButton.setSelected(false);
         } else {

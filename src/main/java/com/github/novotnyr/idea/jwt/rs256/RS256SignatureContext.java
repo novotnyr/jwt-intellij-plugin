@@ -14,11 +14,11 @@ public class RS256SignatureContext implements SignatureContext {
     }
 
     public RSAPrivateKey getPrivateKey() {
-        return privateKey;
+        return this.privateKey;
     }
 
     public RSAPublicKey getPublicKey() {
-        return publicKey;
+        return this.publicKey;
     }
 
     @Override
@@ -65,7 +65,7 @@ public class RS256SignatureContext implements SignatureContext {
         }
 
         private String sanitizeWhitespace(String publicKey) {
-            if (!sanitizingWhitespace) {
+            if (!this.sanitizingWhitespace) {
                 return publicKey;
             }
             return RsaUtils.sanitizeWhitespace(publicKey);

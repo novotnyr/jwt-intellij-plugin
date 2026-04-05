@@ -32,7 +32,7 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, Date> {
     protected void initialize() {
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 
-        this.claimValueTextField.setText(value.getValueString());
+        this.claimValueTextField.setText(this.value.getValueString());
 
         add(this.claimValueTextField);
         add(this.datePreviewLabel = new JLabel());
@@ -55,44 +55,44 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, Date> {
     }
 
     private void nowButtonClicked(ActionEvent e) {
-        validationInfo = null;
+        this.validationInfo = null;
         long unixTimestamp = new Date().getTime() / 1000;
-        claimValueTextField.setText(String.valueOf(unixTimestamp));
-        datePreviewLabel.setText(new Date(unixTimestamp * 1000).toString());
+        this.claimValueTextField.setText(String.valueOf(unixTimestamp));
+        this.datePreviewLabel.setText(new Date(unixTimestamp * 1000).toString());
     }
 
     private void add15MinutesButtonClicked(ActionEvent event) {
         try {
-            long unixTimestamp = Long.parseLong(claimValueTextField.getText());
+            long unixTimestamp = Long.parseLong(this.claimValueTextField.getText());
             unixTimestamp = unixTimestamp + (15 * 60);
-            claimValueTextField.setText(String.valueOf(unixTimestamp));
-            datePreviewLabel.setText(new Date(unixTimestamp * 1000).toString());
+            this.claimValueTextField.setText(String.valueOf(unixTimestamp));
+            this.datePreviewLabel.setText(new Date(unixTimestamp * 1000).toString());
         } catch (NumberFormatException e) {
-            datePreviewLabel.setText("Not a valid timestamp");
-            validationInfo = new ValidationInfo("Not a valid timestamp", claimValueTextField);
+            this.datePreviewLabel.setText("Not a valid timestamp");
+            this.validationInfo = new ValidationInfo("Not a valid timestamp", this.claimValueTextField);
         }
     }
 
     private void subtract15MinutesButtonClicked(ActionEvent event) {
         try {
-            long unixTimestamp = Long.parseLong(claimValueTextField.getText());
+            long unixTimestamp = Long.parseLong(this.claimValueTextField.getText());
             unixTimestamp = unixTimestamp - (15 * 60);
-            claimValueTextField.setText(String.valueOf(unixTimestamp));
-            datePreviewLabel.setText(new Date(unixTimestamp * 1000).toString());
+            this.claimValueTextField.setText(String.valueOf(unixTimestamp));
+            this.datePreviewLabel.setText(new Date(unixTimestamp * 1000).toString());
         } catch (NumberFormatException e) {
-            datePreviewLabel.setText("Not a valid timestamp");
-            validationInfo = new ValidationInfo("Not a valid timestamp", claimValueTextField);
+            this.datePreviewLabel.setText("Not a valid timestamp");
+            this.validationInfo = new ValidationInfo("Not a valid timestamp", this.claimValueTextField);
         }
     }
 
     private void onClaimValueTextFieldChanged() {
         try {
-            validationInfo = null;
-            long unixTimestamp = Long.parseLong(claimValueTextField.getText());
-            datePreviewLabel.setText(new Date(unixTimestamp * 1000).toString());
+            this.validationInfo = null;
+            long unixTimestamp = Long.parseLong(this.claimValueTextField.getText());
+            this.datePreviewLabel.setText(new Date(unixTimestamp * 1000).toString());
         } catch (NumberFormatException e) {
-            datePreviewLabel.setText("Not a valid timestamp");
-            validationInfo = new ValidationInfo("Not a valid timestamp", claimValueTextField);
+            this.datePreviewLabel.setText("Not a valid timestamp");
+            this.validationInfo = new ValidationInfo("Not a valid timestamp", this.claimValueTextField);
         }
     }
 
@@ -102,7 +102,7 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, Date> {
     }
 
     public ValidationInfo getValidationInfo() {
-        return validationInfo;
+        return this.validationInfo;
     }
 
     public void setValidationInfo(ValidationInfo validationInfo) {

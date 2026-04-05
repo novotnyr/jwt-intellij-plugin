@@ -380,7 +380,7 @@ public class JwtPanel implements DataProvider {
     }
 
     private void configureSecretPanel(Jwt jwt) {
-        SecretPanel newSecretPanel = SecretPanelFactory.getInstance().getSecretPanel(project, jwt, getInitialSignatureContext(jwt));
+        SecretPanel newSecretPanel = SecretPanelFactory.getInstance().getSecretPanel(this.project, jwt, getInitialSignatureContext(jwt));
         if (isSameSecretPanel(newSecretPanel)) {
             return;
         }
@@ -429,7 +429,7 @@ public class JwtPanel implements DataProvider {
     }
 
     private boolean isRemoveClaimActionEnabled() {
-        return isEditable() && claimsTable.getSelectedRows().length > 0;
+        return isEditable() && this.claimsTable.getSelectedRows().length > 0;
     }
 
     private SignatureContext getSignatureContext() {

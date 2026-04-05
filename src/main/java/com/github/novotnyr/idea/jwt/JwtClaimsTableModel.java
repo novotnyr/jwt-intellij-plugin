@@ -37,7 +37,7 @@ public class JwtClaimsTableModel extends AbstractTableModel implements TableCell
 
     @Override
     public int getRowCount() {
-        return jwt.getPayloadClaims().size();
+        return this.jwt.getPayloadClaims().size();
     }
 
     @Override
@@ -92,12 +92,12 @@ public class JwtClaimsTableModel extends AbstractTableModel implements TableCell
     }
 
     public NamedClaim<?> getClaimAt(int rowIndex) {
-        return jwt.getPayloadClaims().get(rowIndex);
+        return this.jwt.getPayloadClaims().get(rowIndex);
     }
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        List<NamedClaim<?>> payloadClaims = jwt.getPayloadClaims();
+        List<NamedClaim<?>> payloadClaims = this.jwt.getPayloadClaims();
         for (int i = 0; i < payloadClaims.size(); i++) {
             NamedClaim<?> claim = payloadClaims.get(i);
 

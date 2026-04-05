@@ -11,11 +11,11 @@ public class ClaimError {
     }
 
     public String getClaim() {
-        return claim;
+        return this.claim;
     }
 
     public String getMessage() {
-        return message;
+        return this.message;
     }
 
     @Override

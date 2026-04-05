@@ -12,7 +12,7 @@ public class HS256SignatureContext implements SignatureContext {
     }
 
     public String getSecret() {
-        return secret;
+        return this.secret;
     }
 
     @Override

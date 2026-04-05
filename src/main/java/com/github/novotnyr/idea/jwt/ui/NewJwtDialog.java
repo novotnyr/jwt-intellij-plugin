@@ -43,23 +43,23 @@ public class NewJwtDialog extends DialogWrapper {
         this.newSignatureContextProvider = new IdePreferenceNewSignatureContextProvider(project);
         this.project = project;
 
-        algorithmComboBox.setModel(new DefaultComboBoxModel<>(ALGORITHMS));
-        algorithmComboBox.addItemListener(event -> {
+        this.algorithmComboBox.setModel(new DefaultComboBoxModel<>(ALGORITHMS));
+        this.algorithmComboBox.addItemListener(event -> {
             if (event.getStateChange() == ItemEvent.SELECTED) {
                 onAlgorithmComboBoxItemSelected((String) event.getItem());
             }
         });
-        algorithmComboBox.setSelectedItem("HS256");
+        this.algorithmComboBox.setSelectedItem("HS256");
         onAlgorithmComboBoxItemSelected("HS256");
         init();
     }
 
     private void onAlgorithmComboBoxItemSelected(String algorithmName) {
-        SignatureContext initialSignatureContext = newSignatureContextProvider.createSignatureContext(algorithmName);
-        this.secretPanel = SecretPanelFactory.getInstance().getSecretPanel(project, algorithmName, initialSignatureContext);
+        SignatureContext initialSignatureContext = this.newSignatureContextProvider.createSignatureContext(algorithmName);
+        this.secretPanel = SecretPanelFactory.getInstance().getSecretPanel(this.project, algorithmName, initialSignatureContext);
         this.secretPanel.setProject(this.project);
         this.secretPanelContainer.removeAll();
-        this.secretPanelContainer.add(secretPanel.getRoot(), BorderLayout.CENTER);
+        this.secretPanelContainer.add(this.secretPanel.getRoot(), BorderLayout.CENTER);
         this.secretPanelContainer.revalidate();
     }
 

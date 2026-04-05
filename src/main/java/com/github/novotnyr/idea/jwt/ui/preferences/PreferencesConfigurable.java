@@ -55,7 +55,7 @@ public class PreferencesConfigurable implements Configurable {
             validateRs256PublicKeyFile();
             validateRs256PrivateKeyFile();
 
-            PluginPreferences pluginPreferences = PluginPreferences.getInstance(project);
+            PluginPreferences pluginPreferences = PluginPreferences.getInstance(this.project);
             pluginPreferences.setRs256PublicKeyFile(this.rs256PublicKeyTextField.getText());
             pluginPreferences.setRs256PrivateKeyFile(this.rs256PrivateKeyTextField.getText());
         } catch (Exception e) {

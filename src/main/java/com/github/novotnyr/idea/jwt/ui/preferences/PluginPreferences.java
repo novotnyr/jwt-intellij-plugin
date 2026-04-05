@@ -30,7 +30,7 @@ public class PluginPreferences implements PersistentStateComponent<PluginPrefere
     }
 
     public String getRs256PrivateKeyFile() {
-        return rs256PrivateKeyFile;
+        return this.rs256PrivateKeyFile;
     }
 
     public void setRs256PrivateKeyFile(String rs256PrivateKeyFile) {
@@ -38,7 +38,7 @@ public class PluginPreferences implements PersistentStateComponent<PluginPrefere
     }
 
     public String getRs256PublicKeyFile() {
-        return rs256PublicKeyFile;
+        return this.rs256PublicKeyFile;
     }
 
     public void setRs256PublicKeyFile(String rs256PublicKeyFile) {

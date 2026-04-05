@@ -63,7 +63,7 @@ public class ClaimDialog extends DialogWrapper {
     }
 
     public NamedClaim<?> getClaim() {
-        return claim;
+        return this.claim;
     }
 
     private static class ClaimPanel extends JPanel {

@@ -48,11 +48,11 @@ public class JwtValidator {
             Algorithm algorithm = this.algorithmResolver.resolve(jwt.getAlgorithm(), signatureContext);
             algorithm.verify(jwt);
         } catch (SignatureVerificationException e) {
-            globalErrors.add(new SignatureError());
+            this.globalErrors.add(new SignatureError());
         } catch (IllegalArgumentException e) {
-            globalErrors.add(SignatureError.forEmptySecret());
+            this.globalErrors.add(SignatureError.forEmptySecret());
         } catch (UnknownAlgorithmException e) {
-            globalErrors.add(SignatureError.forUnknownAlgorithm(jwt.getAlgorithm()));
+            this.globalErrors.add(SignatureError.forUnknownAlgorithm(jwt.getAlgorithm()));
         }
     }
 
@@ -97,10 +97,10 @@ public class JwtValidator {
     }
 
     public List<ClaimError> getClaimErrors() {
-        return claimErrors;
+        return this.claimErrors;
     }
 
     public List<GlobalError> getGlobalErrors() {
-        return globalErrors;
+        return this.globalErrors;
     }
 }

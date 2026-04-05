@@ -88,7 +88,7 @@ public abstract class SecretPanel {
 
     @Nullable
     public Project getProject() {
-        return project;
+        return this.project;
     }
 
     public void setProject(@Nullable Project project) {

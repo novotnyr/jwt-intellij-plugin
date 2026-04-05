@@ -146,7 +146,7 @@ public class Jwt {
     }
 
     public String getAlgorithm() {
-        return algorithm;
+        return this.algorithm;
     }
 
     @Override
@@ -156,14 +156,14 @@ public class Jwt {
         Jwt jwt = (Jwt) o;
         return Objects.equals(getHeaderClaims(), jwt.getHeaderClaims()) &&
                 Objects.equals(getPayloadClaims(), jwt.getPayloadClaims()) &&
-                Objects.equals(signatureContext, jwt.signatureContext) &&
-                Objects.equals(jwtString, jwt.jwtString) &&
+                Objects.equals(this.signatureContext, jwt.signatureContext) &&
+                Objects.equals(this.jwtString, jwt.jwtString) &&
                 Objects.equals(getAlgorithm(), jwt.getAlgorithm());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getHeaderClaims(), getPayloadClaims(), signatureContext, jwtString, getAlgorithm());
+        return Objects.hash(getHeaderClaims(), getPayloadClaims(), this.signatureContext, this.jwtString, getAlgorithm());
     }
 
     public boolean isEmpty() {
