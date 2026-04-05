@@ -361,10 +361,10 @@ public class JwtPanel implements DataProvider {
 
     public void setJwt(Jwt jwt) {
         if (this.jwtUpdateInProgress) {
-            // this means that change in claims triggered
+            // This means that a change in the claims triggered
             // a change in String representation that
-            // again triggered a change in claims
-            // In such cacse, do nothing
+            // again triggered a change in tjeclaims.
+            // In such a case, do nothing.
             return;
         }
 
