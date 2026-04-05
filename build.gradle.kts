@@ -24,7 +24,6 @@ dependencies {
 
     intellijPlatform {
         intellijIdeaCommunity("2024.2")
-        pluginVerifier()
     }
 }
 
