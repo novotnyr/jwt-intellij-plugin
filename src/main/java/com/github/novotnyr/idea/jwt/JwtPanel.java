@@ -124,6 +124,7 @@ public class JwtPanel implements DataProvider {
 
     private JBScrollPane createHeaderTable() {
         this.headerTable.setAutoResizeMode(JBTable.AUTO_RESIZE_ALL_COLUMNS);
+        this.headerTable.setTableHeader(null);
         var headerScrollPane = new JBScrollPane(this.headerTable);
         return headerScrollPane;
     }
