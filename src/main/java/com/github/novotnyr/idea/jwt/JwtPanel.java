@@ -374,11 +374,7 @@ public class JwtPanel implements DataProvider {
         this.headerTable.setPreferredScrollableViewportSize(new Dimension(0, this.headerTableModel.getRowCount() * this.headerTable.getRowHeight()));
         this.headerTable.getParent().revalidate();
 
-        if (Jwt.EMPTY.equals(jwt)) {
-            this.validateButton.setEnabled(false);
-        } else {
-            this.validateButton.setEnabled(true);
-        }
+        this.validateButton.setEnabled(!Jwt.EMPTY.equals(jwt));
 
         this.claimsTableModel = new JwtClaimsTableModel(jwt);
         this.claimsTableModel.setClaimErrors(validateClaims(jwt));
@@ -438,7 +434,6 @@ public class JwtPanel implements DataProvider {
     private boolean isValidatable() {
         return this.secretPanel.getStatus().isValidatable();
     }
-
 
     public SecretPanel getSecretPanel() {
         return this.secretPanel;
