@@ -46,6 +46,7 @@ intellijPlatform {
             recommended()
         }
     }
+    buildSearchableOptions = false
 }
 
 java {
