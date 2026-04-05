@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.github.novotnyr"
-version = "0.22"
+version = "0.23-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -34,9 +34,6 @@ intellijPlatform {
         }
         changeNotes = """
             <ul>
-            <li>Require at least JetBrains IDE 2024.2 or newer</li>
-            <li>Update underlying JWT parsing libraries</li>
-            <li>Remove unnecessary space under Validate button</li>
             </ul>
         """.trimIndent()
     }
