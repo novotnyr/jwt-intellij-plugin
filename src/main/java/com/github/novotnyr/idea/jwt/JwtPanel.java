@@ -24,8 +24,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.JBSplitter;
+import com.intellij.ui.TitledSeparator;
 import com.intellij.ui.ToolbarDecorator;
-import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.TextTransferable;
@@ -63,7 +63,7 @@ public class JwtPanel implements DataProvider {
 
     private JBTable headerTable = new JBTable();
 
-    private JBLabel payloadLabel = new JBLabel("Payload");
+    private TitledSeparator payloadLabel = new TitledSeparator("Payload");
 
     private JwtClaimsTableModel claimsTableModel;
 
@@ -114,16 +114,26 @@ public class JwtPanel implements DataProvider {
     private void createUIComponents() {
         this.claimsTablePanel = configureClaimsTableActions();
 
-        this.rootPanel.add(createHeaderTable(), BorderLayout.NORTH);
+        this.rootPanel.add(createHeaderTableAndClaimsLabelGroup(), BorderLayout.NORTH);
         this.rootPanel.add(createPayloadAndSecretPanels(), BorderLayout.CENTER);
         this.rootPanel.add(this.validateButton, BorderLayout.SOUTH);
     }
 
-    private JBScrollPane createHeaderTable() {
+    /**
+     * Create a panel that contains the JWT header section.
+     * Additionally, it contains the static "Claims" label.
+     * This is to maintain a static height.
+     */
+    private JComponent createHeaderTableAndClaimsLabelGroup() {
+        var panel = new BorderLayoutPanel();
+
         this.headerTable.setAutoResizeMode(JBTable.AUTO_RESIZE_ALL_COLUMNS);
         this.headerTable.setTableHeader(null);
-        var headerScrollPane = new JBScrollPane(this.headerTable);
-        return headerScrollPane;
+
+        panel.addToTop(new JBScrollPane(this.headerTable));
+        panel.addToBottom(this.payloadLabel);
+
+        return panel;
     }
 
     private @Nullable JComponent createPayloadAndSecretPanels() {
