@@ -23,7 +23,11 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.DoubleClickListener;
+import com.intellij.ui.JBSplitter;
+import com.intellij.ui.TitledSeparator;
 import com.intellij.ui.ToolbarDecorator;
+import com.intellij.ui.components.JBLabel;
+import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.TextTransferable;
 import org.jetbrains.annotations.NotNull;
@@ -31,7 +35,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
-import javax.swing.JLabel;
+import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -51,29 +55,29 @@ public class JwtPanel implements DataProvider {
     @Nullable
     private Project project;
 
-    private PropertyChangeSupport propertyChangeSupport;
+    private PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);;
 
-    private JPanel rootPanel;
+    private JPanel rootPanel = new JPanel(new BorderLayout());
 
-    private JLabel headerLabel;
+    private TitledSeparator headerLabel = new TitledSeparator("Header");
 
     private JwtHeaderTableModel headerTableModel;
 
-    private JBTable headerTable;
+    private JBTable headerTable = new JBTable();
 
-    private JLabel payloadLabel;
+    private JBLabel payloadLabel = new JBLabel("Payload");
 
     private JwtClaimsTableModel claimsTableModel;
 
-    private JBTable claimsTable;
+    private JBTable claimsTable = new JBTable();;
 
     private JPanel claimsTablePanel;
 
-    private JPanel secretPanelContainer;
+    private JPanel secretPanelContainer = new JPanel();
 
     private SecretPanel secretPanel = new UnrecognizedSecretPanel();
 
-    private JButton validateButton;
+    private JButton validateButton = new JButton("Validate");
 
     private Jwt jwt = Jwt.EMPTY;
 
@@ -86,6 +90,8 @@ public class JwtPanel implements DataProvider {
     private boolean jwtUpdateInProgress;
 
     public JwtPanel() {
+        createUIComponents();
+
         this.headerLabel.setVisible(false);
         this.payloadLabel.setVisible(false);
         this.claimsTable.setName(Constants.CLAIMS_TABLE_NAME);
@@ -109,9 +115,26 @@ public class JwtPanel implements DataProvider {
     }
 
     private void createUIComponents() {
-        this.propertyChangeSupport = new PropertyChangeSupport(this);
-        this.claimsTable = new JBTable();
         this.claimsTablePanel = configureClaimsTableActions();
+
+        var splitter = new JBSplitter(true);
+        splitter.setFirstComponent(createHeaderTable());
+        splitter.setSecondComponent(createPayloadAndSecretPanels());
+        this.rootPanel.add(splitter, BorderLayout.CENTER);
+        this.rootPanel.add(this.validateButton, BorderLayout.SOUTH);
+    }
+
+    private JBScrollPane createHeaderTable() {
+        this.headerTable.setAutoResizeMode(JBTable.AUTO_RESIZE_ALL_COLUMNS);
+        var headerScrollPane = new JBScrollPane(this.headerTable);
+        return headerScrollPane;
+    }
+
+    private @Nullable JComponent createPayloadAndSecretPanels() {
+        var splitter = new JBSplitter(true);
+        splitter.setFirstComponent(this.claimsTablePanel);
+        splitter.setSecondComponent(this.secretPanelContainer);
+        return splitter;
     }
 
     public JPanel getRootPanel() {

@@ -25,14 +25,11 @@ public class JwtHeaderTableModel extends AbstractTableModel {
 
     @Override
     public String getColumnName(int column) {
-        switch (column) {
-            case 0:
-                return "Claim";
-            case 1:
-                return "Value";
-            default:
-                return "-";
-        }
+        return switch (column) {
+            case 0 -> "Header";
+            case 1 -> "Value";
+            default -> "-";
+        };
     }
 
     @Override
