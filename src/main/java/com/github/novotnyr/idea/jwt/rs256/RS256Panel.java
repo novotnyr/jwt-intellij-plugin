@@ -74,19 +74,16 @@ public class RS256Panel extends SecretPanel {
 
     @Override
     public SignatureContext getSignatureContext() {
-        switch (getStatus()) {
-            case VALID:
-                return new RS256SignatureContext.Builder()
-                        .withPublicKey(this.publicKeyEditorTextField.getText())
-                        .build();
-            case MUTABLE:
-                return new RS256SignatureContext.Builder()
-                        .withPrivateKey(this.privateKeyEditorTextField.getText())
-                        .withPublicKey(this.publicKeyEditorTextField.getText())
-                        .build();
-            default:
-                return SignatureContext.EMPTY;
-        }
+        return switch (getStatus()) {
+            case VALID -> new RS256SignatureContext.Builder()
+                    .withPublicKey(this.publicKeyEditorTextField.getText())
+                    .build();
+            case MUTABLE -> new RS256SignatureContext.Builder()
+                    .withPrivateKey(this.privateKeyEditorTextField.getText())
+                    .withPublicKey(this.publicKeyEditorTextField.getText())
+                    .build();
+            default -> SignatureContext.EMPTY;
+        };
     }
 
     @Override
