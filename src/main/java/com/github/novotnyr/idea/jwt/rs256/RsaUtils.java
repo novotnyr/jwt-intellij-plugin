@@ -47,15 +47,14 @@ public abstract class RsaUtils {
         try(PEMParser pemParser = new PEMParser(privateKeyPem)) {
             JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
             Object pemKeyPairObject = pemParser.readObject();
-            if (pemKeyPairObject instanceof SubjectPublicKeyInfo) {
-                throw new SignatureContextException("Input is an RSA Public Key, but private key is expected");
-            } else if (pemKeyPairObject instanceof PrivateKeyInfo) {
-                return extractPrivateKeyFromPkcs8((PrivateKeyInfo) pemKeyPairObject);
-            } else if (pemKeyPairObject instanceof PEMKeyPair) {
-                return extractPrivateKeyFromPkcs1(converter, (PEMKeyPair) pemKeyPairObject);
-            } else {
-                throw new SignatureContextException("Unsupported RSA private key type. Is this PKCS#8 or PKCS#1 Private Key?");
-            }
+            return switch (pemKeyPairObject) {
+                case SubjectPublicKeyInfo ignored ->
+                        throw new SignatureContextException("Input is an RSA Public Key, but private key is expected");
+                case PrivateKeyInfo privateKeyInfo -> extractPrivateKeyFromPkcs8(privateKeyInfo);
+                case PEMKeyPair pemKeyPair -> extractPrivateKeyFromPkcs1(converter, pemKeyPair);
+                case null, default ->
+                        throw new SignatureContextException("Unsupported RSA private key type. Is this PKCS#8 or PKCS#1 Private Key?");
+            };
         } catch (IOException e) {
             throw new SignatureContextException("Unable to parse RSA private key", e);
         } catch (IllegalArgumentException | NullPointerException | DecoderException e) {
@@ -63,8 +62,7 @@ public abstract class RsaUtils {
         }
     }
 
-    private static RSAPrivateKey extractPrivateKeyFromPkcs1(JcaPEMKeyConverter converter, PEMKeyPair pemKeyPairObject) throws PEMException {
-        PEMKeyPair pemKeyPair = pemKeyPairObject;
+    private static RSAPrivateKey extractPrivateKeyFromPkcs1(JcaPEMKeyConverter converter, PEMKeyPair pemKeyPair) throws PEMException {
         KeyPair keyPair = converter.getKeyPair(pemKeyPair);
         return (RSAPrivateKey) keyPair.getPrivate();
     }
