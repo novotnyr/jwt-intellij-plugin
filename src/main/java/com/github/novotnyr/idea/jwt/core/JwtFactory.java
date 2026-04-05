@@ -9,7 +9,7 @@ import static com.auth0.jwt.HeaderParams.TYPE;
 import static com.auth0.jwt.RegisteredClaims.ISSUED_AT;
 
 public class JwtFactory {
-    private static JwtFactory INSTANCE = new JwtFactory();
+    private static final JwtFactory INSTANCE = new JwtFactory();
 
     public static JwtFactory getInstance() {
         return INSTANCE;
