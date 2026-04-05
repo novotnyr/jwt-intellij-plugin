@@ -27,7 +27,6 @@ import java.util.Objects;
 import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.*;
 
 public class RS256Panel extends SecretPanel {
-    private final SignatureContext initialSignatureContext;
     private Project project;
     private JPanel root;
     private EditorTextField publicKeyEditorTextField;
@@ -37,7 +36,6 @@ public class RS256Panel extends SecretPanel {
 
     public RS256Panel(Project project, SignatureContext initialSignatureContext) {
         this.project = project;
-        this.initialSignatureContext = initialSignatureContext;
         if (initialSignatureContext instanceof RS256SignatureContext) {
             setSignatureContext(initialSignatureContext);
         }
