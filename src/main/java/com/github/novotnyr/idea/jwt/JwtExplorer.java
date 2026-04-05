@@ -52,7 +52,7 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
                                 Balloon.Position.atRight);
             } catch (JWTDecodeException e) {
                 JBPopupFactory.getInstance()
-                        .createHtmlTextBalloonBuilder("JWT has a wrong syntax", MessageType.ERROR, null)
+                        .createHtmlTextBalloonBuilder("JWT has a wrong syntax:" + e.getMessage(), MessageType.ERROR, null)
                         .setFadeoutTime(7500)
                         .createBalloon()
                         .show(RelativePoint.getNorthWestOf(JwtExplorer.this.encodedJwtPanel),
