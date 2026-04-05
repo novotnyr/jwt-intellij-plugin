@@ -117,10 +117,8 @@ public class JwtPanel implements DataProvider {
     private void createUIComponents() {
         this.claimsTablePanel = configureClaimsTableActions();
 
-        var splitter = new JBSplitter(true);
-        splitter.setFirstComponent(createHeaderTable());
-        splitter.setSecondComponent(createPayloadAndSecretPanels());
-        this.rootPanel.add(splitter, BorderLayout.CENTER);
+        this.rootPanel.add(createHeaderTable(), BorderLayout.NORTH);
+        this.rootPanel.add(createPayloadAndSecretPanels(), BorderLayout.CENTER);
         this.rootPanel.add(this.validateButton, BorderLayout.SOUTH);
     }
 
