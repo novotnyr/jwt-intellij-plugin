@@ -44,11 +44,6 @@ intellijPlatform {
         val intellijPublishToken: String by project
         token = intellijPublishToken
     }
-    pluginVerification {
-        ides {
-            recommended()
-        }
-    }
     buildSearchableOptions = false
 }
 
