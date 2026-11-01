@@ -41,8 +41,7 @@ intellijPlatform {
         """.trimIndent()
     }
     publishing {
-        val intellijPublishToken: String by project
-        token = intellijPublishToken
+        token = project.property("intellijPublishToken") as String
     }
     buildSearchableOptions = false
 }
@@ -53,7 +52,11 @@ java {
     }
 }
 
-val runIde261 by intellijPlatformTesting.runIde.registering {
-    type = IntelliJPlatformType.IntellijIdea
-    version = "2026.1"
+intellijPlatformTesting {
+    runIde {
+        register("runIde261") {
+            type = IntelliJPlatformType.IntellijIdea
+            version = "2026.1"
+        }
+    }
 }
