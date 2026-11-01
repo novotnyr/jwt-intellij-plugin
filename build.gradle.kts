@@ -33,7 +33,7 @@ intellijPlatform {
     pluginConfiguration {
         changeNotes = """
             <ul>
-                <li></li>
+                <li>Fix inability to parse RS256 keys in plugin settings</li>
             </ul>
         """.trimIndent()
     }
