@@ -29,9 +29,4 @@
                              displayName="JWT"/>
         <projectService serviceImplementation="com.github.novotnyr.idea.jwt.ui.preferences.PluginPreferences"/>
     </extensions>
-
-    <actions>
-        <!-- Add your actions here -->
-    </actions>
-
 </idea-plugin>
