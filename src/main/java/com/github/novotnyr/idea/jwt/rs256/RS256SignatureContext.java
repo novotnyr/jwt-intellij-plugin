@@ -34,6 +34,9 @@ public class RS256SignatureContext implements SignatureContext {
     }
 
     public String getPublicKeyString() {
+        if (this.publicKey == null) {
+            return "";
+        }
         return RsaUtils.toString(this.publicKey);
     }
 
@@ -57,7 +60,9 @@ public class RS256SignatureContext implements SignatureContext {
 
         public RS256SignatureContext build() {
             RS256SignatureContext signatureContext = new RS256SignatureContext();
-            signatureContext.publicKey = RsaUtils.getPublicKey(sanitizeWhitespace(this.publicKey));
+            if (this.publicKey != null) {
+                signatureContext.publicKey = RsaUtils.getPublicKey(sanitizeWhitespace(this.publicKey));
+            }
             if (this.privateKey != null) {
                 signatureContext.privateKey = RsaUtils.getPrivateKey(sanitizeWhitespace(this.privateKey));
             }

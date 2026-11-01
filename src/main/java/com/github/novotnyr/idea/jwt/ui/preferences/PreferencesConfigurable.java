@@ -68,7 +68,7 @@ public class PreferencesConfigurable implements Configurable {
         if (StringUtil.isEmpty(rs256PrivateKey)) {
             return;
         }
-        RsaUtils.getPrivateKey(rs256PrivateKey);
+        RsaUtils.getPrivateKey(new File(rs256PrivateKey));
     }
 
     private void validateRs256PublicKeyFile() {
