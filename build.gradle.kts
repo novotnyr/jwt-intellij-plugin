@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.github.novotnyr"
-version = "0.23"
+version = "0.24-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -36,8 +36,7 @@ intellijPlatform {
         }
         changeNotes = """
             <ul>
-                <li>Rework tool window logic</li>
-                <li>Separate each section with a draggable splitter</li>
+                <li></li>
             </ul>
         """.trimIndent()
     }
