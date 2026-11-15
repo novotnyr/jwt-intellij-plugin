@@ -1,0 +1,101 @@
+package com.github.novotnyr.idea.jwt.validation;
+
+import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.github.novotnyr.idea.jwt.SignatureAlgorithm;
+import com.github.novotnyr.idea.jwt.core.Jwt;
+import com.github.novotnyr.idea.jwt.core.JwtFactory;
+import com.github.novotnyr.idea.jwt.core.NumericDate;
+import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
+import org.junit.Test;
+
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.Base64;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+
+public class JwtValidatorTest {
+    private static final Instant NOW = Instant.parse("2025-01-01T00:00:00.500Z");
+
+    private static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);
+
+    private static final BigDecimal NOW_SECONDS = NumericDate.fromInstant(NOW);
+
+    @Test
+    public void missingTimestampClaimsAreAllowed() {
+        assertTrue(validate("{}").getClaimErrors().isEmpty());
+    }
+
+    @Test
+    public void expirationRequiresNowToBeStrictlyBeforeIt() {
+        assertErrors("{\"exp\":" + NOW_SECONDS + "}", "exp");
+        assertTrue(validate("{\"exp\":" + NOW_SECONDS.add(new BigDecimal("0.001")) + "}")
+                .getClaimErrors().isEmpty());
+        assertTrue(validate("{\"exp\":" + NOW_SECONDS.add(new BigDecimal("0.000000001")) + "}")
+                .getClaimErrors().isEmpty());
+    }
+
+    @Test
+    public void notBeforeAllowsEqualityButRejectsFutureTime() {
+        assertTrue(validate("{\"nbf\":" + NOW_SECONDS + "}").getClaimErrors().isEmpty());
+        assertErrors("{\"nbf\":" + NOW_SECONDS.add(new BigDecimal("0.001")) + "}", "nbf");
+    }
+
+    @Test
+    public void futureIssuedAtIsAllowedWhenItIsNumeric() {
+        String payload = "{\"exp\":" + NOW_SECONDS.add(new BigDecimal("0.125"))
+                + ",\"nbf\":" + NOW_SECONDS.subtract(new BigDecimal("0.125"))
+                + ",\"iat\":" + NOW_SECONDS.add(new BigDecimal("3600.25")) + "}";
+        assertTrue(validate(payload).getClaimErrors().isEmpty());
+        assertTrue(validate("{\"iat\":-0.5}").getClaimErrors().isEmpty());
+    }
+
+    @Test
+    public void explicitNullIsInvalidButAbsenceIsAllowed() {
+        assertErrors("{\"exp\":null,\"nbf\":null,\"iat\":null}", "exp", "nbf", "iat");
+    }
+
+    @Test
+    public void nonNumericTimestampClaimsAreRejected() {
+        assertThrows(JWTDecodeException.class, () -> token("{\"exp\":\"123\"}"));
+        assertThrows(JWTDecodeException.class, () -> token("{\"nbf\":true}"));
+        assertThrows(JWTDecodeException.class, () -> token("{\"iat\":[]}"));
+    }
+
+    @Test
+    public void signatureVerificationStillRunsWithOptionalClaimsMissing() {
+        Jwt signed = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
+                new HS256SignatureContext("right secret"), false);
+        JwtValidator validator = new JwtValidator(CLOCK);
+        validator.validate(new Jwt(signed.toString()), new HS256SignatureContext("wrong secret"));
+        assertTrue(validator.getClaimErrors().isEmpty());
+        assertTrue(validator.hasSignatureError());
+        assertFalse(validator.getGlobalErrors().isEmpty());
+    }
+
+    private static JwtValidator validate(String payload) {
+        return new JwtValidator(CLOCK).validateClaims(token(payload));
+    }
+
+    private static void assertErrors(String payload, String... claimNames) {
+        List<String> actual = validate(payload).getClaimErrors().stream().map(ClaimError::getClaim).toList();
+        assertEquals(List.of(claimNames), actual);
+    }
+
+    private static Jwt token(String payload) {
+        String header = encode("{\"alg\":\"HS256\",\"typ\":\"JWT\"}");
+        return new Jwt(header + "." + encode(payload) + ".c2ln");
+    }
+
+    private static String encode(String json) {
+        return Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(json.getBytes(StandardCharsets.UTF_8));
+    }
+}

@@ -15,6 +15,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import java.awt.Component;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class JwtClaimsTableModel extends AbstractTableModel implements TableCellRenderer {
@@ -77,16 +78,18 @@ public class JwtClaimsTableModel extends AbstractTableModel implements TableCell
     private Object render(NamedClaim<?> claim) {
         if(claim instanceof DateClaim) {
             DateClaim dateClaim = (DateClaim) claim;
-            if (Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.ISO) {
-                return dateClaim.getValue();
+            Date date = dateClaim.getDate();
+            if (date != null && Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.ISO) {
+                return date;
             }
-            if (Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.RELATIVE) {
+            if (date != null && Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.RELATIVE) {
                 PrettyTime prettyTime = new PrettyTime();
-                return prettyTime.format(dateClaim.getValue());
+                return prettyTime.format(date);
             }
             if (Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.RAW) {
-                return dateClaim.getValue().getTime() / 1000;
+                return dateClaim.getValue();
             }
+            return dateClaim.getValueString();
         }
         return claim.getValue();
     }
@@ -113,7 +116,10 @@ public class JwtClaimsTableModel extends AbstractTableModel implements TableCell
     }
 
     public void setClaimErrors(List<ClaimError> claimErrors) {
-        this.claimErrors = claimErrors;
+        this.claimErrors = List.copyOf(claimErrors);
+        if (getRowCount() > 0) {
+            fireTableRowsUpdated(0, getRowCount() - 1);
+        }
     }
 }
 

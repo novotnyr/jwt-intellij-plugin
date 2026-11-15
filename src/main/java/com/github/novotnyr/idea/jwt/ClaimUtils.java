@@ -2,25 +2,31 @@ package com.github.novotnyr.idea.jwt;
 
 import com.auth0.jwt.interfaces.Claim;
 import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.github.novotnyr.idea.jwt.core.BooleanClaim;
 import com.github.novotnyr.idea.jwt.core.DateClaim;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.core.NumericClaim;
+import com.github.novotnyr.idea.jwt.core.NumericDate;
 import com.github.novotnyr.idea.jwt.core.RawClaim;
 import com.github.novotnyr.idea.jwt.core.StringClaim;
 import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry.DataType;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 public class ClaimUtils {
 
-    public static NamedClaim<?> getClaim(String claimName, Claim claimValue) {
-        Date date = claimValue.asDate();
+    /** The raw JSON value preserves precision for registered NumericDate claims. */
+    public static NamedClaim<?> getClaim(String claimName, Claim claimValue, JsonNode rawValue) {
         if (isDateClaim(claimName, claimValue)) {
-            return new DateClaim(claimName, date);
+            BigDecimal timestamp = NumericDate.fromJson(rawValue);
+            return timestamp == null
+                    ? new RawClaim(claimName, rawValue)
+                    : DateClaim.fromNumericDate(claimName, timestamp);
         }
         Boolean bool = claimValue.asBoolean();
         if(bool != null) {
@@ -66,15 +72,19 @@ public class ClaimUtils {
 
     public static NamedClaim<?> copyClaim(NamedClaim<?> templateClaim, String name, Object value) {
         if(templateClaim instanceof DateClaim) {
-            Date date = null;
-            if(value instanceof String) {
-                date = DateUtils.toDate((String) value);
-            } else if (value instanceof Long) {
-                date = new Date((Long) value * 1000);
-            } else if (value instanceof Date) {
-                date = (Date) value;
+            if (value instanceof BigDecimal numericDate) {
+                return DateClaim.fromNumericDate(name, numericDate);
             }
-            return new DateClaim(name, date);
+            if (value instanceof String text) {
+                return DateClaim.fromNumericDate(name, new BigDecimal(text));
+            }
+            if (value instanceof Long seconds) {
+                return DateClaim.fromNumericDate(name, BigDecimal.valueOf(seconds));
+            }
+            if (value instanceof Date date) {
+                return new DateClaim(name, date);
+            }
+            throw new IllegalArgumentException("Unsupported timestamp value: " + value);
         }
         if(templateClaim instanceof BooleanClaim) {
             return new BooleanClaim(name, (Boolean) value);

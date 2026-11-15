@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.github.novotnyr.idea.jwt.ClaimUtils;
 import com.github.novotnyr.idea.jwt.SignatureContext;
 
@@ -42,8 +43,13 @@ public class Jwt {
 
         this.algorithm = decodedJwt.getAlgorithm();
 
+        JsonNode rawPayload = null;
         for (Map.Entry<String, Claim> claim : getClaims(decodedJwt).entrySet()) {
-            this.payloadClaims.add(ClaimUtils.getClaim(claim.getKey(), claim.getValue()));
+            if (rawPayload == null && ClaimUtils.isDateClaim(claim.getKey(), claim.getValue())) {
+                rawPayload = NumericDate.parsePayload(decodedJwt);
+            }
+            JsonNode rawValue = rawPayload == null ? null : rawPayload.get(claim.getKey());
+            this.payloadClaims.add(ClaimUtils.getClaim(claim.getKey(), claim.getValue(), rawValue));
         }
     }
 

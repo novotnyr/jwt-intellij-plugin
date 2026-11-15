@@ -40,12 +40,8 @@ public class PayloadClaimsSerializer extends StdSerializer<PayloadClaims> {
                 case RegisteredClaims.EXPIRES_AT:
                 case RegisteredClaims.ISSUED_AT:
                 case RegisteredClaims.NOT_BEFORE:
-                    if (claim instanceof DateClaim dateClaim) {
-                        safePayload.put(name, dateClaim.getTimestamp());
-                        break;
-                    } else {
-                        safePayload.put(name, claim.getValueString());
-                    }
+                    safePayload.put(name, claim.getValue());
+                    break;
                 default:
                     safePayload.put(name, getValue(claim));
                     break;
@@ -56,7 +52,9 @@ public class PayloadClaimsSerializer extends StdSerializer<PayloadClaims> {
     }
 
     private Object getValue(NamedClaim<?> claim) {
-        if (claim.getValue() instanceof Date date) {
+        if (claim instanceof DateClaim dateClaim) {
+            return dateClaim.getValue();
+        } else if (claim.getValue() instanceof Date date) {
             return date.getTime() / 1000;
         } else {
             return claim.getValueString();

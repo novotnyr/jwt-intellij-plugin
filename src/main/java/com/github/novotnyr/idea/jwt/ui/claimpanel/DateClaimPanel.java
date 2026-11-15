@@ -1,7 +1,7 @@
 package com.github.novotnyr.idea.jwt.ui.claimpanel;
 
-import com.github.novotnyr.idea.jwt.DateUtils;
 import com.github.novotnyr.idea.jwt.core.DateClaim;
+import com.github.novotnyr.idea.jwt.core.NumericDate;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.DocumentAdapter;
 
@@ -10,9 +10,11 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.event.DocumentEvent;
 import java.awt.event.ActionEvent;
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Date;
 
-public class DateClaimPanel extends AbstractClaimPanel<DateClaim, Date> {
+public class DateClaimPanel extends AbstractClaimPanel<DateClaim, BigDecimal> {
 
     private JLabel datePreviewLabel;
 
@@ -21,8 +23,6 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, Date> {
     private JButton add15MinutesButton;
 
     private JButton subtract15MinutesButton;
-
-    private ValidationInfo validationInfo;
 
     public DateClaimPanel(DateClaim value) {
         super(value);
@@ -55,41 +55,32 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, Date> {
     }
 
     private void nowButtonClicked(ActionEvent e) {
-        this.validationInfo = null;
-        long unixTimestamp = new Date().getTime() / 1000;
-        this.claimValueTextField.setText(String.valueOf(unixTimestamp));
-        this.datePreviewLabel.setText(new Date(unixTimestamp * 1000).toString());
+        this.claimValueTextField.setText(Long.toString(Instant.now().getEpochSecond()));
     }
 
     private void add15MinutesButtonClicked(ActionEvent event) {
-        try {
-            long unixTimestamp = Long.parseLong(this.claimValueTextField.getText());
-            unixTimestamp = unixTimestamp + (15 * 60);
-            this.claimValueTextField.setText(String.valueOf(unixTimestamp));
-            this.datePreviewLabel.setText(new Date(unixTimestamp * 1000).toString());
-        } catch (NumberFormatException e) {
-            this.datePreviewLabel.setText("Not a valid timestamp");
-            this.validationInfo = new ValidationInfo("Not a valid timestamp", this.claimValueTextField);
-        }
+        shiftSeconds(15 * 60);
     }
 
     private void subtract15MinutesButtonClicked(ActionEvent event) {
+        shiftSeconds(-15 * 60);
+    }
+
+    private void shiftSeconds(int seconds) {
         try {
-            long unixTimestamp = Long.parseLong(this.claimValueTextField.getText());
-            unixTimestamp = unixTimestamp - (15 * 60);
-            this.claimValueTextField.setText(String.valueOf(unixTimestamp));
-            this.datePreviewLabel.setText(new Date(unixTimestamp * 1000).toString());
+            BigDecimal timestamp = new BigDecimal(this.claimValueTextField.getText());
+            this.claimValueTextField.setText(timestamp.add(BigDecimal.valueOf(seconds)).toString());
         } catch (NumberFormatException e) {
-            this.datePreviewLabel.setText("Not a valid timestamp");
-            this.validationInfo = new ValidationInfo("Not a valid timestamp", this.claimValueTextField);
+            onClaimValueTextFieldChanged();
         }
     }
 
     private void onClaimValueTextFieldChanged() {
         try {
             this.validationInfo = null;
-            long unixTimestamp = Long.parseLong(this.claimValueTextField.getText());
-            this.datePreviewLabel.setText(new Date(unixTimestamp * 1000).toString());
+            BigDecimal timestamp = new BigDecimal(this.claimValueTextField.getText());
+            Date preview = NumericDate.toDate(timestamp);
+            this.datePreviewLabel.setText(preview == null ? "Timestamp outside display range" : preview.toString());
         } catch (NumberFormatException e) {
             this.datePreviewLabel.setText("Not a valid timestamp");
             this.validationInfo = new ValidationInfo("Not a valid timestamp", this.claimValueTextField);
@@ -97,8 +88,8 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, Date> {
     }
 
     @Override
-    public Date getClaimValue() {
-        return DateUtils.toDate(this.claimValueTextField.getText());
+    public BigDecimal getClaimValue() {
+        return new BigDecimal(this.claimValueTextField.getText());
     }
 
     public ValidationInfo getValidationInfo() {
