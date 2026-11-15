@@ -61,9 +61,9 @@ public class NewJwtDialogOwnershipTest extends LightPlatformTestCase {
             TestDialog dialog = new TestDialog(getProject());
             try {
                 assertEquals(SignatureAlgorithm.HS256, dialog.selectedAlgorithm());
-                JTextField dialogSecret = findComponents(dialog.center(), JTextField.class).get(0);
+                JTextField dialogSecret = findComponents(dialog.center(), JTextField.class).getFirst();
                 assertEquals("", dialogSecret.getText());
-                JTextField ownerField = findComponents(ownerSecret.getRoot(), JTextField.class).get(0);
+                JTextField ownerField = findComponents(ownerSecret.getRoot(), JTextField.class).getFirst();
                 assertNotSame(ownerField.getDocument(), dialogSecret.getDocument());
 
                 dialogSecret.setText("discarded draft");
@@ -91,7 +91,7 @@ public class NewJwtDialogOwnershipTest extends LightPlatformTestCase {
 
             TestDialog dialog = new TestDialog(getProject());
             try {
-                JTextField dialogSecret = findComponents(dialog.center(), JTextField.class).get(0);
+                JTextField dialogSecret = findComponents(dialog.center(), JTextField.class).getFirst();
                 assertEquals("", dialogSecret.getText());
                 dialogSecret.setText("accepted secret");
                 assertEquals("window secret", ((HS256SignatureContext) ownerSecret.getSignatureContext()).getSecret());
@@ -138,7 +138,7 @@ public class NewJwtDialogOwnershipTest extends LightPlatformTestCase {
                 selectRsaWithDefaults(dialog, executor);
                 List<EditorTextField> dialogFields = findComponents(dialog.center(), EditorTextField.class);
                 assertEquals(2, dialogFields.size());
-                assertNotSame(ownerFields.get(0).getDocument(), dialogFields.get(0).getDocument());
+                assertNotSame(ownerFields.getFirst().getDocument(), dialogFields.get(0).getDocument());
                 assertEquals("", dialogFields.get(0).getText());
                 assertEquals("", dialogFields.get(1).getText());
 
@@ -171,7 +171,7 @@ public class NewJwtDialogOwnershipTest extends LightPlatformTestCase {
             try {
                 assertEquals(SignatureAlgorithm.HS256, dialog.selectedAlgorithm());
                 dialog.selectAlgorithm(SignatureAlgorithm.HS384);
-                JTextField dialogSecret = findComponents(dialog.center(), JTextField.class).get(0);
+                JTextField dialogSecret = findComponents(dialog.center(), JTextField.class).getFirst();
                 assertEquals("", dialogSecret.getText());
                 dialogSecret.setText("hs384 accepted");
                 dialog.accept();
@@ -258,10 +258,10 @@ public class NewJwtDialogOwnershipTest extends LightPlatformTestCase {
             UIUtil.dispatchAllInvocationEvents();
             ValidationInfo error = dialog.validationInfo();
             assertNotNull(error);
-            assertSame(fields.get(0), error.component);
+            assertSame(fields.getFirst(), error.component);
             assertFalse(dialog.isDisposed());
 
-            fields.get(0).setText(publicKey);
+            fields.getFirst().setText(publicKey);
             dialog.accept();
             executor.runNext();
             UIUtil.dispatchAllInvocationEvents();
@@ -313,7 +313,7 @@ public class NewJwtDialogOwnershipTest extends LightPlatformTestCase {
             fields.get(1).setText(RsaUtils.toString((RSAPrivateKey) pair.getPrivate()));
 
             dialog.accept();
-            JCheckBox addIat = findComponents(dialog.center(), JCheckBox.class).get(0);
+            JCheckBox addIat = findComponents(dialog.center(), JCheckBox.class).getFirst();
             addIat.setSelected(!addIat.isSelected());
             executor.runNext();
             UIUtil.dispatchAllInvocationEvents();
@@ -348,7 +348,7 @@ public class NewJwtDialogOwnershipTest extends LightPlatformTestCase {
             UIUtil.dispatchAllInvocationEvents();
             assertFalse(dialog.isDisposed());
 
-            fields.get(0).setText(RsaUtils.toString((RSAPublicKey) pair.getPublic()));
+            fields.getFirst().setText(RsaUtils.toString((RSAPublicKey) pair.getPublic()));
             dialog.accept();
             dialog.doCancelAction();
             executor.runNext();
@@ -380,7 +380,7 @@ public class NewJwtDialogOwnershipTest extends LightPlatformTestCase {
             try {
                 dialog.selectAlgorithm(SignatureAlgorithm.RS256);
                 List<EditorTextField> fields = findComponents(dialog.center(), EditorTextField.class);
-                fields.get(0).setText("my public key draft");
+                fields.getFirst().setText("my public key draft");
                 executor.runNext();
                 UIUtil.dispatchAllInvocationEvents();
                 assertEquals("my public key draft", fields.get(0).getText());
@@ -435,11 +435,11 @@ public class NewJwtDialogOwnershipTest extends LightPlatformTestCase {
         }
 
         String selectedAlgorithm() {
-            return (String) findComponents(center(), JComboBox.class).get(0).getSelectedItem();
+            return (String) findComponents(center(), JComboBox.class).getFirst().getSelectedItem();
         }
 
         void selectAlgorithm(String algorithm) {
-            findComponents(center(), JComboBox.class).get(0).setSelectedItem(algorithm);
+            findComponents(center(), JComboBox.class).getFirst().setSelectedItem(algorithm);
         }
 
         void accept() {

@@ -20,7 +20,7 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
     public void testExplorerActionsFollowCurrentToken() {
         JwtExplorer explorer = new JwtExplorer(getProject());
         try {
-            ActionGroup toolbar = (ActionGroup) explorer.getActions(false).get(0);
+            ActionGroup toolbar = (ActionGroup) explorer.getActions(false).getFirst();
             AnAction copy = findAction(toolbar, "Copy payload as JSON");
             AnAction scratch = findAction(toolbar, "Create scratch file from payload");
             assertTrue(scratch instanceof CreateScratchFileAction);

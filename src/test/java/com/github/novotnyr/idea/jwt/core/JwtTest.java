@@ -31,8 +31,8 @@ public class JwtTest {
         List<NamedClaim<?>> payloadClaims = jwt.getPayloadClaims();
         Assert.assertEquals(1, payloadClaims.size());
 
-        Assert.assertEquals("wai", payloadClaims.get(0).getName());
-        Assert.assertEquals("test", payloadClaims.get(0).getValue());
+        Assert.assertEquals("wai", payloadClaims.getFirst().getName());
+        Assert.assertEquals("test", payloadClaims.getFirst().getValue());
 
     }
 

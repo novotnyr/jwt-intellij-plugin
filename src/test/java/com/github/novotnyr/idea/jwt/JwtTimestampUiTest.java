@@ -32,9 +32,9 @@ public class JwtTimestampUiTest extends LightPlatformTestCase {
         model.setClaimErrors(List.of(new ClaimError("subject", "Example error")));
 
         assertEquals(1, changes.size());
-        assertEquals(TableModelEvent.UPDATE, changes.get(0).getType());
-        assertEquals(0, changes.get(0).getFirstRow());
-        assertEquals(0, changes.get(0).getLastRow());
+        assertEquals(TableModelEvent.UPDATE, changes.getFirst().getType());
+        assertEquals(0, changes.getFirst().getFirstRow());
+        assertEquals(0, changes.getFirst().getLastRow());
         assertEquals(0, table.getSelectedRow());
     }
 

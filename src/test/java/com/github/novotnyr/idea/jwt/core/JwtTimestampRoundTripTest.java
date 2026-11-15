@@ -34,7 +34,7 @@ public class JwtTimestampRoundTripTest {
     @Test
     public void editingAnotherClaimKeepsInvalidNullTimestampAsNull() {
         Jwt jwt = token("{\"exp\":null}");
-        assertTrue(jwt.getPayloadClaims().get(0) instanceof RawClaim);
+        assertTrue(jwt.getPayloadClaims().getFirst() instanceof RawClaim);
         jwt.setSignatureContext(new HS256SignatureContext("secret"));
         jwt.setPayloadClaim(new StringClaim("subject", "alice"));
 

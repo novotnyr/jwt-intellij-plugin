@@ -129,7 +129,7 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
             AtomicInteger notifications = new AtomicInteger();
             panel.setSignatureContextChangedListener(notifications::incrementAndGet);
             panel.setSignatureContextChangedListener(notifications::incrementAndGet);
-            findComponents(panel.getRoot(), JTextField.class).get(0).setText("one edit");
+            findComponents(panel.getRoot(), JTextField.class).getFirst().setText("one edit");
             assertEquals(1, notifications.get());
 
             panel.removeSignatureContextChangedListener();
@@ -151,7 +151,7 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
             KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
             generator.initialize(1024);
             String publicKey = RsaUtils.toString((RSAPublicKey) generator.generateKeyPair().getPublic());
-            EditorTextField publicField = findComponents(panel.getRoot(), EditorTextField.class).get(0);
+            EditorTextField publicField = findComponents(panel.getRoot(), EditorTextField.class).getFirst();
             publicField.setText(publicKey);
             assertEquals(1, notifications.get());
 
@@ -186,7 +186,7 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
             panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.RS256));
             RS256Panel first = (RS256Panel) panel.getSecretPanel();
             List<EditorTextField> firstFields = findComponents(first.getRoot(), EditorTextField.class);
-            firstFields.get(0).setText("manual public key draft");
+            firstFields.getFirst().setText("manual public key draft");
             executor.runNext();
             UIUtil.dispatchAllInvocationEvents();
             assertEquals("manual public key draft", firstFields.get(0).getText());
@@ -251,7 +251,7 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
             preferences.updateKeyFiles(secondPublicFile.toString(), secondPrivateFile.toString());
             executor.runNext();
             UIUtil.dispatchAllInvocationEvents();
-            assertEquals("", fields.get(0).getText());
+            assertEquals("", fields.getFirst().getText());
             executor.runNext();
             UIUtil.dispatchAllInvocationEvents();
             assertEquals(secondPublic, fields.get(0).getText());
