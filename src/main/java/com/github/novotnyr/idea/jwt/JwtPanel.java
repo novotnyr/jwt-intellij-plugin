@@ -1,8 +1,6 @@
 package com.github.novotnyr.idea.jwt;
 
-import com.github.novotnyr.idea.jwt.action.AbstractActionButtonController;
 import com.github.novotnyr.idea.jwt.action.AddClaimActionButtonController;
-import com.github.novotnyr.idea.jwt.action.EditClaimActionButtonUpdater;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry;
@@ -22,7 +20,6 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.diagnostic.Logger;
@@ -107,12 +104,6 @@ public class JwtPanel implements DataProvider, Disposable {
     private JButton validateButton = new JButton("Validate");
 
     private Jwt jwt = Jwt.EMPTY;
-
-    private AddClaimActionButtonController addClaimActionButtonController;
-
-    private EditClaimActionButtonUpdater editClaimActionButtonUpdater;
-
-    private AbstractActionButtonController removeClaimActionButtonController;
 
     private boolean jwtUpdateInProgress;
 
@@ -213,24 +204,10 @@ public class JwtPanel implements DataProvider, Disposable {
     }
 
     private JPanel configureClaimsTableActions() {
-        this.addClaimActionButtonController = new AddClaimActionButtonController() {
+        AddClaimActionButtonController addClaimAction = new AddClaimActionButtonController(this::isAddClaimActionEnabled) {
             @Override
             public void onClaimTypeSelected(DataTypeRegistry.DataType dataType) {
                 onNewAction(dataType);
-            }
-        };
-
-        this.editClaimActionButtonUpdater = new EditClaimActionButtonUpdater();
-
-        this.removeClaimActionButtonController = new AbstractActionButtonController() {
-            @Override
-            public void run(AnActionButton button) {
-                onRemoveClaim();
-            }
-
-            @Override
-            public boolean isEnabled(@NonNull AnActionEvent anActionEvent) {
-                return isRemoveClaimActionEnabled();
             }
         };
 
@@ -254,11 +231,11 @@ public class JwtPanel implements DataProvider, Disposable {
                     }
                 })
                 .setEditAction(this::onEditAction)
-                .setEditActionUpdater(this.editClaimActionButtonUpdater)
-                .setAddAction(this.addClaimActionButtonController)
-                .setAddActionUpdater(this.addClaimActionButtonController)
-                .setRemoveAction(this.removeClaimActionButtonController)
-                .setRemoveActionUpdater(this.removeClaimActionButtonController)
+                .setEditActionUpdater(event -> isEditClaimActionEnabled())
+                .setAddAction(addClaimAction)
+                .setAddActionUpdater(addClaimAction)
+                .setRemoveAction(button -> onRemoveClaim())
+                .setRemoveActionUpdater(event -> isRemoveClaimActionEnabled())
                 .createPanel();
         this.claimsTablePanel.setBorder(IdeBorderFactory.createTitledBorder("Payload", false));
         return this.claimsTablePanel;
@@ -289,7 +266,7 @@ public class JwtPanel implements DataProvider, Disposable {
             if (this.secretPanel instanceof RS256Panel) {
                 this.parsedRsaContext = null;
             }
-            refreshClaimsTableControllers();
+            refreshValidateButton();
         });
     }
 
@@ -389,6 +366,9 @@ public class JwtPanel implements DataProvider, Disposable {
     }
 
     private void onRemoveClaim() {
+        if (!isRemoveClaimActionEnabled()) {
+            return;
+        }
         int selectedRow = this.claimsTable.getSelectedRow();
         NamedClaim<?> claim = this.claimsTableModel.getClaimAt(selectedRow);
         updateClaim(null, claim.getName());
@@ -471,21 +451,8 @@ public class JwtPanel implements DataProvider, Disposable {
         return result.get();
     }
 
-    private void refreshClaimsTableControllers() {
-        DataContext dataContext = dataId -> {
-            if (Constants.DataKeys.JWT_STATUS.is(dataId)) {
-                return JwtPanel.this.getSecretPanel().getStatus();
-            }
-            if (Constants.DataKeys.JWT.is(dataId)) {
-                return JwtPanel.this.jwt;
-            }
-            return null;
-        };
-
-        AnActionEvent event = AnActionEvent.createFromInputEvent(null, "place", null, dataContext);
-        this.addClaimActionButtonController.isEnabled(event);
-        this.editClaimActionButtonUpdater.isEnabled(event);
-        this.validateButton.setEnabled(isValidatable());
+    private void refreshValidateButton() {
+        this.validateButton.setEnabled(!Jwt.EMPTY.equals(this.jwt) && isValidatable());
     }
 
     @Nullable
@@ -531,8 +498,6 @@ public class JwtPanel implements DataProvider, Disposable {
         this.headerTable.setPreferredScrollableViewportSize(new Dimension(0, this.headerTableModel.getRowCount() * this.headerTable.getRowHeight()));
         this.headerTable.getParent().revalidate();
 
-        this.validateButton.setEnabled(!Jwt.EMPTY.equals(jwt));
-
         this.claimsTableModel = new JwtClaimsTableModel(jwt);
         this.claimsTableModel.setClaimErrors(validateClaims(jwt));
         this.claimsTable.setModel(this.claimsTableModel);
@@ -542,7 +507,7 @@ public class JwtPanel implements DataProvider, Disposable {
 
         configureSecretPanel(jwt);
 
-        refreshClaimsTableControllers();
+        refreshValidateButton();
     }
 
     private void updateClaimsTablePreferredSize() {
@@ -648,7 +613,7 @@ public class JwtPanel implements DataProvider, Disposable {
         } finally {
             configureSecretTextFieldListeners();
         }
-        refreshClaimsTableControllers();
+        refreshValidateButton();
     }
 
     private boolean isEditable() {
@@ -663,8 +628,16 @@ public class JwtPanel implements DataProvider, Disposable {
         return this.secretPanel;
     }
 
+    private boolean isAddClaimActionEnabled() {
+        return !Jwt.EMPTY.equals(this.jwt) && isEditable();
+    }
+
+    private boolean isEditClaimActionEnabled() {
+        return isEditable() && this.claimsTable.getSelectedRow() >= 0;
+    }
+
     private boolean isRemoveClaimActionEnabled() {
-        return isEditable() && this.claimsTable.getSelectedRows().length > 0;
+        return isEditClaimActionEnabled();
     }
 
     private SignatureContext getSignatureContext() {

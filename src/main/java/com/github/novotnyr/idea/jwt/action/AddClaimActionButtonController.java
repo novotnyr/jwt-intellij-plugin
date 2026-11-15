@@ -1,9 +1,6 @@
 package com.github.novotnyr.idea.jwt.action;
 
-import com.github.novotnyr.idea.jwt.Constants;
-import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry;
-import com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.PopupChooserBuilder;
@@ -15,17 +12,23 @@ import com.intellij.ui.components.JBList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.MUTABLE;
+import java.util.function.BooleanSupplier;
 
 public class AddClaimActionButtonController implements AnActionButtonRunnable, AnActionButtonUpdater {
 
     private DataTypeRegistry dataTypeRegistry = DataTypeRegistry.getInstance();
 
-    private boolean enabled = false;
+    private final BooleanSupplier canAddClaim;
+
+    public AddClaimActionButtonController(BooleanSupplier canAddClaim) {
+        this.canAddClaim = canAddClaim;
+    }
 
     @Override
     public void run(AnActionButton button) {
+        if (!this.canAddClaim.getAsBoolean()) {
+            return;
+        }
         Collection<DataTypeRegistry.DataType> dataTypes = this.dataTypeRegistry.getDataTypes();
         final JBList<String> list = new JBList<>(render(dataTypes));
 
@@ -56,13 +59,6 @@ public class AddClaimActionButtonController implements AnActionButtonRunnable, A
 
     @Override
     public boolean isEnabled(AnActionEvent event) {
-        JwtStatus jwtStatus = event.getData(Constants.DataKeys.JWT_STATUS);
-        Jwt jwt = event.getData(Constants.DataKeys.JWT);
-        boolean isEditable = MUTABLE.equals(jwtStatus);
-        if (jwt != null) {
-            this.enabled = isEditable && !jwt.isEmpty();
-            return this.enabled;
-        }
-        return this.enabled;
+        return this.canAddClaim.getAsBoolean();
     }
 }
