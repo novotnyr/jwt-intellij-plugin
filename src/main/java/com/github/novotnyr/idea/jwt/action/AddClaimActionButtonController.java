@@ -8,6 +8,7 @@ import com.intellij.ui.AnActionButton;
 import com.intellij.ui.AnActionButtonRunnable;
 import com.intellij.ui.AnActionButtonUpdater;
 import com.intellij.ui.components.JBList;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,7 +59,7 @@ public class AddClaimActionButtonController implements AnActionButtonRunnable, A
     }
 
     @Override
-    public boolean isEnabled(AnActionEvent event) {
+    public boolean isEnabled(@NonNull AnActionEvent event) {
         return this.canAddClaim.getAsBoolean();
     }
 }

@@ -5,6 +5,7 @@ import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextArea;
+import org.jspecify.annotations.NonNull;
 
 import javax.swing.JPanel;
 import javax.swing.event.DocumentEvent;
@@ -37,7 +38,7 @@ public class EncodedJwtPanel extends JPanel {
         this.encodedJwtTextArea.setLineWrap(true);
         this.encodedJwtTextArea.getDocument().addDocumentListener(new DocumentAdapter() {
             @Override
-            protected void textChanged(DocumentEvent documentEvent) {
+            protected void textChanged(@NonNull DocumentEvent documentEvent) {
                 try {
                     Document document = documentEvent.getDocument();
                     highlight(document);

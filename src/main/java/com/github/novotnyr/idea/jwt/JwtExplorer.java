@@ -24,6 +24,7 @@ import com.intellij.ui.JBSplitter;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
 
@@ -92,7 +93,7 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
         DefaultActionGroup group = new DefaultActionGroup();
         group.add(new AnAction("New JWT", "Create a new JWT", AllIcons.FileTypes.Any_type) {
             @Override
-            public void actionPerformed(AnActionEvent anActionEvent) {
+            public void actionPerformed(@NonNull AnActionEvent anActionEvent) {
                 NewJwtDialog dialog = new NewJwtDialog(JwtExplorer.this.project);
                 if (dialog.showAndGet()) {
                     Jwt jwt = dialog.getJwt();
@@ -107,7 +108,7 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
 
         group.add(new AnAction("Copy payload as JSON", "Copy JWT payload to clipboard as JSON", AllIcons.FileTypes.Json) {
             @Override
-            public void actionPerformed(AnActionEvent anActionEvent) {
+            public void actionPerformed(@NonNull AnActionEvent anActionEvent) {
                 Jwt jwt = JwtExplorer.this.jwt;
                 if (jwt != null) {
                     ClipboardUtils.copyPayload(JwtExplorer.this.jwt);
@@ -115,7 +116,7 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
             }
 
             @Override
-            public void update(AnActionEvent e) {
+            public void update(@NonNull AnActionEvent e) {
                 e.getPresentation().setEnabled(!JwtExplorer.this.jwt.isEmpty());
             }
 
@@ -133,7 +134,7 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
 
         group.add(new AnAction("Reset", "Reset All Fields", AllIcons.General.Reset) {
             @Override
-            public void actionPerformed(AnActionEvent anActionEvent) {
+            public void actionPerformed(@NonNull AnActionEvent anActionEvent) {
                 JwtExplorer.this.jwt = Jwt.EMPTY;
                 JwtExplorer.this.jwtPanel.reset();
                 runWithoutEncodedJwtEvent(JwtExplorer.this.encodedJwtPanel::reset);

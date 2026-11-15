@@ -18,6 +18,7 @@ import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.util.concurrency.AppExecutorUtil;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JCheckBox;
@@ -99,7 +100,7 @@ public class NewJwtDialog extends DialogWrapper {
             if (selectedPanel instanceof RS256Panel rsaPanel) {
                 rsaPanel.addKeyTextChangeListener(new DocumentListener() {
                     @Override
-                    public void documentChanged(DocumentEvent event) {
+                    public void documentChanged(@NonNull DocumentEvent event) {
                         invalidateRsaValidation();
                     }
                 }, getDisposable());

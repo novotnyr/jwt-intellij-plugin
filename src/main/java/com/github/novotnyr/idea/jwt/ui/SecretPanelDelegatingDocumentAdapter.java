@@ -2,6 +2,7 @@ package com.github.novotnyr.idea.jwt.ui;
 
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SignatureContextChangedListener;
 import com.intellij.ui.DocumentAdapter;
+import org.jspecify.annotations.NonNull;
 
 import javax.swing.event.DocumentEvent;
 
@@ -13,7 +14,7 @@ public class SecretPanelDelegatingDocumentAdapter extends DocumentAdapter {
     }
 
     @Override
-    protected void textChanged(DocumentEvent event) {
+    protected void textChanged(@NonNull DocumentEvent event) {
         this.delegate.onSignatureContextChanged();
     }
 }

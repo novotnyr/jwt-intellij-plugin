@@ -18,6 +18,7 @@ import com.intellij.testFramework.LightPlatformTestCase;
 import com.intellij.ui.EditorTextField;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.openapi.ui.ValidationInfo;
+import org.jspecify.annotations.NonNull;
 
 import javax.swing.JComboBox;
 import javax.swing.JCheckBox;
@@ -455,7 +456,7 @@ public class NewJwtDialogOwnershipTest extends LightPlatformTestCase {
         private final Queue<Runnable> tasks = new ArrayDeque<>();
 
         @Override
-        public void execute(Runnable task) {
+        public void execute(@NonNull Runnable task) {
             this.tasks.add(task);
         }
 

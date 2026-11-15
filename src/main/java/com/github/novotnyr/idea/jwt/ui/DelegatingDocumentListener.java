@@ -2,6 +2,7 @@ package com.github.novotnyr.idea.jwt.ui;
 
 import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.ui.DocumentAdapter;
+import org.jspecify.annotations.NonNull;
 
 import javax.swing.event.DocumentEvent;
 
@@ -13,12 +14,12 @@ public class DelegatingDocumentListener<T> extends DocumentAdapter implements Do
     }
 
     @Override
-    protected final void textChanged(DocumentEvent event) {
+    protected final void textChanged(@NonNull DocumentEvent event) {
         onDocumentChanged();
     }
 
     @Override
-    public final void documentChanged(com.intellij.openapi.editor.event.DocumentEvent event) {
+    public final void documentChanged(com.intellij.openapi.editor.event.@NonNull DocumentEvent event) {
         onDocumentChanged();
     }
 

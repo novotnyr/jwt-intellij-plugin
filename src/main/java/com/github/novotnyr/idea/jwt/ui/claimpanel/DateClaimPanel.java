@@ -4,6 +4,7 @@ import com.github.novotnyr.idea.jwt.core.DateClaim;
 import com.github.novotnyr.idea.jwt.core.NumericDate;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.DocumentAdapter;
+import org.jspecify.annotations.NonNull;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -42,7 +43,7 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, BigDecimal> {
 
         this.claimValueTextField.getDocument().addDocumentListener(new DocumentAdapter() {
             @Override
-            protected void textChanged(DocumentEvent documentEvent) {
+            protected void textChanged(@NonNull DocumentEvent documentEvent) {
                 onClaimValueTextFieldChanged();
             }
         });

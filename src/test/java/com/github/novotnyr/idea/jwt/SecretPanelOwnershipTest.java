@@ -16,6 +16,7 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.testFramework.LightPlatformTestCase;
 import com.intellij.ui.EditorTextField;
 import com.intellij.util.ui.UIUtil;
+import org.jspecify.annotations.NonNull;
 
 import javax.swing.JComponent;
 import javax.swing.JTextField;
@@ -329,7 +330,7 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
         private final Queue<Runnable> tasks = new ArrayDeque<>();
 
         @Override
-        public void execute(Runnable task) {
+        public void execute(@NonNull Runnable task) {
             this.tasks.add(task);
         }
 
