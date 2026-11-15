@@ -58,7 +58,19 @@ public class PreferencesConfigurable implements Configurable {
 
     @Override
     public boolean isModified() {
-        return true;
+        if (this.settingsPanel == null) {
+            return false;
+        }
+
+        PluginPreferences pluginPreferences = PluginPreferences.getInstance(this.project);
+        String privateKeyFile = this.settingsPanel.getRs256PrivateKeyTextField().getText();
+        String publicKeyFile = this.settingsPanel.getRs256PublicKeyTextField().getText();
+        return isDifferent(privateKeyFile, pluginPreferences.getRs256PrivateKeyFile())
+                || isDifferent(publicKeyFile, pluginPreferences.getRs256PublicKeyFile());
+    }
+
+    private static boolean isDifferent(String currentValue, String savedValue) {
+        return !StringUtil.notNullize(currentValue).equals(StringUtil.notNullize(savedValue));
     }
 
     @Override
