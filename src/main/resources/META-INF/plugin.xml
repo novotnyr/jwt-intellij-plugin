@@ -25,7 +25,8 @@
         <toolWindow id="JWT" anchor="right" factoryClass="com.github.novotnyr.idea.jwt.ToolWindowFactory"
                     icon="/icons/toolwindow-icon.svg" />
         <projectConfigurable instance="com.github.novotnyr.idea.jwt.ui.preferences.PreferencesConfigurable"
-                             groupId="tools"
+                             id="com.github.novotnyr.idea.jwt.ui.preferences.PreferencesConfigurable"
+                             parentId="tools"
                              displayName="JWT"/>
         <projectService serviceImplementation="com.github.novotnyr.idea.jwt.ui.preferences.PluginPreferences"/>
     </extensions>
