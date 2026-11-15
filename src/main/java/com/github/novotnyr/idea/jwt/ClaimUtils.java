@@ -60,7 +60,6 @@ public class ClaimUtils {
             case NUMERIC -> new NumericClaim("claim", 0L);
             case TIMESTAMP -> new DateClaim("claim", new Date());
             case RAW -> new RawClaim("claim", MissingNode.getInstance());
-            default -> throw new IllegalStateException("Unknown data type " + dataType);
         };
     }
 
