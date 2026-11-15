@@ -16,15 +16,11 @@ public final class SecretPanelFactory {
         if (algorithmName == null) {
             return new UnrecognizedSecretPanel();
         }
-        switch (algorithmName) {
-            case HS256:
-                return new HS256Panel();
-            case HS384:
-                return new HS384Panel();
-            case RS256:
-                return new RS256Panel(project, initialSignatureContext);
-            default:
-                return new UnrecognizedSecretPanel();
-        }
+        return switch (algorithmName) {
+            case HS256 -> new HS256Panel();
+            case HS384 -> new HS384Panel();
+            case RS256 -> new RS256Panel(project, initialSignatureContext);
+            default -> new UnrecognizedSecretPanel();
+        };
     }
 }
