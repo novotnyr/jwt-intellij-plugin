@@ -8,7 +8,7 @@ public class SignatureAlgorithm {
     public static final String HS256 = "HS256";
     public static final String HS384 = "HS384";
 
-    public static final Set<String> SUPPORTED_ALGORITHMS = new HashSet<String>() {
+    public static final Set<String> SUPPORTED_ALGORITHMS = new HashSet<>() {
         {
             add(RS256);
             add(HS256);

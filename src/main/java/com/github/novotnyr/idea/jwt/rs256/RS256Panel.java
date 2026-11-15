@@ -128,7 +128,7 @@ public class RS256Panel extends SecretPanel {
     public void setSignatureContextChangedListener(@NonNull SignatureContextChangedListener listener) {
         super.setSignatureContextChangedListener(listener);
 
-        this.documentListener = new DelegatingDocumentListener<SignatureContextChangedListener>(listener) {
+        this.documentListener = new DelegatingDocumentListener<>(listener) {
             @Override
             protected void onDocumentChanged() {
                 listener.onSignatureContextChanged();
