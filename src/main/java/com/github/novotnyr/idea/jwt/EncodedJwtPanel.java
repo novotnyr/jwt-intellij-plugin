@@ -4,10 +4,9 @@ import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
-import org.jdesktop.swingx.prompt.PromptSupport;
+import com.intellij.ui.components.JBTextArea;
 
 import javax.swing.JPanel;
-import javax.swing.JTextArea;
 import javax.swing.event.DocumentEvent;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
@@ -19,7 +18,7 @@ import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER;
 import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
 
 public class EncodedJwtPanel extends JPanel {
-    private JTextArea encodedJwtTextArea = new JTextArea(8, 0);
+    private JBTextArea encodedJwtTextArea = new JBTextArea(8, 0);
 
     private JBScrollPane encodedJwtTextAreaScrollPane
             = new JBScrollPane(this.encodedJwtTextArea, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_NEVER);
@@ -33,7 +32,7 @@ public class EncodedJwtPanel extends JPanel {
 
         add(this.encodedJwtTextAreaScrollPane, BorderLayout.CENTER);
 
-        PromptSupport.init("Paste or type JWT here", null, null, this.encodedJwtTextArea);
+        this.encodedJwtTextArea.getEmptyText().setText("Paste or type JWT here");
         this.encodedJwtTextArea.setLineWrap(true);
         this.encodedJwtTextArea.getDocument().addDocumentListener(new DocumentAdapter() {
             @Override
