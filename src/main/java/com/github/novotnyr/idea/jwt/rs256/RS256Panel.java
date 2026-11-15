@@ -17,14 +17,12 @@ import com.intellij.ui.JBSplitter;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.components.BorderLayoutPanel;
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import javax.swing.JComponent;
 
 import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.*;
 
 public class RS256Panel extends SecretPanel {
-    private Project project;
     private final BorderLayoutPanel root;
     private final EditorTextField publicKeyEditorTextField;
     private final EditorTextField privateKeyEditorTextField;
@@ -32,15 +30,15 @@ public class RS256Panel extends SecretPanel {
     private DelegatingDocumentListener<SignatureContextChangedListener> documentListener;
 
     public RS256Panel(Project project, SignatureContext initialSignatureContext) {
-        this.project = project;
-
         // These EditorTextField constructors create PSI documents for paste preprocessing.
-        this.publicKeyEditorTextField = new EditorTextField(this.project, FileTypes.PLAIN_TEXT);
+        this.publicKeyEditorTextField = new EditorTextField(project, FileTypes.PLAIN_TEXT);
         this.publicKeyEditorTextField.setOneLineMode(false);
+        this.publicKeyEditorTextField.setDisposedWith(this);
         RsaKeyPastePreProcessor.mark(this.publicKeyEditorTextField.getDocument());
 
-        this.privateKeyEditorTextField = new EditorTextField(this.project, FileTypes.PLAIN_TEXT);
+        this.privateKeyEditorTextField = new EditorTextField(project, FileTypes.PLAIN_TEXT);
         this.privateKeyEditorTextField.setOneLineMode(false);
+        this.privateKeyEditorTextField.setDisposedWith(this);
         RsaKeyPastePreProcessor.mark(this.privateKeyEditorTextField.getDocument());
 
         this.root = createUI();
@@ -109,6 +107,14 @@ public class RS256Panel extends SecretPanel {
     }
 
     @Override
+    public SecretPanel copyFor(Project project) {
+        RS256Panel copy = new RS256Panel(project, SignatureContext.EMPTY);
+        copy.publicKeyEditorTextField.setText(this.publicKeyEditorTextField.getText());
+        copy.privateKeyEditorTextField.setText(this.privateKeyEditorTextField.getText());
+        return copy;
+    }
+
+    @Override
     public void setSignatureContextChangedListener(@NonNull SignatureContextChangedListener listener) {
         super.setSignatureContextChangedListener(listener);
 
@@ -130,12 +136,10 @@ public class RS256Panel extends SecretPanel {
     @Override
     public void removeSignatureContextChangedListener() {
         super.removeSignatureContextChangedListener();
-        this.publicKeyEditorTextField.getDocument().removeDocumentListener(this.documentListener);
-        this.privateKeyEditorTextField.getDocument().removeDocumentListener(this.documentListener);
-    }
-
-    @Override
-    public void setProject(@Nullable Project project) {
-        this.project = project;
+        if (this.documentListener != null) {
+            this.publicKeyEditorTextField.getDocument().removeDocumentListener(this.documentListener);
+            this.privateKeyEditorTextField.getDocument().removeDocumentListener(this.documentListener);
+            this.documentListener = null;
+        }
     }
 }

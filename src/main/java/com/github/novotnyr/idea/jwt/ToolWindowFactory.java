@@ -17,8 +17,7 @@ import org.jetbrains.annotations.NotNull;
 public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFactory, DumbAware {
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        JwtExplorer jwtExplorer = new JwtExplorer();
-        jwtExplorer.setProject(project);
+        JwtExplorer jwtExplorer = new JwtExplorer(project);
 
         ContentFactory contentFactory = getContentFactory();
         Content content = contentFactory.createContent(jwtExplorer, "", false);

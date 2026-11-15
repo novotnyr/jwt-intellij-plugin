@@ -14,6 +14,7 @@ import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.github.novotnyr.idea.jwt.validation.JwtValidator;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.CopyPasteManagerEx;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -21,6 +22,7 @@ import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.IdeBorderFactory;
@@ -47,15 +49,16 @@ import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.github.novotnyr.idea.jwt.ClaimDialog.Mode.EDIT;
 import static com.github.novotnyr.idea.jwt.ClaimDialog.Mode.VIEW;
 import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.MUTABLE;
 
-public class JwtPanel implements DataProvider {
-    @Nullable
-    private Project project;
+public class JwtPanel implements DataProvider, Disposable {
+    private final Project project;
 
     private PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
 
@@ -75,7 +78,11 @@ public class JwtPanel implements DataProvider {
 
     private JPanel secretPanelContainer = new JPanel(new BorderLayout());
 
-    private SecretPanel secretPanel = new UnrecognizedSecretPanel();
+    private final SecretPanel unrecognizedSecretPanel = new UnrecognizedSecretPanel();
+
+    private final Map<String, SecretPanel> secretPanels = new HashMap<>();
+
+    private SecretPanel secretPanel = this.unrecognizedSecretPanel;
 
     private JButton validateButton = new JButton("Validate");
 
@@ -89,7 +96,9 @@ public class JwtPanel implements DataProvider {
 
     private boolean jwtUpdateInProgress;
 
-    public JwtPanel() {
+    public JwtPanel(Project project) {
+        this.project = project;
+        Disposer.register(this, this.unrecognizedSecretPanel);
         createUIComponents();
 
         this.claimsTable.setName(Constants.CLAIMS_TABLE_NAME);
@@ -409,30 +418,45 @@ public class JwtPanel implements DataProvider {
     private void replaceSecretPanelContent(SecretPanel secretPanel) {
         this.secretPanelContainer.removeAll();
         this.secretPanelContainer.add(secretPanel.getRoot(), BorderLayout.CENTER);
+        this.secretPanelContainer.revalidate();
+        this.secretPanelContainer.repaint();
     }
 
     private void configureSecretPanel(Jwt jwt) {
-        SecretPanel newSecretPanel = SecretPanelFactory.getInstance().getSecretPanel(this.project, jwt, getInitialSignatureContext(jwt));
-        if (isSameSecretPanel(newSecretPanel)) {
+        SecretPanel newSecretPanel = getOrCreateSecretPanel(jwt.getAlgorithm());
+        if (newSecretPanel == this.secretPanel) {
             return;
         }
-        newSecretPanel.setProject(this.project);
         this.secretPanel.removeSignatureContextChangedListener();
         replaceSecretPanelContent(newSecretPanel);
         this.secretPanel = newSecretPanel;
         configureSecretTextFieldListeners();
     }
 
-    private SignatureContext getInitialSignatureContext(Jwt jwt) {
-        if (this.project == null) {
-            return SignatureContext.EMPTY;
+    private SecretPanel getOrCreateSecretPanel(String algorithm) {
+        if (!SignatureAlgorithm.isSupported(algorithm)) {
+            return this.unrecognizedSecretPanel;
         }
-        return new IdePreferenceNewSignatureContextProvider(this.project)
-                .createSignatureContext(jwt.getAlgorithm());
+
+        SecretPanel panel = this.secretPanels.get(algorithm);
+        if (panel == null) {
+            SignatureContext initialSignatureContext = getInitialSignatureContext(algorithm);
+            panel = SecretPanelFactory.create(this.project, algorithm, initialSignatureContext);
+            Disposer.register(this, panel);
+            this.secretPanels.put(algorithm, panel);
+        }
+        return panel;
     }
 
-    private boolean isSameSecretPanel(SecretPanel newSecretPanel) {
-        return newSecretPanel.getClass().getName().equals(this.secretPanel.getClass().getName());
+    private SignatureContext getInitialSignatureContext(String algorithm) {
+        return new IdePreferenceNewSignatureContextProvider(this.project)
+                .createSignatureContext(algorithm);
+    }
+
+    @Nullable
+    public SecretPanel copySecretPanelForDialog(String algorithm) {
+        SecretPanel panel = this.secretPanels.get(algorithm);
+        return panel == null ? null : panel.copyFor(this.project);
     }
 
     private List<ClaimError> validateClaims(Jwt jwt) {
@@ -444,7 +468,13 @@ public class JwtPanel implements DataProvider {
 
 
     public void setSignatureContext(SignatureContext signatureContext) {
-        this.secretPanel.setSignatureContext(signatureContext);
+        this.secretPanel.removeSignatureContextChangedListener();
+        try {
+            this.secretPanel.setSignatureContext(signatureContext);
+        } finally {
+            configureSecretTextFieldListeners();
+        }
+        refreshClaimsTableControllers();
     }
 
     private boolean isEditable() {
@@ -469,13 +499,19 @@ public class JwtPanel implements DataProvider {
 
     public void reset() {
         setJwt(Jwt.EMPTY);
+        for (SecretPanel panel : this.secretPanels.values()) {
+            Disposer.dispose(panel);
+        }
+        this.secretPanels.clear();
     }
 
     public void addJwtListener(PropertyChangeListener listener) {
         this.propertyChangeSupport.addPropertyChangeListener("jwt", listener);
     }
 
-    public void setProject(@Nullable Project project) {
-        this.project = project;
+    @Override
+    public void dispose() {
+        this.secretPanel.removeSignatureContextChangedListener();
+        this.secretPanels.clear();
     }
 }

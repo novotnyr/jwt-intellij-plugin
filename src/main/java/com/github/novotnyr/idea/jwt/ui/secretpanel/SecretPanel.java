@@ -3,6 +3,7 @@ package com.github.novotnyr.idea.jwt.ui.secretpanel;
 import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.SignatureContextException;
 import com.github.novotnyr.idea.jwt.validation.SignatureError;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.popup.Balloon;
@@ -10,16 +11,12 @@ import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.TextAccessor;
 import com.intellij.ui.awt.RelativePoint;
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import javax.swing.JComponent;
 import javax.swing.text.JTextComponent;
 
-public abstract class SecretPanel {
+public abstract class SecretPanel implements Disposable {
     private SignatureContextChangedListener signatureContextChangedListener;
-
-    @Nullable
-    private Project project;
 
     public abstract JComponent getRoot();
 
@@ -70,7 +67,21 @@ public abstract class SecretPanel {
 
     public abstract void setSignatureContext(SignatureContext signatureContext);
 
+    /**
+     * Creates a panel for another UI owner using this panel's current raw field text.
+     * The copy must have its own components and documents, with no inherited listeners.
+     * Incomplete key text must be copied without parsing it as a signature context.
+     * The caller owns and must dispose the returned panel.
+     *
+     * @param project project for editor-backed fields in the copy
+     * @return a new, independent panel containing the current field text
+     */
+    public abstract SecretPanel copyFor(Project project);
+
     public void setSignatureContextChangedListener(@NonNull SignatureContextChangedListener listener) {
+        if (this.signatureContextChangedListener != null) {
+            removeSignatureContextChangedListener();
+        }
         this.signatureContextChangedListener = listener;
     }
 
@@ -86,12 +97,8 @@ public abstract class SecretPanel {
         return textAccessor.getText() != null && !textAccessor.getText().isEmpty();
     }
 
-    @Nullable
-    public Project getProject() {
-        return this.project;
-    }
-
-    public void setProject(@Nullable Project project) {
-        this.project = project;
+    @Override
+    public void dispose() {
+        removeSignatureContextChangedListener();
     }
 }

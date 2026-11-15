@@ -6,6 +6,7 @@ import com.github.novotnyr.idea.jwt.ui.SecretPanelDelegatingDocumentAdapter;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SignatureContextChangedListener;
+import com.intellij.openapi.project.Project;
 import org.jspecify.annotations.NonNull;
 
 import javax.swing.JComponent;
@@ -27,6 +28,13 @@ public class HS256Panel extends SecretPanel {
 
     public void setSecret(String secret) {
         this.secretTextField.setText(secret);
+    }
+
+    @Override
+    public SecretPanel copyFor(Project project) {
+        HS256Panel copy = new HS256Panel();
+        copy.setSecret(getSecret());
+        return copy;
     }
 
     public JPanel getRoot() {
@@ -68,6 +76,9 @@ public class HS256Panel extends SecretPanel {
     @Override
     public void removeSignatureContextChangedListener() {
         super.removeSignatureContextChangedListener();
-        this.secretTextField.getDocument().removeDocumentListener(this.secretTextFieldDocumentListener);
+        if (this.secretTextFieldDocumentListener != null) {
+            this.secretTextField.getDocument().removeDocumentListener(this.secretTextFieldDocumentListener);
+            this.secretTextFieldDocumentListener = null;
+        }
     }
 }

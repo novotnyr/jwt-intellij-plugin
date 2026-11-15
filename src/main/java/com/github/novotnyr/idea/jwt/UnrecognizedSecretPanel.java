@@ -3,6 +3,7 @@ package com.github.novotnyr.idea.jwt;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SignatureContextChangedListener;
+import com.intellij.openapi.project.Project;
 import org.jspecify.annotations.NonNull;
 
 import javax.swing.JComponent;
@@ -36,6 +37,11 @@ public class UnrecognizedSecretPanel extends SecretPanel {
     @Override
     public void setSignatureContext(SignatureContext signatureContext) {
         // not supported
+    }
+
+    @Override
+    public SecretPanel copyFor(Project project) {
+        return new UnrecognizedSecretPanel();
     }
 
     @Override

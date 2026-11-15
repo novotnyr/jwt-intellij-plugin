@@ -15,6 +15,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.popup.Balloon;
@@ -28,16 +29,24 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
 
     private final EncodedJwtPanel encodedJwtPanel;
     private final JwtPanel jwtPanel;
+    private final Project project;
 
     private Jwt jwt = Jwt.EMPTY;
+    private boolean updatingEncodedJwt;
 
-    public JwtExplorer() {
+    public JwtExplorer(Project project) {
         super(true);
-        configureToolbar();
+        this.project = project;
 
         this.encodedJwtPanel = new EncodedJwtPanel();
-        this.jwtPanel = new JwtPanel();
+        this.jwtPanel = new JwtPanel(project);
+        Disposer.register(this, this.jwtPanel);
+        configureToolbar();
+
         this.encodedJwtPanel.addPropertyChangeListener("jwt", event -> {
+            if (this.updatingEncodedJwt) {
+                return;
+            }
             try {
                 String jwtString = (String) event.getNewValue();
                 Jwt jwt = StringUtils.isEmpty(jwtString) ? Jwt.EMPTY : new Jwt(jwtString);
@@ -68,7 +77,8 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
         });
         this.jwtPanel.addJwtListener(evt -> {
             Jwt jwt = (Jwt) evt.getNewValue();
-            JwtExplorer.this.encodedJwtPanel.setJwt(jwt);
+            JwtExplorer.this.jwt = jwt;
+            setEncodedJwtSilently(jwt);
         });
 
         JBSplitter splitter = new JBSplitter(true, 0.2f);
@@ -83,13 +93,15 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
         group.add(new AnAction("New JWT", "Create a new JWT", AllIcons.FileTypes.Any_type) {
             @Override
             public void actionPerformed(AnActionEvent anActionEvent) {
-                NewJwtDialog dialog = new NewJwtDialog(anActionEvent.getProject());
+                NewJwtDialog dialog = new NewJwtDialog(JwtExplorer.this.project,
+                        JwtExplorer.this.jwtPanel::copySecretPanelForDialog);
                 if (dialog.showAndGet()) {
                     Jwt jwt = dialog.getJwt();
+                    SignatureContext signatureContext = dialog.getSignatureContext();
                     JwtExplorer.this.jwt = jwt;
-                    JwtExplorer.this.encodedJwtPanel.setJwt(jwt);
-                    JwtExplorer.this.jwtPanel.setSignatureContext(dialog.getSignatureContext());
                     JwtExplorer.this.jwtPanel.setJwt(jwt);
+                    JwtExplorer.this.jwtPanel.setSignatureContext(signatureContext);
+                    setEncodedJwtSilently(jwt);
                 }
             }
         });
@@ -129,8 +141,8 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
             @Override
             public void actionPerformed(AnActionEvent anActionEvent) {
                 JwtExplorer.this.jwt = Jwt.EMPTY;
-                JwtExplorer.this.encodedJwtPanel.reset();
                 JwtExplorer.this.jwtPanel.reset();
+                runWithoutEncodedJwtEvent(JwtExplorer.this.encodedJwtPanel::reset);
             }
         });
 
@@ -143,10 +155,19 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
 
     @Override
     public void dispose() {
-
     }
 
-    public void setProject(Project project) {
-        this.jwtPanel.setProject(project);
+    private void setEncodedJwtSilently(Jwt jwt) {
+        runWithoutEncodedJwtEvent(() -> this.encodedJwtPanel.setJwt(jwt));
+    }
+
+    private void runWithoutEncodedJwtEvent(Runnable update) {
+        boolean previousValue = this.updatingEncodedJwt;
+        this.updatingEncodedJwt = true;
+        try {
+            update.run();
+        } finally {
+            this.updatingEncodedJwt = previousValue;
+        }
     }
 }
