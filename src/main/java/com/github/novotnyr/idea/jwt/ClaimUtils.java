@@ -54,20 +54,14 @@ public class ClaimUtils {
     }
 
     public static NamedClaim<?> newEmptyClaim(DataType dataType) {
-        switch (dataType) {
-            case BOOLEAN:
-                return new BooleanClaim("claim", false);
-            case STRING:
-                return new StringClaim("claim", "value");
-            case NUMERIC:
-                return new NumericClaim("claim", 0L);
-            case TIMESTAMP:
-                return new DateClaim("claim", new Date());
-            case RAW:
-                return new RawClaim("claim", MissingNode.getInstance());
-            default:
-                throw new IllegalStateException("Unknown data type " + dataType);
-        }
+        return switch (dataType) {
+            case BOOLEAN -> new BooleanClaim("claim", false);
+            case STRING -> new StringClaim("claim", "value");
+            case NUMERIC -> new NumericClaim("claim", 0L);
+            case TIMESTAMP -> new DateClaim("claim", new Date());
+            case RAW -> new RawClaim("claim", MissingNode.getInstance());
+            default -> throw new IllegalStateException("Unknown data type " + dataType);
+        };
     }
 
     public static NamedClaim<?> copyClaim(NamedClaim<?> templateClaim, String name, Object value) {

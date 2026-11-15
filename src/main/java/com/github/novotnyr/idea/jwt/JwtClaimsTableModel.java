@@ -48,14 +48,11 @@ public class JwtClaimsTableModel extends AbstractTableModel implements TableCell
 
     @Override
     public String getColumnName(int column) {
-        switch (column) {
-            case 0:
-                return "Claim";
-            case 1:
-                return "Value";
-            default:
-                return "-";
-        }
+        return switch (column) {
+            case 0 -> "Claim";
+            case 1 -> "Value";
+            default -> "-";
+        };
     }
 
     @Override
