@@ -14,6 +14,7 @@ import com.intellij.openapi.editor.highlighter.EditorHighlighterFactory;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.EditorTextField;
 import com.intellij.ui.components.JBScrollPane;
+import org.jspecify.annotations.NonNull;
 
 import java.awt.BorderLayout;
 import java.io.IOException;
@@ -37,7 +38,7 @@ public class RawClaimPanel extends AbstractClaimPanel<RawClaim, TreeNode> {
         Document document = EditorFactory.getInstance().createDocument(toString(super.value.getValue()));
         this.claimValueEditorTextField = new EditorTextField(document, null, JsonFileType.INSTANCE, false ,false) {
             @Override
-            protected EditorEx createEditor() {
+            protected @NonNull EditorEx createEditor() {
                 EditorHighlighterFactory highlighterFactory = EditorHighlighterFactory.getInstance();
                 EditorHighlighter editorHighlighter = highlighterFactory.createEditorHighlighter(null, JsonFileType.INSTANCE);
                 EditorEx editor = super.createEditor();
