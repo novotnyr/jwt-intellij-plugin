@@ -95,7 +95,7 @@ public class ClaimDialog extends DialogWrapper {
 
             GridBagConstraints cColumns2 = new GridBagConstraints();
             cColumns2.fill = GridBagConstraints.HORIZONTAL;
-            cColumn1.anchor = GridBagConstraints.LINE_START;
+            cColumns2.anchor = GridBagConstraints.LINE_START;
             cColumns2.weightx = 1;
             cColumns2.gridx = 1;
             cColumns2.gridy = 0;
