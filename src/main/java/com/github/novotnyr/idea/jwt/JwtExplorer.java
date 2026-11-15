@@ -121,18 +121,13 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
 
             @Override
             public @NotNull ActionUpdateThread getActionUpdateThread() {
-                return ActionUpdateThread.BGT;
+                return ActionUpdateThread.EDT;
             }
         });
         group.add(new CreateScratchFileAction() {
             @Override
             protected Jwt getJwt() {
                 return JwtExplorer.this.jwt;
-            }
-
-            @Override
-            public @NotNull ActionUpdateThread getActionUpdateThread() {
-                return ActionUpdateThread.EDT;
             }
         });
 

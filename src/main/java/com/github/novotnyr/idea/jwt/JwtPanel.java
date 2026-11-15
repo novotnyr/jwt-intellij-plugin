@@ -227,7 +227,7 @@ public class JwtPanel implements DataProvider, Disposable {
 
                     @Override
                     public @NotNull ActionUpdateThread getActionUpdateThread() {
-                        return ActionUpdateThread.BGT;
+                        return ActionUpdateThread.EDT;
                     }
                 })
                 .setEditAction(this::onEditAction)

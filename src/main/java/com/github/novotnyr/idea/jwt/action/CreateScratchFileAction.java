@@ -6,11 +6,13 @@ import com.github.novotnyr.idea.jwt.ui.Icons;
 import com.github.novotnyr.idea.jwt.ui.editor.EditorReformatter;
 import com.intellij.ide.scratch.ScratchRootType;
 import com.intellij.json.JsonLanguage;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import org.jetbrains.annotations.NotNull;
 
 import static com.intellij.ide.scratch.ScratchFileService.Option.create_if_missing;
 
@@ -23,6 +25,11 @@ public abstract class CreateScratchFileAction extends AnAction {
 
     public CreateScratchFileAction() {
         super("Create scratch file from payload", "Create scratch file from payload", Icons.createScratchFile());
+    }
+
+    @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.EDT;
     }
 
     @Override

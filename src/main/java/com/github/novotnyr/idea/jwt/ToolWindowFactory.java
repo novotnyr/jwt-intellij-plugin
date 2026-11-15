@@ -38,7 +38,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
         return ApplicationManager.getApplication().getService(ContentFactory.class);
     }
 
-    private ActionGroup getToolWindowActionGroup() {
+    ActionGroup getToolWindowActionGroup() {
         DefaultActionGroup actionGroup = new DefaultActionGroup("Timestamp format", true);
         actionGroup.add(new CheckboxAction("Unix timestamp") {
             @Override
@@ -53,7 +53,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
 
             @Override
             public @NotNull ActionUpdateThread getActionUpdateThread() {
-                return ActionUpdateThread.BGT;
+                return ActionUpdateThread.EDT;
             }
         });
         actionGroup.add(new CheckboxAction("ISO") {
@@ -69,7 +69,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
 
             @Override
             public @NotNull ActionUpdateThread getActionUpdateThread() {
-                return ActionUpdateThread.BGT;
+                return ActionUpdateThread.EDT;
             }
         });
         actionGroup.add(new CheckboxAction("Relative") {
@@ -85,7 +85,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
 
             @Override
             public @NotNull ActionUpdateThread getActionUpdateThread() {
-                return ActionUpdateThread.BGT;
+                return ActionUpdateThread.EDT;
             }
         });
 
