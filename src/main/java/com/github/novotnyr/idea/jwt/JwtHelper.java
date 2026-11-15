@@ -33,10 +33,6 @@ public class JwtHelper {
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(o);
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Illegal JSON", e);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Unreadable JSON", e);
         }
     }
-
-
 }
