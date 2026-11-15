@@ -26,6 +26,7 @@ dependencies {
 
     intellijPlatform {
         intellijIdeaCommunity("2024.3")
+        bundledPlugin("com.intellij.modules.json")
     }
 }
 
