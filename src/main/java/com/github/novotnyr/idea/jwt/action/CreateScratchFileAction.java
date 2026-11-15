@@ -3,7 +3,6 @@ package com.github.novotnyr.idea.jwt.action;
 import com.github.novotnyr.idea.jwt.JwtHelper;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.ui.Icons;
-import com.github.novotnyr.idea.jwt.ui.editor.EditorReformatter;
 import com.intellij.ide.scratch.ScratchRootType;
 import com.intellij.json.JsonLanguage;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
@@ -19,7 +18,7 @@ import static com.intellij.ide.scratch.ScratchFileService.Option.create_if_missi
 public abstract class CreateScratchFileAction extends AnAction {
     public static final String EXTENSION = "json";
 
-    private EditorReformatter editorReformatter = new EditorReformatter();
+    private final ScratchFileFormatter scratchFileFormatter = new ScratchFileFormatter();
 
     private String extension = EXTENSION;
 
@@ -46,7 +45,7 @@ public abstract class CreateScratchFileAction extends AnAction {
                 .createScratchFile(project, fileName, JsonLanguage.INSTANCE, jwtPayloadString, create_if_missing);
         if (scratchVirtualFile != null) {
             FileEditorManager.getInstance(project).openFile(scratchVirtualFile, true);
-            this.editorReformatter.reformatActiveEditor(project, scratchVirtualFile);
+            this.scratchFileFormatter.reformat(project, scratchVirtualFile);
         }
     }
 
