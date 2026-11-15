@@ -5,13 +5,12 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.ex.CheckboxAction;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.content.Content;
-import com.intellij.ui.content.ContentFactory;
+import com.intellij.ui.content.ContentManager;
 import org.jetbrains.annotations.NotNull;
 
 public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFactory, DumbAware {
@@ -19,9 +18,9 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         JwtExplorer jwtExplorer = new JwtExplorer(project);
 
-        ContentFactory contentFactory = getContentFactory();
-        Content content = contentFactory.createContent(jwtExplorer, "", false);
-        toolWindow.getContentManager().addContent(content);
+        ContentManager contentManager = toolWindow.getContentManager();
+        Content content = contentManager.getFactory().createContent(jwtExplorer, "", false);
+        contentManager.addContent(content);
 
         if(toolWindow instanceof ToolWindowEx) {
             ToolWindowEx extendedToolWindow = (ToolWindowEx) toolWindow;
@@ -29,13 +28,6 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
         }
 
         content.setDisposer(jwtExplorer);
-    }
-
-    private static ContentFactory getContentFactory() {
-        // IC-2022.1 introduced ContentFactory.getInstance() and deprecated ContentFactory.SERVICE.getInstance()
-        // Use implementation from the IC sources until we increase the 'since' compatibility
-        // https://github.com/JetBrains/intellij-community/blame/ca1151aa9f88e1e9f727d55736916cbe48d9518b/platform/ide-core/src/com/intellij/ui/content/ContentFactory.java#L27
-        return ApplicationManager.getApplication().getService(ContentFactory.class);
     }
 
     ActionGroup getToolWindowActionGroup() {
