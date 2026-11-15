@@ -14,13 +14,17 @@ import java.awt.BorderLayout;
 import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.NONE;
 
 public class UnrecognizedSecretPanel extends SecretPanel {
-    @Override
-    public JComponent getRoot() {
-        JPanel root = new JPanel(new BorderLayout());
+    private final JPanel root = new JPanel(new BorderLayout());
+
+    public UnrecognizedSecretPanel() {
         JLabel label = new JLabel("Empty or unsupported JWT");
         label.setHorizontalAlignment(SwingConstants.CENTER);
-        root.add(label, BorderLayout.CENTER);
-        return root;
+        this.root.add(label, BorderLayout.CENTER);
+    }
+
+    @Override
+    public JComponent getRoot() {
+        return this.root;
     }
 
     @Override

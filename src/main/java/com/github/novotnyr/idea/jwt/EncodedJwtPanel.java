@@ -18,14 +18,15 @@ import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER;
 import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
 
 public class EncodedJwtPanel extends JPanel {
-    private JBTextArea encodedJwtTextArea = new JBTextArea(8, 0);
+    private final JBTextArea encodedJwtTextArea = new JBTextArea(8, 0);
 
-    private JBScrollPane encodedJwtTextAreaScrollPane
+    private final JBScrollPane encodedJwtTextAreaScrollPane
             = new JBScrollPane(this.encodedJwtTextArea, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_NEVER);
 
-    private Highlighter.HighlightPainter headerPainter = new DefaultHighlighter.DefaultHighlightPainter(JBColor.LIGHT_GRAY);
-    private Highlighter.HighlightPainter payloadPainter = new DefaultHighlighter.DefaultHighlightPainter(JBColor.LIGHT_GRAY);
-    private Highlighter.HighlightPainter signaturePainter = new DefaultHighlighter.DefaultHighlightPainter(JBColor.GRAY);
+    private final Highlighter.HighlightPainter payloadPainter = new DefaultHighlighter.DefaultHighlightPainter(JBColor.LIGHT_GRAY);
+
+    /** Tag for the payload highlight owned by this panel. */
+    private Object payloadHighlightTag;
 
     public EncodedJwtPanel() {
         super(new BorderLayout());
@@ -50,20 +51,22 @@ public class EncodedJwtPanel extends JPanel {
     }
 
     private void highlight(Document document) {
+        Highlighter highlighter = this.encodedJwtTextArea.getHighlighter();
+        if (this.payloadHighlightTag != null) {
+            highlighter.removeHighlight(this.payloadHighlightTag);
+            this.payloadHighlightTag = null;
+        }
+
         try {
             String text = document.getText(0, document.getLength());
-            String[] split = text.split("\\.");
-            if(split.length != 3) {
+            String[] segments = text.split("\\.", -1);
+            if (segments.length != 3) {
                 return;
             }
-            String header = split[0];
-            String payload = split[1];
-            String signature = split[2];
-            // TODO rework highlights
-            //this.encodedJwtTextArea.getHighlighter().addHighlight(0, header.length(), this.headerPainter);
-            this.encodedJwtTextArea.getHighlighter().addHighlight(header.length() + 1, header.length() + 1 + payload.length(), this.payloadPainter);
-            // TODO rework highlights
-            //this.encodedJwtTextArea.getHighlighter().addHighlight(header.length() + 1 + payload.length() + 1, header.length() + 1 + payload.length() + 1 + signature.length(), this.signaturePainter);
+
+            int payloadStart = segments[0].length() + 1;
+            int payloadEnd = payloadStart + segments[1].length();
+            this.payloadHighlightTag = highlighter.addHighlight(payloadStart, payloadEnd, this.payloadPainter);
         } catch (BadLocationException e) {
             e.printStackTrace();
         }

@@ -17,6 +17,7 @@ import com.intellij.testFramework.LightPlatformTestCase;
 import com.intellij.ui.EditorTextField;
 import com.intellij.util.ui.UIUtil;
 
+import javax.swing.JComponent;
 import javax.swing.JTextField;
 import java.awt.Component;
 import java.awt.Container;
@@ -36,6 +37,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class SecretPanelOwnershipTest extends LightPlatformTestCase {
+    public void testUnrecognizedPanelKeepsAttachedBalloonTargetAcrossTokenSwitches() {
+        JwtPanel panel = new JwtPanel(getProject());
+        try {
+            UnrecognizedSecretPanel unrecognized = (UnrecognizedSecretPanel) panel.getSecretPanel();
+            JComponent root = unrecognized.getRoot();
+            Container parent = root.getParent();
+            assertNotNull(parent);
+            assertSame(root, unrecognized.getBaloonableComponent());
+
+            panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.HS256));
+            assertNull(root.getParent());
+
+            panel.setJwt(Jwt.EMPTY);
+            assertSame(unrecognized, panel.getSecretPanel());
+            assertSame(root, unrecognized.getRoot());
+            assertSame(root, unrecognized.getBaloonableComponent());
+            assertSame(parent, root.getParent());
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
     public void testTwoToolWindowsKeepIndependentPanelsAndSecrets() {
         JwtPanel first = new JwtPanel(getProject());
         JwtPanel second = new JwtPanel(getProject());
