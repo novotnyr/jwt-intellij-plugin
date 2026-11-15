@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.github.novotnyr"
-version = "0.24"
+version = "0.25-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -33,7 +33,7 @@ intellijPlatform {
     pluginConfiguration {
         changeNotes = """
             <ul>
-                <li>Fix inability to parse RS256 keys in plugin settings</li>
+                <li></li>
             </ul>
         """.trimIndent()
     }
