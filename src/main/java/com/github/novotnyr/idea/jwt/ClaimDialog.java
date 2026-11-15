@@ -122,20 +122,15 @@ public class ClaimDialog extends DialogWrapper {
             this.claimNameTextField.setText(claim.getName());
         }
 
-        private AbstractClaimPanel<?, ?> createNestedPanel() {
-            if(this.claim instanceof DateClaim) {
-                return new DateClaimPanel((DateClaim) this.claim);
-            } else if(this.claim instanceof StringClaim) {
-                return new StringClaimPanel((StringClaim) this.claim);
-            } else if(this.claim instanceof NumericClaim) {
-                return new NumericClaimPanel((NumericClaim) this.claim);
-            } else if(this.claim instanceof BooleanClaim) {
-                return new BooleanClaimPanel((BooleanClaim) this.claim);
-            } else if(this.claim instanceof RawClaim) {
-                return new RawClaimPanel((RawClaim) this.claim);
-            }
-
-            return null;
+        private @Nullable AbstractClaimPanel<?, ?> createNestedPanel() {
+            return switch (this.claim) {
+                case DateClaim dateClaim -> new DateClaimPanel(dateClaim);
+                case StringClaim stringClaim -> new StringClaimPanel(stringClaim);
+                case NumericClaim numericClaim -> new NumericClaimPanel(numericClaim);
+                case BooleanClaim booleanClaim -> new BooleanClaimPanel(booleanClaim);
+                case RawClaim rawClaim -> new RawClaimPanel(rawClaim);
+                case null, default -> null;
+            };
         }
 
         public String getClaimName() {
