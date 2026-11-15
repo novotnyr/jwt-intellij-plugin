@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import static com.intellij.ide.scratch.ScratchFileService.Option.create_if_missing;
+import static org.junit.Assert.assertNotEquals;
 
 public class CreateScratchFileActionTest extends LightPlatformTestCase {
     public void testFormatterTargetsScratchFileWhenAnotherEditorIsSelected() throws Exception {
@@ -36,7 +37,7 @@ public class CreateScratchFileActionTest extends LightPlatformTestCase {
 
             assertEquals(otherFile, editors.getSelectedFiles()[0]);
             assertEquals(otherText, textOf(otherFile));
-            assertFalse(scratchText.equals(textOf(scratchFile)));
+            assertNotEquals(scratchText, textOf(scratchFile));
             assertTrue(textOf(scratchFile).contains("\"value\": 2"));
         } finally {
             closeAndDelete(otherFile, scratchFile);
@@ -67,7 +68,7 @@ public class CreateScratchFileActionTest extends LightPlatformTestCase {
                     .orElse(null);
             assertNotNull(scratchFile);
             assertTrue(Arrays.asList(editors.getSelectedFiles()).contains(scratchFile));
-            assertFalse(source.equals(textOf(scratchFile)));
+            assertNotEquals(source, textOf(scratchFile));
             assertTrue(textOf(scratchFile).contains("\"nonce\":"));
         } finally {
             closeAndDelete(scratchFile);
