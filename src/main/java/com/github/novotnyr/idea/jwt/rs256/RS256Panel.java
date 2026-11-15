@@ -4,15 +4,10 @@ import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.SignatureContextException;
 import com.github.novotnyr.idea.jwt.core.UnsupportedSignatureContext;
 import com.github.novotnyr.idea.jwt.ui.DelegatingDocumentListener;
-import com.github.novotnyr.idea.jwt.ui.FormatOnPasteEditorActionHandler;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SignatureContextChangedListener;
 import com.github.novotnyr.idea.jwt.validation.SignatureError;
-import com.intellij.openapi.actionSystem.IdeActions;
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.actionSystem.EditorActionHandler;
-import com.intellij.openapi.editor.actionSystem.EditorActionManager;
 import com.intellij.openapi.editor.ex.util.EditorUtil;
 import com.intellij.openapi.fileTypes.FileTypes;
 import com.intellij.openapi.project.Project;
@@ -25,7 +20,6 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import javax.swing.JComponent;
-import java.util.Objects;
 
 import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.*;
 
@@ -40,11 +34,14 @@ public class RS256Panel extends SecretPanel {
     public RS256Panel(Project project, SignatureContext initialSignatureContext) {
         this.project = project;
 
-        this.publicKeyEditorTextField = new EditorTextField("", this.project, FileTypes.PLAIN_TEXT);
+        // These EditorTextField constructors create PSI documents for paste preprocessing.
+        this.publicKeyEditorTextField = new EditorTextField(this.project, FileTypes.PLAIN_TEXT);
         this.publicKeyEditorTextField.setOneLineMode(false);
+        RsaKeyPastePreProcessor.mark(this.publicKeyEditorTextField.getDocument());
 
-        this.privateKeyEditorTextField = new EditorTextField("", this.project, FileTypes.PLAIN_TEXT);
+        this.privateKeyEditorTextField = new EditorTextField(this.project, FileTypes.PLAIN_TEXT);
         this.privateKeyEditorTextField.setOneLineMode(false);
+        RsaKeyPastePreProcessor.mark(this.privateKeyEditorTextField.getDocument());
 
         this.root = createUI();
 
@@ -54,17 +51,6 @@ public class RS256Panel extends SecretPanel {
 
         this.publicKeyEditorTextField.setFont(EditorUtil.getEditorFont());
         this.privateKeyEditorTextField.setFont(EditorUtil.getEditorFont());
-
-        EditorActionManager actionManager = EditorActionManager.getInstance();
-        EditorActionHandler defaultPasteHandler = actionManager.getActionHandler(IdeActions.ACTION_EDITOR_PASTE);
-        FormatOnPasteEditorActionHandler pasteHandler = new FormatOnPasteEditorActionHandler(defaultPasteHandler, FormatOnPasteEditorActionHandler::sanitize) {
-            @Override
-            protected boolean supports(Editor editor) {
-                return (RS256Panel.this.publicKeyEditorTextField.getEditor() != null && Objects.equals(RS256Panel.this.publicKeyEditorTextField.getEditor(), editor))
-                        || (RS256Panel.this.privateKeyEditorTextField.getEditor() != null && Objects.equals(RS256Panel.this.privateKeyEditorTextField.getEditor(), editor));
-            }
-        };
-        actionManager.setActionHandler(IdeActions.ACTION_EDITOR_PASTE, pasteHandler);
     }
 
     private BorderLayoutPanel createUI() {

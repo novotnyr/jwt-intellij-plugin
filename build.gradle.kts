@@ -1,4 +1,5 @@
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
     id("java")
@@ -27,6 +28,7 @@ dependencies {
     intellijPlatform {
         intellijIdeaCommunity("2024.3")
         bundledPlugin("com.intellij.modules.json")
+        testFramework(TestFrameworkType.Platform)
     }
 }
 

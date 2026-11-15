@@ -22,6 +22,7 @@
     <depends>com.intellij.modules.json</depends>
 
     <extensions defaultExtensionNs="com.intellij">
+        <copyPastePreProcessor implementation="com.github.novotnyr.idea.jwt.rs256.RsaKeyPastePreProcessor"/>
         <toolWindow id="JWT" anchor="right" factoryClass="com.github.novotnyr.idea.jwt.ToolWindowFactory"
                     icon="/icons/toolwindow-icon.svg" />
         <projectConfigurable instance="com.github.novotnyr.idea.jwt.ui.preferences.PreferencesConfigurable"
