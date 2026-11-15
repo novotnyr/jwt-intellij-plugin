@@ -66,6 +66,7 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
         }
     }
 
+    @SuppressWarnings("OverrideOnly")
     public void testTimestampMenuFollowsCurrentFormat() {
         Configuration.TimestampFormat original = Configuration.INSTANCE.getTimestampFormat();
         try {
@@ -98,6 +99,7 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
         return jwt;
     }
 
+    @SuppressWarnings("OverrideOnly")
     private static AnAction findAction(ActionGroup group, String text) {
         for (AnAction action : group.getChildren(null)) {
             if (text.equals(action.getTemplatePresentation().getText())) {
@@ -107,12 +109,14 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
         throw new AssertionError("Action not found: " + text);
     }
 
+    @SuppressWarnings("OverrideOnly")
     private static boolean isEnabled(AnAction action) {
         AnActionEvent event = TestActionEvent.createTestEvent(action);
         action.update(event);
         return event.getPresentation().isEnabled();
     }
 
+    @SuppressWarnings("OverrideOnly")
     private static boolean isSelected(AnAction action) {
         AnActionEvent event = TestActionEvent.createTestEvent(action);
         action.update(event);
