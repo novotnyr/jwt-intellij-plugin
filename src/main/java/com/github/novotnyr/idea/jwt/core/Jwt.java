@@ -18,9 +18,9 @@ import java.util.Objects;
 public class Jwt {
     public static Jwt EMPTY = new Jwt();
 
-    private List<NamedClaim<?>> headerClaims = new LinkedList<>();
+    private final List<NamedClaim<?>> headerClaims = new LinkedList<>();
 
-    private List<NamedClaim<?>> payloadClaims = new LinkedList<>();
+    private final List<NamedClaim<?>> payloadClaims = new LinkedList<>();
 
     private SignatureContext signatureContext;
 

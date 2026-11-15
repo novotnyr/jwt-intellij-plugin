@@ -15,11 +15,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class JwtBuilder {
-    private AlgorithmResolver algorithmResolver = new AlgorithmResolver();
+    private final AlgorithmResolver algorithmResolver = new AlgorithmResolver();
 
-    private Map<String, Object> headerClaims = new LinkedHashMap<>();
+    private final Map<String, Object> headerClaims = new LinkedHashMap<>();
 
-    private PayloadClaims payloadClaims = new PayloadClaims();
+    private final PayloadClaims payloadClaims = new PayloadClaims();
 
     private final ObjectMapper mapper;
 

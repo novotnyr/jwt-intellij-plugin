@@ -29,7 +29,7 @@ import static com.github.novotnyr.idea.jwt.ClaimDialog.Mode.NEW;
 public class ClaimDialog extends DialogWrapper {
     private NamedClaim<?> claim;
 
-    private ClaimPanel claimPanel;
+    private final ClaimPanel claimPanel;
 
     protected ClaimDialog(NamedClaim<?> claim, Mode mode) {
         super(false);
@@ -71,7 +71,7 @@ public class ClaimDialog extends DialogWrapper {
 
         protected Mode mode;
 
-        private JLabel claimTextLabel = new JLabel("Claim:");
+        private final JLabel claimTextLabel = new JLabel("Claim:");
 
         protected JTextField claimNameTextField = new JTextField();
 

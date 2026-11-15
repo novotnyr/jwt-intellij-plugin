@@ -20,7 +20,7 @@ public abstract class CreateScratchFileAction extends AnAction {
 
     private final ScratchFileFormatter scratchFileFormatter = new ScratchFileFormatter();
 
-    private String extension = EXTENSION;
+    private final String extension = EXTENSION;
 
     public CreateScratchFileAction() {
         super("Create scratch file from payload", "Create scratch file from payload", Icons.createScratchFile());

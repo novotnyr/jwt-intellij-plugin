@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class PayloadClaims implements Iterable<NamedClaim<?>> {
-    private List<NamedClaim<?>> claims = new LinkedList<>();
+    private final List<NamedClaim<?>> claims = new LinkedList<>();
 
     public void add(NamedClaim<?> claim) {
         this.claims.add(claim);

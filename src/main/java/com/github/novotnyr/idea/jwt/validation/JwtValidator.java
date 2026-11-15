@@ -26,9 +26,9 @@ public class JwtValidator {
 
     private final Clock clock;
 
-    private List<GlobalError> globalErrors = new ArrayList<>();
+    private final List<GlobalError> globalErrors = new ArrayList<>();
 
-    private List<ClaimError> claimErrors = new ArrayList<>();
+    private final List<ClaimError> claimErrors = new ArrayList<>();
 
     public JwtValidator() {
         this(Clock.systemUTC());

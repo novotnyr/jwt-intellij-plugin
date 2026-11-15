@@ -12,9 +12,9 @@ import java.util.Map;
 public class NullClaim implements Claim {
     public static final NullClaim EMPTY_AND_MISSING = new NullClaim(true, true);
 
-    private boolean isNull;
+    private final boolean isNull;
 
-    private boolean isMissing;
+    private final boolean isMissing;
 
     public NullClaim(boolean isNull, boolean isMissing) {
         this.isNull = isNull;

@@ -16,7 +16,7 @@ import java.util.function.BooleanSupplier;
 
 public class AddClaimActionButtonController implements AnActionButtonRunnable, AnActionButtonUpdater {
 
-    private DataTypeRegistry dataTypeRegistry = DataTypeRegistry.getInstance();
+    private final DataTypeRegistry dataTypeRegistry = DataTypeRegistry.getInstance();
 
     private final BooleanSupplier canAddClaim;
 

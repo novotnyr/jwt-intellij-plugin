@@ -53,7 +53,7 @@ public class RS256SignatureContext implements SignatureContext {
 
         private String privateKey;
 
-        private boolean sanitizingWhitespace = true;
+        private final boolean sanitizingWhitespace = true;
 
         public Builder withPublicKey(final String publicKey) {
             this.publicKey = publicKey;

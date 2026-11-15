@@ -77,23 +77,23 @@ public class JwtPanel implements DataProvider, Disposable {
      */
     private final Executor rsaExecutor;
 
-    private PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
+    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
 
-    private JPanel rootPanel = new BorderLayoutPanel();
+    private final JPanel rootPanel = new BorderLayoutPanel();
 
     private JwtHeaderTableModel headerTableModel;
 
-    private JBTable headerTable = new JBTable();
+    private final JBTable headerTable = new JBTable();
 
     private JwtClaimsTableModel claimsTableModel;
 
-    private JBTable claimsTable = new JBTable();
+    private final JBTable claimsTable = new JBTable();
 
     private JPanel claimsTablePanel;
 
     private JBSplitter payloadSplitter;
 
-    private JPanel secretPanelContainer = new JPanel(new BorderLayout());
+    private final JPanel secretPanelContainer = new JPanel(new BorderLayout());
 
     private final SecretPanel unrecognizedSecretPanel = new UnrecognizedSecretPanel();
 
@@ -101,7 +101,7 @@ public class JwtPanel implements DataProvider, Disposable {
 
     private SecretPanel secretPanel = this.unrecognizedSecretPanel;
 
-    private JButton validateButton = new JButton("Validate");
+    private final JButton validateButton = new JButton("Validate");
 
     private Jwt jwt = Jwt.EMPTY;
 

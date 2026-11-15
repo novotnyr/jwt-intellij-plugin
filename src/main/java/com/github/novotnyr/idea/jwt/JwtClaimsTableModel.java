@@ -19,11 +19,11 @@ import java.util.Date;
 import java.util.List;
 
 public class JwtClaimsTableModel extends AbstractTableModel implements TableCellRenderer {
-    private Jwt jwt;
+    private final Jwt jwt;
 
-    private DefaultTableCellRenderer errorTableCellRenderer = new DefaultTableCellRenderer();
+    private final DefaultTableCellRenderer errorTableCellRenderer = new DefaultTableCellRenderer();
 
-    private DefaultTableCellRenderer defaultDelegateRenderer = new DefaultTableCellRenderer();
+    private final DefaultTableCellRenderer defaultDelegateRenderer = new DefaultTableCellRenderer();
 
     private List<ClaimError> claimErrors = new ArrayList<>();
 
