@@ -6,9 +6,13 @@ import com.github.novotnyr.idea.jwt.action.EditClaimActionButtonUpdater;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry;
+import com.github.novotnyr.idea.jwt.rs256.RS256Panel;
+import com.github.novotnyr.idea.jwt.rs256.RS256SignatureContext;
+import com.github.novotnyr.idea.jwt.rs256.RsaKeyParser;
 import com.github.novotnyr.idea.jwt.ui.ClaimTableTransferHandler;
 import com.github.novotnyr.idea.jwt.ui.IdePreferenceNewSignatureContextProvider;
 import com.github.novotnyr.idea.jwt.ui.UiUtils;
+import com.github.novotnyr.idea.jwt.ui.preferences.PluginPreferences;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.github.novotnyr.idea.jwt.validation.JwtValidator;
@@ -21,6 +25,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.progress.ProcessCanceledException;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.AnActionButton;
@@ -31,6 +38,7 @@ import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.TextTransferable;
 import com.intellij.util.ui.components.BorderLayoutPanel;
+import com.intellij.util.concurrency.AppExecutorUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
@@ -52,13 +60,25 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static com.github.novotnyr.idea.jwt.ClaimDialog.Mode.EDIT;
 import static com.github.novotnyr.idea.jwt.ClaimDialog.Mode.VIEW;
 import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.MUTABLE;
 
 public class JwtPanel implements DataProvider, Disposable {
+    private static final Logger LOG = Logger.getInstance(JwtPanel.class);
+
     private final Project project;
+
+    /**
+     * Loads configured RSA key files and parses their PEM content off the EDT.
+     * The completion handler applies the result on the EDT only if the panel still owns the captured key text.
+     */
+    private final Executor rsaExecutor;
 
     private PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
 
@@ -96,9 +116,41 @@ public class JwtPanel implements DataProvider, Disposable {
 
     private boolean jwtUpdateInProgress;
 
+    /** Prevents delayed RSA work from updating this panel after disposal. */
+    private boolean disposed;
+
+    /**
+     * Key text last populated from preferences, including its document stamps.
+     * A settings change reloads defaults only while the current text still matches this snapshot.
+     */
+    private RS256Panel.KeyTextSnapshot rsaDefaultsText;
+
+    /** Invalidates older default-key loads after a newer load or Reset. */
+    private long rsaDefaultsGeneration;
+
+    /**
+     * Last successfully parsed RSA context. Cleared when the key text changes; volatile because
+     * action-system data lookups may read it on another thread without parsing editor text.
+     */
+    private volatile RS256SignatureContext parsedRsaContext;
+
+    /** JWT and parsed keys produced together by an RSA claim update on a worker thread. */
+    private record RsaMutation(Jwt jwt, SignatureContext context) {
+    }
+
+    /** Signature-validation result and parsed keys produced together on a worker thread. */
+    private record RsaValidation(JwtValidator validator, SignatureContext context) {
+    }
+
     public JwtPanel(Project project) {
+        this(project, AppExecutorUtil.getAppExecutorService());
+    }
+
+    JwtPanel(Project project, Executor rsaExecutor) {
         this.project = project;
+        this.rsaExecutor = rsaExecutor;
         Disposer.register(this, this.unrecognizedSecretPanel);
+        PluginPreferences.getInstance(project).addKeyFilesChangeListener(this::onKeyFilesChanged, this);
         createUIComponents();
 
         this.claimsTable.setName(Constants.CLAIMS_TABLE_NAME);
@@ -233,7 +285,12 @@ public class JwtPanel implements DataProvider, Disposable {
     }
 
     private void configureSecretTextFieldListeners() {
-        this.secretPanel.setSignatureContextChangedListener(newSignatureContext -> refreshClaimsTableControllers());
+        this.secretPanel.setSignatureContextChangedListener(() -> {
+            if (this.secretPanel instanceof RS256Panel) {
+                this.parsedRsaContext = null;
+            }
+            refreshClaimsTableControllers();
+        });
     }
 
     private void editClaimAtRow(int row) {
@@ -268,11 +325,28 @@ public class JwtPanel implements DataProvider, Disposable {
     }
 
     private void onValidateButtonClick(@SuppressWarnings("unused") ActionEvent event) {
+        RS256Panel rsaPanel = this.secretPanel instanceof RS256Panel panel ? panel : null;
+        RS256Panel.KeyTextSnapshot keyText = rsaPanel == null ? null : rsaPanel.snapshotKeyText();
+        Jwt originalJwt = this.jwt;
+        String encodedJwt = originalJwt.toString();
         try {
-            JwtValidator jwtValidator = new JwtValidator();
-
-            SignatureContext secret = this.secretPanel.getSignatureContext();
-            jwtValidator.validate(this.jwt, secret);
+            JwtValidator jwtValidator;
+            if (rsaPanel != null) {
+                RsaValidation validation = runRsaOperation("Validating RSA JWT", () -> {
+                    SignatureContext context = RsaKeyParser.parse(keyText.publicKey(), keyText.privateKey());
+                    JwtValidator validator = new JwtValidator();
+                    validator.validate(new Jwt(encodedJwt), context);
+                    return new RsaValidation(validator, context);
+                });
+                if (validation == null || !isCurrentRsaInput(rsaPanel, keyText, originalJwt, encodedJwt)) {
+                    return;
+                }
+                jwtValidator = validation.validator();
+                this.parsedRsaContext = (RS256SignatureContext) validation.context();
+            } else {
+                jwtValidator = new JwtValidator();
+                jwtValidator.validate(this.jwt, this.secretPanel.getSignatureContext());
+            }
             this.claimsTableModel.setClaimErrors(jwtValidator.getClaimErrors());
             if(jwtValidator.hasSignatureError()) {
                 this.secretPanel.notifySignatureErrors(jwtValidator.getSignatureError());
@@ -280,7 +354,9 @@ public class JwtPanel implements DataProvider, Disposable {
                 this.secretPanel.notifySignatureValid();
             }
         } catch (SignatureContextException e) {
-            this.secretPanel.notifySecurityContextException(e);
+            if (rsaPanel == null || isCurrentRsaInput(rsaPanel, keyText, originalJwt, encodedJwt)) {
+                this.secretPanel.notifySecurityContextException(e);
+            }
         }
     }
 
@@ -315,10 +391,7 @@ public class JwtPanel implements DataProvider, Disposable {
     private void onRemoveClaim() {
         int selectedRow = this.claimsTable.getSelectedRow();
         NamedClaim<?> claim = this.claimsTableModel.getClaimAt(selectedRow);
-        this.jwt.setSignatureContext(getSignatureContext());
-        this.jwt.removeClaim(claim.getName());
-
-        refreshJwt();
+        updateClaim(null, claim.getName());
     }
 
 
@@ -326,10 +399,76 @@ public class JwtPanel implements DataProvider, Disposable {
         ClaimDialog claimDialog = new ClaimDialog(claim, mode);
         if(claimDialog.showAndGet()) {
             NamedClaim<?> updatedClaim = claimDialog.getClaim();
-            this.jwt.setSignatureContext(getSignatureContext());
-            this.jwt.setPayloadClaim(updatedClaim);
-            refreshJwt();
+            updateClaim(updatedClaim, null);
         }
+    }
+
+    void updateClaim(@Nullable NamedClaim<?> updatedClaim, @Nullable String removedClaimName) {
+        if (this.secretPanel instanceof RS256Panel rsaPanel) {
+            RS256Panel.KeyTextSnapshot keyText = rsaPanel.snapshotKeyText();
+            Jwt originalJwt = this.jwt;
+            String encodedJwt = originalJwt.toString();
+            try {
+                RsaMutation mutation = runRsaOperation("Updating RSA JWT", () -> {
+                    SignatureContext context = RsaKeyParser.parse(keyText.publicKey(), keyText.privateKey());
+                    Jwt updatedJwt = new Jwt(encodedJwt);
+                    updatedJwt.setSignatureContext(context);
+                    if (updatedClaim != null) {
+                        updatedJwt.setPayloadClaim(updatedClaim);
+                    } else {
+                        updatedJwt.removeClaim(removedClaimName);
+                    }
+                    return new RsaMutation(updatedJwt, context);
+                });
+                if (mutation == null || !isCurrentRsaInput(rsaPanel, keyText, originalJwt, encodedJwt)) {
+                    return;
+                }
+                this.jwt = mutation.jwt();
+                this.parsedRsaContext = (RS256SignatureContext) mutation.context();
+                refreshJwt();
+            } catch (SignatureContextException e) {
+                if (isCurrentRsaInput(rsaPanel, keyText, originalJwt, encodedJwt)) {
+                    rsaPanel.notifySecurityContextException(e);
+                }
+            }
+            return;
+        }
+        this.jwt.setSignatureContext(getSignatureContext());
+        if (updatedClaim != null) {
+            this.jwt.setPayloadClaim(updatedClaim);
+        } else {
+            this.jwt.removeClaim(removedClaimName);
+        }
+        refreshJwt();
+    }
+
+    private boolean isCurrentRsaInput(RS256Panel panel, RS256Panel.KeyTextSnapshot keyText,
+                                      Jwt originalJwt, String encodedJwt) {
+        return !this.disposed && !this.project.isDisposed() && this.secretPanel == panel
+                && panel.snapshotKeyText().equals(keyText) && this.jwt == originalJwt
+                && encodedJwt.equals(this.jwt.toString());
+    }
+
+    @Nullable
+    private <T> T runRsaOperation(String title, Supplier<T> operation) {
+        AtomicReference<T> result = new AtomicReference<>();
+        AtomicReference<RuntimeException> failure = new AtomicReference<>();
+        boolean completed = ProgressManager.getInstance().runProcessWithProgressSynchronously(() -> {
+            try {
+                result.set(operation.get());
+            } catch (ProcessCanceledException e) {
+                throw e;
+            } catch (RuntimeException e) {
+                failure.set(e);
+            }
+        }, title, true, this.project);
+        if (!completed) {
+            return null;
+        }
+        if (failure.get() != null) {
+            throw failure.get();
+        }
+        return result.get();
     }
 
     private void refreshClaimsTableControllers() {
@@ -353,6 +492,10 @@ public class JwtPanel implements DataProvider, Disposable {
     @Override
     public Object getData(@NonNull String dataId) {
         if (Constants.DataKeys.SECRET.is(dataId)) {
+            if (this.secretPanel instanceof RS256Panel) {
+                // DataProvider may be queried during action updates; never parse editor text here.
+                return this.parsedRsaContext;
+            }
             return this.secretPanel.getSignatureContext();
         }
         if (PlatformDataKeys.SELECTED_ITEM.is(dataId)) {
@@ -440,23 +583,51 @@ public class JwtPanel implements DataProvider, Disposable {
 
         SecretPanel panel = this.secretPanels.get(algorithm);
         if (panel == null) {
-            SignatureContext initialSignatureContext = getInitialSignatureContext(algorithm);
-            panel = SecretPanelFactory.create(this.project, algorithm, initialSignatureContext);
+            panel = SecretPanelFactory.create(this.project, algorithm, SignatureContext.EMPTY);
             Disposer.register(this, panel);
             this.secretPanels.put(algorithm, panel);
+            if (panel instanceof RS256Panel rs256Panel) {
+                this.rsaDefaultsText = rs256Panel.snapshotKeyText();
+                loadDefaultRsaKeys(rs256Panel);
+            }
         }
         return panel;
     }
 
-    private SignatureContext getInitialSignatureContext(String algorithm) {
-        return new IdePreferenceNewSignatureContextProvider(this.project)
-                .createSignatureContext(algorithm);
+    private void loadDefaultRsaKeys(RS256Panel panel) {
+        IdePreferenceNewSignatureContextProvider provider = new IdePreferenceNewSignatureContextProvider(this.project);
+        RS256Panel.KeyTextSnapshot initialText = panel.snapshotKeyText();
+        long generation = ++this.rsaDefaultsGeneration;
+        CompletableFuture.supplyAsync(() -> provider.<SignatureContext>createSignatureContext(SignatureAlgorithm.RS256),
+                        this.rsaExecutor)
+                .whenComplete((context, error) -> SwingUtilities.invokeLater(() -> {
+                    if (error != null) {
+                        LOG.warn("Cannot load default RSA keys", error);
+                        return;
+                    }
+                    if (this.disposed || this.project.isDisposed() || generation != this.rsaDefaultsGeneration
+                            || this.secretPanels.get(SignatureAlgorithm.RS256) != panel
+                            || !panel.snapshotKeyText().equals(initialText)) {
+                        return;
+                    }
+                    if (context instanceof RS256SignatureContext) {
+                        if (this.secretPanel == panel) {
+                            setSignatureContext(context);
+                        } else {
+                            panel.setSignatureContext(context);
+                            this.parsedRsaContext = (RS256SignatureContext) context;
+                        }
+                        this.rsaDefaultsText = panel.snapshotKeyText();
+                    }
+                }));
     }
 
-    @Nullable
-    public SecretPanel copySecretPanelForDialog(String algorithm) {
-        SecretPanel panel = this.secretPanels.get(algorithm);
-        return panel == null ? null : panel.copyFor(this.project);
+    private void onKeyFilesChanged() {
+        SecretPanel panel = this.secretPanels.get(SignatureAlgorithm.RS256);
+        if (panel instanceof RS256Panel rsaPanel
+                && rsaPanel.snapshotKeyText().equals(this.rsaDefaultsText)) {
+            loadDefaultRsaKeys(rsaPanel);
+        }
     }
 
     private List<ClaimError> validateClaims(Jwt jwt) {
@@ -471,6 +642,9 @@ public class JwtPanel implements DataProvider, Disposable {
         this.secretPanel.removeSignatureContextChangedListener();
         try {
             this.secretPanel.setSignatureContext(signatureContext);
+            if (this.secretPanel instanceof RS256Panel) {
+                this.parsedRsaContext = (RS256SignatureContext) signatureContext;
+            }
         } finally {
             configureSecretTextFieldListeners();
         }
@@ -503,6 +677,9 @@ public class JwtPanel implements DataProvider, Disposable {
             Disposer.dispose(panel);
         }
         this.secretPanels.clear();
+        this.rsaDefaultsText = null;
+        this.rsaDefaultsGeneration++;
+        this.parsedRsaContext = null;
     }
 
     public void addJwtListener(PropertyChangeListener listener) {
@@ -511,7 +688,9 @@ public class JwtPanel implements DataProvider, Disposable {
 
     @Override
     public void dispose() {
+        this.disposed = true;
         this.secretPanel.removeSignatureContextChangedListener();
         this.secretPanels.clear();
+        this.parsedRsaContext = null;
     }
 }

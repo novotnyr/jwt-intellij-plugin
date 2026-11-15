@@ -1,10 +1,12 @@
 package com.github.novotnyr.idea.jwt.ui.preferences;
 
+import com.github.novotnyr.idea.jwt.SignatureContextException;
 import com.github.novotnyr.idea.jwt.rs256.RsaUtils;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.ui.TextBrowseFolderListener;
 import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.Nls;
@@ -12,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.JComponent;
 import java.io.File;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class PreferencesConfigurable implements Configurable {
     private final Project project;
@@ -75,32 +78,44 @@ public class PreferencesConfigurable implements Configurable {
 
     @Override
     public void apply() throws ConfigurationException {
-        try {
-            validateRs256PublicKeyFile();
-            validateRs256PrivateKeyFile();
-
-            PluginPreferences pluginPreferences = PluginPreferences.getInstance(this.project);
-            pluginPreferences.setRs256PublicKeyFile(this.settingsPanel.getRs256PublicKeyTextField().getText());
-            pluginPreferences.setRs256PrivateKeyFile(this.settingsPanel.getRs256PrivateKeyTextField().getText());
-        } catch (Exception e) {
-            throw new ConfigurationException(e.getMessage());
+        String publicKeyFile = this.settingsPanel.getRs256PublicKeyTextField().getText();
+        String privateKeyFile = this.settingsPanel.getRs256PrivateKeyTextField().getText();
+        AtomicReference<SignatureContextException> validationError = new AtomicReference<>();
+        boolean completed = ProgressManager.getInstance().runProcessWithProgressSynchronously(() -> {
+            try {
+                validateKeyFiles(publicKeyFile, privateKeyFile);
+            } catch (SignatureContextException e) {
+                validationError.set(e);
+            }
+        }, "Validating RSA key files", true, this.project);
+        if (!completed) {
+            throw new ConfigurationException("RSA key validation was canceled");
         }
+        if (validationError.get() != null) {
+            throw new ConfigurationException(validationError.get().getMessage());
+        }
+
+        PluginPreferences pluginPreferences = PluginPreferences.getInstance(this.project);
+        pluginPreferences.updateKeyFiles(publicKeyFile, privateKeyFile);
     }
 
-    private void validateRs256PrivateKeyFile() {
-        String rs256PrivateKey = this.settingsPanel.getRs256PrivateKeyTextField().getText();
-        if (StringUtil.isEmpty(rs256PrivateKey)) {
-            return;
-        }
-        RsaUtils.getPrivateKey(new File(rs256PrivateKey));
+    void validateKeyFiles(String publicKeyFile, String privateKeyFile) {
+        validateRs256PublicKeyFile(publicKeyFile);
+        validateRs256PrivateKeyFile(privateKeyFile);
     }
 
-    private void validateRs256PublicKeyFile() {
-        String rs256PublicKey = this.settingsPanel.getRs256PublicKeyTextField().getText();
-        if (StringUtil.isEmpty(rs256PublicKey)) {
+    private static void validateRs256PrivateKeyFile(String path) {
+        if (StringUtil.isEmpty(path)) {
             return;
         }
-        RsaUtils.getPublicKey(new File(rs256PublicKey));
+        RsaUtils.getPrivateKey(new File(path));
+    }
+
+    private static void validateRs256PublicKeyFile(String path) {
+        if (StringUtil.isEmpty(path)) {
+            return;
+        }
+        RsaUtils.getPublicKey(new File(path));
     }
 
 }

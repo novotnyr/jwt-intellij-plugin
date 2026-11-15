@@ -13,6 +13,13 @@ public class RS256SignatureContext implements SignatureContext {
     private RS256SignatureContext() {
     }
 
+    static RS256SignatureContext fromKeys(RSAPublicKey publicKey, RSAPrivateKey privateKey) {
+        RS256SignatureContext context = new RS256SignatureContext();
+        context.publicKey = publicKey;
+        context.privateKey = privateKey;
+        return context;
+    }
+
     public RSAPrivateKey getPrivateKey() {
         return this.privateKey;
     }

@@ -1,27 +1,39 @@
 package com.github.novotnyr.idea.jwt;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.JwtFactory;
+import com.github.novotnyr.idea.jwt.core.StringClaim;
 import com.github.novotnyr.idea.jwt.hs256.HS256Panel;
 import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
 import com.github.novotnyr.idea.jwt.hs384.HS384Panel;
 import com.github.novotnyr.idea.jwt.rs256.RS256Panel;
+import com.github.novotnyr.idea.jwt.rs256.RS256SignatureContext;
 import com.github.novotnyr.idea.jwt.rs256.RsaUtils;
-import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
+import com.github.novotnyr.idea.jwt.ui.preferences.PluginPreferences;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.testFramework.LightPlatformTestCase;
 import com.intellij.ui.EditorTextField;
+import com.intellij.util.ui.UIUtil;
 
 import javax.swing.JTextField;
 import java.awt.Component;
 import java.awt.Container;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyPairGenerator;
+import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Base64;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SecretPanelOwnershipTest extends LightPlatformTestCase {
     public void testTwoToolWindowsKeepIndependentPanelsAndSecrets() {
@@ -92,8 +104,8 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
         HS256Panel panel = new HS256Panel();
         try {
             AtomicInteger notifications = new AtomicInteger();
-            panel.setSignatureContextChangedListener(context -> notifications.incrementAndGet());
-            panel.setSignatureContextChangedListener(context -> notifications.incrementAndGet());
+            panel.setSignatureContextChangedListener(notifications::incrementAndGet);
+            panel.setSignatureContextChangedListener(notifications::incrementAndGet);
             findComponents(panel.getRoot(), JTextField.class).get(0).setText("one edit");
             assertEquals(1, notifications.get());
 
@@ -106,34 +118,12 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
         }
     }
 
-    public void testRsaCopyRetainsUnfinishedRawTextWithoutParsing() {
-        RS256Panel source = new RS256Panel(getProject(), SignatureContext.EMPTY);
-        SecretPanel copy = null;
-        try {
-            List<EditorTextField> sourceFields = findComponents(source.getRoot(), EditorTextField.class);
-            sourceFields.get(0).setText("unfinished public key");
-            sourceFields.get(1).setText("unfinished private key");
-
-            copy = source.copyFor(getProject());
-            List<EditorTextField> copyFields = findComponents(copy.getRoot(), EditorTextField.class);
-            assertNotSame(source.getRoot(), copy.getRoot());
-            assertNotSame(sourceFields.get(0).getDocument(), copyFields.get(0).getDocument());
-            assertEquals("unfinished public key", copyFields.get(0).getText());
-            assertEquals("unfinished private key", copyFields.get(1).getText());
-        } finally {
-            if (copy != null) {
-                Disposer.dispose(copy);
-            }
-            Disposer.dispose(source);
-        }
-    }
-
     public void testRsaListenerReplacementAndRemovalAreIdempotent() throws Exception {
         RS256Panel panel = new RS256Panel(getProject(), SignatureContext.EMPTY);
         try {
             AtomicInteger notifications = new AtomicInteger();
-            panel.setSignatureContextChangedListener(context -> notifications.incrementAndGet());
-            panel.setSignatureContextChangedListener(context -> notifications.incrementAndGet());
+            panel.setSignatureContextChangedListener(notifications::incrementAndGet);
+            panel.setSignatureContextChangedListener(notifications::incrementAndGet);
 
             KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
             generator.initialize(1024);
@@ -146,6 +136,142 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
             panel.removeSignatureContextChangedListener();
             publicField.setText("unfinished edit");
             assertEquals(1, notifications.get());
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testLateDefaultKeysDoNotOverwriteEditsOrReset() throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(1024);
+        var pair = generator.generateKeyPair();
+        String publicKey = RsaUtils.toString((RSAPublicKey) pair.getPublic());
+        String privateKey = RsaUtils.toString((RSAPrivateKey) pair.getPrivate());
+        Path publicFile = Files.createTempFile("jwt-public-", ".pem");
+        Path privateFile = Files.createTempFile("jwt-private-", ".pem");
+        Files.writeString(publicFile, publicKey);
+        Files.writeString(privateFile, privateKey);
+
+        PluginPreferences preferences = PluginPreferences.getInstance(getProject());
+        String previousPublic = preferences.getRs256PublicKeyFile();
+        String previousPrivate = preferences.getRs256PrivateKeyFile();
+        preferences.setRs256PublicKeyFile(publicFile.toString());
+        preferences.setRs256PrivateKeyFile(privateFile.toString());
+        ManualExecutor executor = new ManualExecutor();
+        JwtPanel panel = new JwtPanel(getProject(), executor);
+        try {
+            panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.RS256));
+            RS256Panel first = (RS256Panel) panel.getSecretPanel();
+            List<EditorTextField> firstFields = findComponents(first.getRoot(), EditorTextField.class);
+            firstFields.get(0).setText("manual public key draft");
+            executor.runNext();
+            UIUtil.dispatchAllInvocationEvents();
+            assertEquals("manual public key draft", firstFields.get(0).getText());
+            assertEquals("", firstFields.get(1).getText());
+
+            panel.reset();
+            panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.RS256));
+            RS256Panel second = (RS256Panel) panel.getSecretPanel();
+            executor.runNext();
+            UIUtil.dispatchAllInvocationEvents();
+            List<EditorTextField> secondFields = findComponents(second.getRoot(), EditorTextField.class);
+            assertFalse(secondFields.get(0).getText().isEmpty());
+            assertFalse(secondFields.get(1).getText().isEmpty());
+
+            panel.reset();
+            panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.RS256));
+            RS256Panel third = (RS256Panel) panel.getSecretPanel();
+            panel.reset();
+            executor.runNext();
+            UIUtil.dispatchAllInvocationEvents();
+            assertTrue(Disposer.isDisposed(third));
+            assertNotSame(third, panel.getSecretPanel());
+        } finally {
+            Disposer.dispose(panel);
+            preferences.setRs256PublicKeyFile(previousPublic);
+            preferences.setRs256PrivateKeyFile(previousPrivate);
+            Files.deleteIfExists(publicFile);
+            Files.deleteIfExists(privateFile);
+        }
+    }
+
+    public void testSettingsChangeRefreshesOnlyUntouchedRsaDefaults() throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(1024);
+        var firstPair = generator.generateKeyPair();
+        var secondPair = generator.generateKeyPair();
+        String firstPublic = RsaUtils.toString((RSAPublicKey) firstPair.getPublic());
+        String firstPrivate = RsaUtils.toString((RSAPrivateKey) firstPair.getPrivate());
+        String secondPublic = RsaUtils.toString((RSAPublicKey) secondPair.getPublic());
+        String secondPrivate = RsaUtils.toString((RSAPrivateKey) secondPair.getPrivate());
+        Path firstPublicFile = Files.createTempFile("jwt-first-public-", ".pem");
+        Path firstPrivateFile = Files.createTempFile("jwt-first-private-", ".pem");
+        Path secondPublicFile = Files.createTempFile("jwt-second-public-", ".pem");
+        Path secondPrivateFile = Files.createTempFile("jwt-second-private-", ".pem");
+        Files.writeString(firstPublicFile, firstPublic);
+        Files.writeString(firstPrivateFile, firstPrivate);
+        Files.writeString(secondPublicFile, secondPublic);
+        Files.writeString(secondPrivateFile, secondPrivate);
+
+        PluginPreferences preferences = PluginPreferences.getInstance(getProject());
+        String previousPublic = preferences.getRs256PublicKeyFile();
+        String previousPrivate = preferences.getRs256PrivateKeyFile();
+        preferences.setRs256PublicKeyFile(firstPublicFile.toString());
+        preferences.setRs256PrivateKeyFile(firstPrivateFile.toString());
+        ManualExecutor executor = new ManualExecutor();
+        JwtPanel panel = new JwtPanel(getProject(), executor);
+        try {
+            panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.RS256));
+            RS256Panel rsa = (RS256Panel) panel.getSecretPanel();
+            List<EditorTextField> fields = findComponents(rsa.getRoot(), EditorTextField.class);
+
+            preferences.updateKeyFiles(secondPublicFile.toString(), secondPrivateFile.toString());
+            executor.runNext();
+            UIUtil.dispatchAllInvocationEvents();
+            assertEquals("", fields.get(0).getText());
+            executor.runNext();
+            UIUtil.dispatchAllInvocationEvents();
+            assertEquals(secondPublic, fields.get(0).getText());
+            assertEquals(secondPrivate, fields.get(1).getText());
+
+            fields.get(0).setText("my public key draft");
+            preferences.updateKeyFiles(firstPublicFile.toString(), firstPrivateFile.toString());
+            assertEquals("my public key draft", fields.get(0).getText());
+            assertEquals(secondPrivate, fields.get(1).getText());
+        } finally {
+            Disposer.dispose(panel);
+            preferences.setRs256PublicKeyFile(previousPublic);
+            preferences.setRs256PrivateKeyFile(previousPrivate);
+            Files.deleteIfExists(firstPublicFile);
+            Files.deleteIfExists(firstPrivateFile);
+            Files.deleteIfExists(secondPublicFile);
+            Files.deleteIfExists(secondPrivateFile);
+        }
+    }
+
+    public void testRsaClaimMutationSignsWithThePanelKeys() throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(1024);
+        var pair = generator.generateKeyPair();
+        RS256SignatureContext context = new RS256SignatureContext.Builder()
+                .withPublicKey(RsaUtils.toString((RSAPublicKey) pair.getPublic()))
+                .withPrivateKey(RsaUtils.toString((RSAPrivateKey) pair.getPrivate()))
+                .build();
+        Jwt original = JwtFactory.getInstance().newJwt(SignatureAlgorithm.RS256, context, false);
+
+        JwtPanel panel = new JwtPanel(getProject(), new ManualExecutor());
+        try {
+            panel.setJwt(original);
+            panel.setSignatureContext(context);
+            AtomicReference<Jwt> updated = new AtomicReference<>();
+            panel.addJwtListener(event -> updated.set((Jwt) event.getNewValue()));
+
+            panel.updateClaim(new StringClaim("subject", "alice"), null);
+
+            assertNotNull(updated.get());
+            assertEquals("alice", JWT.decode(updated.get().toString()).getClaim("subject").asString());
+            Algorithm.RSA256((RSAPublicKey) pair.getPublic(), (RSAPrivateKey) pair.getPrivate())
+                    .verify(JWT.decode(updated.get().toString()));
         } finally {
             Disposer.dispose(panel);
         }
@@ -174,5 +300,19 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
             }
         }
         return components;
+    }
+
+    private static class ManualExecutor implements Executor {
+        private final Queue<Runnable> tasks = new ArrayDeque<>();
+
+        @Override
+        public void execute(Runnable task) {
+            this.tasks.add(task);
+        }
+
+        void runNext() {
+            assertFalse(this.tasks.isEmpty());
+            this.tasks.remove().run();
+        }
     }
 }

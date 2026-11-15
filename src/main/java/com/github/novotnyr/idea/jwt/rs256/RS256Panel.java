@@ -1,14 +1,14 @@
 package com.github.novotnyr.idea.jwt.rs256;
 
 import com.github.novotnyr.idea.jwt.SignatureContext;
-import com.github.novotnyr.idea.jwt.SignatureContextException;
 import com.github.novotnyr.idea.jwt.core.UnsupportedSignatureContext;
 import com.github.novotnyr.idea.jwt.ui.DelegatingDocumentListener;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SignatureContextChangedListener;
-import com.github.novotnyr.idea.jwt.validation.SignatureError;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.editor.ex.util.EditorUtil;
+import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.fileTypes.FileTypes;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.EditorTextField;
@@ -23,6 +23,9 @@ import javax.swing.JComponent;
 import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.*;
 
 public class RS256Panel extends SecretPanel {
+    public record KeyTextSnapshot(String publicKey, String privateKey, long publicStamp, long privateStamp) {
+    }
+
     private final BorderLayoutPanel root;
     private final EditorTextField publicKeyEditorTextField;
     private final EditorTextField privateKeyEditorTextField;
@@ -70,6 +73,26 @@ public class RS256Panel extends SecretPanel {
         return this.root;
     }
 
+    public KeyTextSnapshot snapshotKeyText() {
+        return new KeyTextSnapshot(this.publicKeyEditorTextField.getText(),
+                this.privateKeyEditorTextField.getText(),
+                this.publicKeyEditorTextField.getDocument().getModificationStamp(),
+                this.privateKeyEditorTextField.getDocument().getModificationStamp());
+    }
+
+    public JComponent getPublicKeyInput() {
+        return this.publicKeyEditorTextField;
+    }
+
+    public JComponent getPrivateKeyInput() {
+        return this.privateKeyEditorTextField;
+    }
+
+    public void addKeyTextChangeListener(DocumentListener listener, Disposable parent) {
+        this.publicKeyEditorTextField.getDocument().addDocumentListener(listener, parent);
+        this.privateKeyEditorTextField.getDocument().addDocumentListener(listener, parent);
+    }
+
     @Override
     public JwtStatus getStatus() {
         JwtStatus status = NONE;
@@ -85,13 +108,8 @@ public class RS256Panel extends SecretPanel {
     @Override
     public SignatureContext getSignatureContext() {
         return switch (getStatus()) {
-            case VALID -> new RS256SignatureContext.Builder()
-                    .withPublicKey(this.publicKeyEditorTextField.getText())
-                    .build();
-            case MUTABLE -> new RS256SignatureContext.Builder()
-                    .withPrivateKey(this.privateKeyEditorTextField.getText())
-                    .withPublicKey(this.publicKeyEditorTextField.getText())
-                    .build();
+            case VALID, MUTABLE -> RsaKeyParser.parse(this.publicKeyEditorTextField.getText(),
+                    this.privateKeyEditorTextField.getText());
             default -> SignatureContext.EMPTY;
         };
     }
@@ -107,26 +125,13 @@ public class RS256Panel extends SecretPanel {
     }
 
     @Override
-    public SecretPanel copyFor(Project project) {
-        RS256Panel copy = new RS256Panel(project, SignatureContext.EMPTY);
-        copy.publicKeyEditorTextField.setText(this.publicKeyEditorTextField.getText());
-        copy.privateKeyEditorTextField.setText(this.privateKeyEditorTextField.getText());
-        return copy;
-    }
-
-    @Override
     public void setSignatureContextChangedListener(@NonNull SignatureContextChangedListener listener) {
         super.setSignatureContextChangedListener(listener);
 
         this.documentListener = new DelegatingDocumentListener<SignatureContextChangedListener>(listener) {
             @Override
             protected void onDocumentChanged() {
-                try {
-                    listener.onSignatureContextChanged(getSignatureContext());
-                } catch (SignatureContextException e) {
-                    SignatureError signatureError = new SignatureError(e.getMessage());
-                    notifySignatureErrors(signatureError);
-                }
+                listener.onSignatureContextChanged();
             }
         };
         this.publicKeyEditorTextField.getDocument().addDocumentListener(this.documentListener);

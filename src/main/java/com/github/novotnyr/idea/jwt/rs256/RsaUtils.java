@@ -57,7 +57,7 @@ public abstract class RsaUtils {
             };
         } catch (IOException e) {
             throw new SignatureContextException("Unable to parse RSA private key", e);
-        } catch (IllegalArgumentException | NullPointerException | DecoderException e) {
+        } catch (IllegalArgumentException | NullPointerException | ClassCastException | DecoderException e) {
             throw new SignatureContextException("Unable to parse RSA private key. Input is malformed", e);
         }
     }
@@ -97,7 +97,7 @@ public abstract class RsaUtils {
             return (RSAPublicKey) converter.getPublicKey(publicKeyInfo);
         } catch (IOException e) {
             throw new SignatureContextException("Unable to parse RSA public key", e);
-        } catch (IllegalArgumentException | NullPointerException | DecoderException e) {
+        } catch (IllegalArgumentException | NullPointerException | ClassCastException | DecoderException e) {
             throw new SignatureContextException("Unable to parse RSA public key. Input is malformed", e);
         }
 

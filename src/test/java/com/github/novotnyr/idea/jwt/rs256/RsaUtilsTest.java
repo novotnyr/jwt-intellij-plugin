@@ -1,5 +1,6 @@
 package com.github.novotnyr.idea.jwt.rs256;
 
+import com.github.novotnyr.idea.jwt.SignatureContextException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -8,6 +9,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.security.KeyPairGenerator;
 
 import static org.junit.Assert.*;
 
@@ -65,6 +68,36 @@ public class RsaUtilsTest {
         assertNull(context.getPublicKey());
         assertTrue(context.isEmpty());
         assertEquals("", context.getPublicKeyString());
+    }
+
+    @Test
+    public void wrongPublicKeyTypeProducesSignatureContextException() {
+        assertThrows(SignatureContextException.class, () -> RsaUtils.getPublicKey(PKCS8_PRIVATE_KEY));
+    }
+
+    @Test
+    public void malformedPrivateKeyIdentifiesThePrivateField() throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(1024);
+        String publicKey = RsaUtils.toString((RSAPublicKey) generator.generateKeyPair().getPublic());
+
+        RsaKeyValidationException error = assertThrows(RsaKeyValidationException.class,
+                () -> RsaKeyParser.parse(publicKey, "malformed private key"));
+        assertEquals(RsaKeyValidationException.Field.PRIVATE, error.getField());
+    }
+
+    @Test
+    public void parserAcceptsLiteralNewlineEscapesInBothKeys() throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(1024);
+        var pair = generator.generateKeyPair();
+        String publicKey = RsaUtils.toString((RSAPublicKey) pair.getPublic()).replace("\n", "\\n");
+        String privateKey = RsaUtils.toString((RSAPrivateKey) pair.getPrivate()).replace("\n", "\\n");
+
+        RS256SignatureContext context = RsaKeyParser.parse(publicKey, privateKey);
+
+        assertEquals(pair.getPublic(), context.getPublicKey());
+        assertEquals(pair.getPrivate(), context.getPrivateKey());
     }
 
     private File writeToFile(String pem) throws IOException {

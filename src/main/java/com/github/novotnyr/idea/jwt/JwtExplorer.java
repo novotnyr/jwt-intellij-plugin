@@ -93,8 +93,7 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
         group.add(new AnAction("New JWT", "Create a new JWT", AllIcons.FileTypes.Any_type) {
             @Override
             public void actionPerformed(AnActionEvent anActionEvent) {
-                NewJwtDialog dialog = new NewJwtDialog(JwtExplorer.this.project,
-                        JwtExplorer.this.jwtPanel::copySecretPanelForDialog);
+                NewJwtDialog dialog = new NewJwtDialog(JwtExplorer.this.project);
                 if (dialog.showAndGet()) {
                     Jwt jwt = dialog.getJwt();
                     SignatureContext signatureContext = dialog.getSignatureContext();

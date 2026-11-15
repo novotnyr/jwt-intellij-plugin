@@ -18,10 +18,14 @@ import java.nio.file.Paths;
 public class IdePreferenceNewSignatureContextProvider implements NewSignatureContextProvider {
     protected final Logger log = Logger.getInstance("#" + IdePreferenceNewSignatureContextProvider.class.getName());
 
-    private final Project project;
+    private final String publicKeyFile;
+
+    private final String privateKeyFile;
 
     public IdePreferenceNewSignatureContextProvider(Project project) {
-        this.project = project;
+        PluginPreferences preferences = project == null ? null : PluginPreferences.getInstance(project);
+        this.publicKeyFile = preferences == null ? null : preferences.getRs256PublicKeyFile();
+        this.privateKeyFile = preferences == null ? null : preferences.getRs256PrivateKeyFile();
     }
 
     @SuppressWarnings("unchecked")
@@ -33,10 +37,8 @@ public class IdePreferenceNewSignatureContextProvider implements NewSignatureCon
         if (isEmptyPrivateKeyFile() && isEmptyPublicKeyFile()) {
             return (T) EditableKeyPairSignatureContext.INSTANCE;
         }
-        PluginPreferences pluginPreferences = PluginPreferences.getInstance(this.project);
-
-        String publicKey = loadPublicKey(pluginPreferences);
-        String privateKey = loadPrivateKey(pluginPreferences);
+        String publicKey = loadPublicKey();
+        String privateKey = loadPrivateKey();
 
         RS256SignatureContext.Builder builder = new RS256SignatureContext.Builder();
         if (publicKey != null) {
@@ -48,18 +50,12 @@ public class IdePreferenceNewSignatureContextProvider implements NewSignatureCon
         return (T) builder.build();
     }
 
-    private PluginPreferences getPreferences() {
-        return PluginPreferences.getInstance(this.project);
-    }
-
     private boolean isEmptyPrivateKeyFile() {
-        String file = getPreferences().getRs256PrivateKeyFile();
-        return isFileUnavailable(file);
+        return isFileUnavailable(this.privateKeyFile);
     }
 
     private boolean isEmptyPublicKeyFile() {
-        String file = getPreferences().getRs256PublicKeyFile();
-        return isFileUnavailable(file);
+        return isFileUnavailable(this.publicKeyFile);
     }
 
 
@@ -67,18 +63,18 @@ public class IdePreferenceNewSignatureContextProvider implements NewSignatureCon
         return file == null || file.isEmpty() || !new File(file).isFile();
     }
 
-    private String loadPrivateKey(PluginPreferences pluginPreferences) {
+    private String loadPrivateKey() {
         try {
-            return load(pluginPreferences.getRs256PrivateKeyFile());
+            return load(this.privateKeyFile);
         } catch (IOException | IllegalArgumentException e) {
             this.log.warn("Cannot load private key: " + e.getMessage());
             return null;
         }
     }
 
-    private String loadPublicKey(PluginPreferences pluginPreferences) {
+    private String loadPublicKey() {
         try {
-            return load(pluginPreferences.getRs256PublicKeyFile());
+            return load(this.publicKeyFile);
         } catch (IOException | IllegalArgumentException e) {
             this.log.warn("Cannot load public key: " + e.getMessage());
             return null;
