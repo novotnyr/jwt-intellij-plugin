@@ -42,4 +42,4 @@ For a local ZIP, download it from [GitHub Releases](https://github.com/novotnyr/
 2. Enter the matching secret or RS256 public key, then select **Validate** to check its signature and claims.
 3. To edit and re-sign a token, provide its signing secret or RS256 key pair and use the controls above the payload table. Use **New JWT** to create a token from scratch.
 
-![JWT tool window with decoded claims](screenshot.png)
+<img src="screenshot.png" alt="JWT tool window with decoded claims" width="515">
