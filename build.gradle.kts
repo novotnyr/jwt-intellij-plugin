@@ -37,6 +37,7 @@ intellijPlatform {
         changeNotes = """
             <ul>
                 <li>Improved the payload claim context menu</li>
+                <li>Provide a proper plugin icon</li>
             </ul>
         """.trimIndent()
     }
