@@ -4,10 +4,14 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.novotnyr.idea.jwt.ClaimUtils;
 import com.github.novotnyr.idea.jwt.SignatureContext;
 
+import java.io.IOException;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -17,6 +21,10 @@ import java.util.Objects;
 
 public class Jwt {
     public static Jwt EMPTY = new Jwt();
+
+    private static final ObjectMapper HEADER_MAPPER = new ObjectMapper()
+            .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+            .enable(DeserializationFeature.USE_BIG_INTEGER_FOR_INTS);
 
     private final List<NamedClaim<?>> headerClaims = new LinkedList<>();
 
@@ -36,10 +44,7 @@ public class Jwt {
 
         DecodedJWT decodedJwt = JWT.decode(encodedJwt);
 
-        addHeaderIfNotNull("alg", decodedJwt.getAlgorithm());
-        addHeaderIfNotNull("typ", decodedJwt.getType());
-        addHeaderIfNotNull("cty", decodedJwt.getContentType());
-        addHeaderIfNotNull("kid", decodedJwt.getKeyId());
+        readHeaderClaims(decodedJwt);
 
         this.algorithm = decodedJwt.getAlgorithm();
 
@@ -57,11 +62,22 @@ public class Jwt {
         return decodedJwt.getClaims();
     }
 
-    private void addHeaderIfNotNull(String claimName, String value) {
-        if(value == null) {
-            return;
+    private void readHeaderClaims(DecodedJWT decodedJwt) {
+        try {
+            JsonNode header = HEADER_MAPPER.readTree(Base64.getUrlDecoder().decode(decodedJwt.getHeader()));
+            if (header == null || !header.isObject()) {
+                throw new JWTDecodeException("JWT header must be a JSON object");
+            }
+            this.headerClaims.clear();
+            header.properties().forEach(entry -> {
+                JsonNode value = entry.getValue();
+                this.headerClaims.add(value.isTextual()
+                        ? new StringClaim(entry.getKey(), value.textValue())
+                        : new RawClaim(entry.getKey(), value));
+            });
+        } catch (IOException | IllegalArgumentException e) {
+            throw new JWTDecodeException("Cannot decode JWT header", e);
         }
-        this.headerClaims.add(new StringClaim(claimName, value));
     }
 
     public List<NamedClaim<?>> getHeaderClaims() {
@@ -112,11 +128,12 @@ public class Jwt {
     }
 
     private void updatePayload(NamedClaim<?> claim) {
-        JwtBuilder builder = new JwtBuilder();
+        JwtBuilder builder = new JwtBuilder().withHeaderClaims(this.headerClaims);
         for (NamedClaim<?> payloadClaim : this.payloadClaims) {
             builder.withClaim(payloadClaim);
         }
         this.jwtString = builder.sign(this.algorithm, this.signatureContext);
+        readHeaderClaims(JWT.decode(this.jwtString));
     }
 
     public void rebuild() {

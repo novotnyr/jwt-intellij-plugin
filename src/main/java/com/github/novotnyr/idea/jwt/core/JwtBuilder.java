@@ -19,6 +19,8 @@ public class JwtBuilder {
 
     private final Map<String, Object> headerClaims = new LinkedHashMap<>();
 
+    private boolean headerClaimsSupplied;
+
     private final PayloadClaims payloadClaims = new PayloadClaims();
 
     private final ObjectMapper mapper;
@@ -35,13 +37,23 @@ public class JwtBuilder {
         return this;
     }
 
+    public JwtBuilder withHeaderClaims(Iterable<NamedClaim<?>> claims) {
+        for (NamedClaim<?> claim : claims) {
+            this.headerClaims.put(claim.getName(), claim.getValue());
+            this.headerClaimsSupplied = true;
+        }
+        return this;
+    }
+
     public String sign(String algorithmName, SignatureContext signatureContext) {
         Algorithm algorithm = this.algorithmResolver.resolve(algorithmName, signatureContext);
-        this.headerClaims.put(HeaderParams.ALGORITHM, algorithm.getName());
-        this.headerClaims.put(HeaderParams.TYPE, "JWT");
-        String signingKeyId = algorithm.getSigningKeyId();
-        if (signingKeyId != null) {
-            this.headerClaims.put(HeaderParams.KEY_ID, signingKeyId);
+        if (!this.headerClaimsSupplied) {
+            this.headerClaims.put(HeaderParams.ALGORITHM, algorithm.getName());
+            this.headerClaims.put(HeaderParams.TYPE, "JWT");
+            String signingKeyId = algorithm.getSigningKeyId();
+            if (signingKeyId != null) {
+                this.headerClaims.put(HeaderParams.KEY_ID, signingKeyId);
+            }
         }
 
         try {
