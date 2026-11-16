@@ -13,11 +13,14 @@ import com.intellij.util.ui.UIUtil;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.datatransfer.DataFlavor;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 public class JwtPanelTabsTest extends LightPlatformTestCase {
     public void testPayloadAndHeaderTabsShareSigningControls() {
@@ -107,5 +110,33 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
         } finally {
             Disposer.dispose(panel);
         }
+    }
+
+    public void testUnsupportedAlgorithmIsNamedInSharedControls() {
+        JwtPanel panel = new JwtPanel(getProject());
+        try {
+            panel.setJwt(tokenWithAlgorithm("HS512"));
+            assertTrue(panel.getSecretPanel() instanceof UnrecognizedSecretPanel);
+            JLabel status = UIUtil.findComponentOfType(panel.getSecretPanel().getRoot(), JLabel.class);
+            assertNotNull(status);
+            assertEquals("Unsupported algorithm: HS512", status.getText());
+
+            panel.setJwt(tokenWithAlgorithm("PS256"));
+            assertEquals("Unsupported algorithm: PS256", status.getText());
+
+            panel.clearParsedJwtKeepingSigningInput();
+            assertEquals("No valid JWT to validate", status.getText());
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    private static Jwt tokenWithAlgorithm(String algorithm) {
+        String headerJson = "{\"alg\":\"" + algorithm + "\",\"typ\":\"JWT\"}";
+        String header = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(headerJson.getBytes(StandardCharsets.UTF_8));
+        String payload = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString("{}".getBytes(StandardCharsets.UTF_8));
+        return new Jwt(header + "." + payload + ".c2ln");
     }
 }

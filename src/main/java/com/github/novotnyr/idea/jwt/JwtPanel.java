@@ -124,7 +124,7 @@ public class JwtPanel implements Disposable {
 
     private final JPanel secretPanelContainer = new JPanel(new BorderLayout());
 
-    private final SecretPanel unrecognizedSecretPanel = new UnrecognizedSecretPanel();
+    private final UnrecognizedSecretPanel unrecognizedSecretPanel = new UnrecognizedSecretPanel();
 
     private final Map<String, SecretPanel> secretPanels = new HashMap<>();
 
@@ -470,6 +470,9 @@ public class JwtPanel implements Disposable {
 
     public void clearParsedJwtKeepingSigningInput() {
         applyJwt(Jwt.EMPTY, false);
+        if (this.secretPanel == this.unrecognizedSecretPanel) {
+            this.unrecognizedSecretPanel.showUnsupportedAlgorithm(null);
+        }
     }
 
     private void applyJwt(Jwt jwt, boolean updateSecretPanel) {
@@ -537,6 +540,7 @@ public class JwtPanel implements Disposable {
 
     private SecretPanel getOrCreateSecretPanel(String algorithm) {
         if (!SignatureAlgorithm.isSupported(algorithm)) {
+            this.unrecognizedSecretPanel.showUnsupportedAlgorithm(algorithm);
             return this.unrecognizedSecretPanel;
         }
 
