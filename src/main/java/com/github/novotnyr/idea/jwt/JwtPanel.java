@@ -9,7 +9,6 @@ import com.github.novotnyr.idea.jwt.rs256.RS256SignatureContext;
 import com.github.novotnyr.idea.jwt.rs256.RsaKeyParser;
 import com.github.novotnyr.idea.jwt.ui.ClaimTableTransferHandler;
 import com.github.novotnyr.idea.jwt.ui.IdePreferenceNewSignatureContextProvider;
-import com.github.novotnyr.idea.jwt.ui.UiUtils;
 import com.github.novotnyr.idea.jwt.ui.preferences.PluginPreferences;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
@@ -20,6 +19,10 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionPlaces;
+import com.intellij.openapi.actionSystem.ActionPopupMenu;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressManager;
@@ -38,15 +41,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
-import javax.swing.AbstractAction;
 import javax.swing.SwingUtilities;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeListener;
@@ -85,7 +86,20 @@ public class JwtPanel implements Disposable {
 
     private JwtClaimsTableModel claimsTableModel;
 
-    private final JBTable claimsTable = new JBTable();
+    private final JBTable claimsTable = new JBTable() {
+        @Override
+        public Point getPopupLocation(MouseEvent event) {
+            if (event != null) {
+                int row = rowAtPoint(event.getPoint());
+                if (row >= 0) {
+                    setRowSelectionInterval(row, row);
+                } else {
+                    clearSelection();
+                }
+            }
+            return super.getPopupLocation(event);
+        }
+    };
 
     private JPanel claimsTablePanel;
 
@@ -188,32 +202,11 @@ public class JwtPanel implements Disposable {
     }
 
     private JPanel configureClaimsTableActions() {
-        AddClaimActionButtonController addClaimAction = new AddClaimActionButtonController(this::isAddClaimActionEnabled) {
-            @Override
-            public void onClaimTypeSelected(DataTypeRegistry.DataType dataType) {
-                onNewAction(dataType);
-            }
-        };
+        AddClaimActionButtonController addClaimAction = new AddClaimAction();
 
         this.claimsTablePanel = ToolbarDecorator.createDecorator(this.claimsTable)
                 .disableUpDownActions()
-                .addExtraAction(new AnAction("Copy payload as JSON", null, AllIcons.FileTypes.Json) {
-                    @Override
-                    public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                        onCopyAsJsonActionPerformed(anActionEvent);
-                    }
-
-                    @Override
-                    public void update(@NotNull AnActionEvent e) {
-                        e.getPresentation()
-                         .setEnabled(!JwtPanel.this.jwt.getPayloadClaims().isEmpty());
-                    }
-
-                    @Override
-                    public @NotNull ActionUpdateThread getActionUpdateThread() {
-                        return ActionUpdateThread.EDT;
-                    }
-                })
+                .addExtraAction(new CopyPayloadAsJsonAction())
                 .setEditAction(this::onEditAction)
                 .setEditActionUpdater(event -> isEditClaimActionEnabled())
                 .setAddAction(addClaimAction)
@@ -227,22 +220,13 @@ public class JwtPanel implements Disposable {
 
 
     private void configureClaimsTablePopup() {
-        JPopupMenu popupMenu = new JPopupMenu();
-        UiUtils.configureTableRowSelectionOnPopup(popupMenu);
+        DefaultActionGroup actions = new DefaultActionGroup();
+        actions.add(new CopyClaimAction("Copy value (as string)", this::copySelectedClaimValue));
+        actions.add(new CopyClaimAction("Copy value (as key=value)", this::copySelectedClaimAsKeyAndValue));
 
-        JMenuItem copyValueMenuItem = new JMenuItem("Copy value (as string)");
-        copyValueMenuItem.addActionListener(JwtPanel.this::onCopyValueMenuItemActionPerformed);
-        popupMenu.add(copyValueMenuItem);
-
-        JMenuItem copyAsKeyAndValueMenuItem = new JMenuItem(new AbstractAction("Copy value (as key=value)") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                onCopyKeyAndValueMenuItemActionPerformed(e);
-            }
-        });
-        popupMenu.add(copyAsKeyAndValueMenuItem);
-
-        this.claimsTable.setComponentPopupMenu(popupMenu);
+        ActionPopupMenu popup = ActionManager.getInstance().createActionPopupMenu(ActionPlaces.POPUP, actions);
+        popup.setTargetComponent(this.claimsTable);
+        this.claimsTable.setComponentPopupMenu(popup.getComponent());
     }
 
     private void configureSecretTextFieldListeners() {
@@ -264,14 +248,14 @@ public class JwtPanel implements Disposable {
     }
 
 
-    public void onCopyValueMenuItemActionPerformed(@SuppressWarnings("unused") ActionEvent e) {
+    private void copySelectedClaimValue() {
         int selectedRowIndex = this.claimsTable.getSelectedRow();
         Object claimValue = this.claimsTableModel.getValueAt(selectedRowIndex, 1);
         TextTransferable textTransferable = new TextTransferable(claimValue.toString());
         CopyPasteManagerEx.getInstanceEx().setContents(textTransferable);
     }
 
-    public void onCopyKeyAndValueMenuItemActionPerformed(@SuppressWarnings("unused") ActionEvent e) {
+    private void copySelectedClaimAsKeyAndValue() {
         int selectedRowIndex = this.claimsTable.getSelectedRow();
         Object claimName = this.claimsTableModel.getValueAt(selectedRowIndex, 0);
         Object claimValue = this.claimsTableModel.getValueAt(selectedRowIndex, 1);
@@ -608,6 +592,62 @@ public class JwtPanel implements Disposable {
 
     public void addJwtListener(PropertyChangeListener listener) {
         this.propertyChangeSupport.addPropertyChangeListener("jwt", listener);
+    }
+
+    private final class AddClaimAction extends AddClaimActionButtonController {
+        private AddClaimAction() {
+            super(JwtPanel.this::isAddClaimActionEnabled);
+        }
+
+        @Override
+        public void onClaimTypeSelected(DataTypeRegistry.DataType dataType) {
+            onNewAction(dataType);
+        }
+    }
+
+    private final class CopyPayloadAsJsonAction extends AnAction {
+        private CopyPayloadAsJsonAction() {
+            super("Copy payload as JSON", null, AllIcons.FileTypes.Json);
+        }
+
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent e) {
+            onCopyAsJsonActionPerformed(e);
+        }
+
+        @Override
+        public void update(@NotNull AnActionEvent e) {
+            e.getPresentation().setEnabled(!JwtPanel.this.jwt.getPayloadClaims().isEmpty());
+        }
+
+        @Override
+        public @NotNull ActionUpdateThread getActionUpdateThread() {
+            return ActionUpdateThread.EDT;
+        }
+    }
+
+    private final class CopyClaimAction extends AnAction {
+        private final Runnable handler;
+
+        private CopyClaimAction(String text, Runnable handler) {
+            super(text);
+            this.handler = handler;
+        }
+
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent e) {
+            this.handler.run();
+        }
+
+        @Override
+        public void update(@NotNull AnActionEvent e) {
+            e.getPresentation().setEnabled(JwtPanel.this.claimsTable.getSelectedRow() >= 0);
+        }
+
+        @Override
+        public @NotNull ActionUpdateThread getActionUpdateThread() {
+            return ActionUpdateThread.EDT;
+        }
     }
 
     @Override
