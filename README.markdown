@@ -1,27 +1,45 @@
 # JWT (JSON Web Token) Analyzer for IntelliJ IDEA
 
-An IntelliJ IDEA plugin for JSON Web Tokens (JWT)
+Inspect, verify, and edit JSON Web Tokens in a dedicated IntelliJ IDEA tool window.
 
-## Supported features
+[Get it on JetBrains Marketplace](https://plugins.jetbrains.com/plugin/9831-jwt-json-web-token-analyzer)
 
-*   Visualize JWT contents in a tabular form
-*   Verify signature (HS384, HS256 and RS256 support)
-*   Verify validity of timestamp-based claims
-*   Visualize timestamp-based claims in unix / ISO / human relative format
-*   Edit claim values: dedicated editor for string, timestamp, boolean, numeric and raw JSON values
+## What you can do
 
-## Installing
+### Inspect a token
 
-1. Download the [latest release](https://github.com/novotnyr/jwt-intellij-plugin/releases) as a ZIP file.
-2. From *IntelliJ* settings, drill down to *Plugins* and install via **Install Plug-in From disk** button.
+Paste a JWT into the tool window to see its decoded header and payload as tables. You can browse claims without supplying a secret or key. The encoded token highlights its payload segment, and malformed tokens show an error beside the input.
 
-## Screenshots
-![Screenshot](screenshot.png)
+### Verify signatures and time claims
 
-## Usage
+Enter a shared secret for HS256 or HS384, or an RSA public key for RS256, then select **Validate**. The plugin checks the signature and the optional `exp` and `nbf` time limits. It also checks that `exp`, `nbf`, and `iat` contain numeric timestamps when present, and marks invalid claims in the payload table.
 
-After installation, toggle the JWT tool window via a button in the right section of the IDE window.
+### Create and edit JWTs
 
-![JWT Tool Window](screenshot-intellij-right-panel.png)
+Use **New JWT** to create an HS256, HS384, or RS256 token, with an optional `iat` claim. With a signing secret or RSA key pair available, use the payload table controls to add, edit, or remove claims. The plugin re-signs the token after each change and provides editors for strings, numbers, booleans, timestamps, and raw JSON.
 
-Alternatively, you can display the JWT tool window via menu *View → Tool Windows → JWT*.
+### Work with timestamps
+
+Use the tool window's gear menu to switch between the **Unix timestamp**, **ISO**, and **Relative** display options. The timestamp editor includes **Now**, **+15 min**, and **-15 min** controls and preserves fractional timestamp values while editing.
+
+### Copy or open the payload
+
+Copy the whole payload as formatted JSON, or open it in a JSON scratch file formatted with the IDE's code style. You can also right-click a claim to copy its value or a `name=value` pair.
+
+### Configure RS256 keys
+
+In **Settings/Preferences → Tools → JWT**, choose PEM files for default RS256 public and private keys. The plugin validates the files before saving and uses them to prefill the RS256 key fields. You can also paste keys directly, including text with escaped newlines (`\n`).
+
+## Install
+
+Open **Settings/Preferences → Plugins → Marketplace**, search for **JWT (JSON Web Token) Analyzer**, and select **Install**.
+
+For a local ZIP, download it from [GitHub Releases](https://github.com/novotnyr/jwt-intellij-plugin/releases) and use **Install Plugin from Disk** in the Plugins settings.
+
+## Get started
+
+1. Open **View → Tool Windows → JWT** and paste a token into the text area.
+2. Enter the matching secret or RS256 public key, then select **Validate** to check its signature and claims.
+3. To edit and re-sign a token, provide its signing secret or RS256 key pair and use the controls above the payload table. Use **New JWT** to create a token from scratch.
+
+![JWT tool window with decoded claims](screenshot.png)
