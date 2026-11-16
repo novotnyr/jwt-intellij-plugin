@@ -8,7 +8,7 @@ Inspect, verify, and edit JSON Web Tokens in a dedicated IntelliJ IDEA tool wind
 
 ### Inspect a token
 
-Paste a JWT into the tool window to see its decoded header and payload as tables. You can browse claims without supplying a secret or key. The encoded token highlights its payload segment, and malformed tokens show an error beside the input.
+Paste a JWT into the tool window. The **Payload** tab shows decoded claims, and the **Header** tab shows every supplied header parameter. You can browse claims without supplying a secret or key. The encoded token highlights its payload segment, and malformed tokens show an error beside the input.
 
 ### Verify signatures and time claims
 

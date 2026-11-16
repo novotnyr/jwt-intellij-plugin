@@ -50,10 +50,15 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
             }
             try {
                 String jwtString = (String) event.getNewValue();
-                Jwt jwt = StringUtils.isEmpty(jwtString) ? Jwt.EMPTY : new Jwt(jwtString);
-                JwtExplorer.this.jwt = jwt;
+                if (StringUtils.isEmpty(jwtString)) {
+                    clearParsedJwt();
+                    return;
+                }
+                Jwt jwt = new Jwt(jwtString);
                 JwtExplorer.this.jwtPanel.setJwt(jwt);
+                JwtExplorer.this.jwt = jwt;
             } catch (SignatureVerificationException e) {
+                clearParsedJwt();
                 JBPopupFactory.getInstance()
                         .createHtmlTextBalloonBuilder(e.getMessage(), MessageType.ERROR, null)
                         .setFadeoutTime(7500)
@@ -61,6 +66,7 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
                         .show(RelativePoint.getNorthWestOf(JwtExplorer.this.encodedJwtPanel),
                                 Balloon.Position.atRight);
             } catch (JWTDecodeException e) {
+                clearParsedJwt();
                 JBPopupFactory.getInstance()
                         .createHtmlTextBalloonBuilder("JWT has a wrong syntax:" + e.getMessage(), MessageType.ERROR, null)
                         .setFadeoutTime(7500)
@@ -154,6 +160,11 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
 
     private void setEncodedJwtSilently(Jwt jwt) {
         runWithoutEncodedJwtEvent(() -> this.encodedJwtPanel.setJwt(jwt));
+    }
+
+    private void clearParsedJwt() {
+        this.jwt = Jwt.EMPTY;
+        this.jwtPanel.clearParsedJwtKeepingSigningInput();
     }
 
     private void runWithoutEncodedJwtEvent(Runnable update) {

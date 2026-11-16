@@ -30,10 +30,12 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.DoubleClickListener;
-import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.JBSplitter;
 import com.intellij.ui.ToolbarDecorator;
+import com.intellij.ui.components.JBScrollPane;
+import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.table.JBTable;
+import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.TextTransferable;
 import com.intellij.util.ui.components.BorderLayoutPanel;
 import com.intellij.util.concurrency.AppExecutorUtil;
@@ -80,9 +82,24 @@ public class JwtPanel implements Disposable {
 
     private final JPanel rootPanel = new BorderLayoutPanel();
 
+    private final JBTabbedPane parsedTabs = new JBTabbedPane();
+
     private JwtHeaderTableModel headerTableModel;
 
-    private final JBTable headerTable = new JBTable();
+    private final JBTable headerTable = new JBTable() {
+        @Override
+        public Point getPopupLocation(MouseEvent event) {
+            if (event != null) {
+                int row = rowAtPoint(event.getPoint());
+                if (row >= 0) {
+                    setRowSelectionInterval(row, row);
+                } else {
+                    clearSelection();
+                }
+            }
+            return super.getPopupLocation(event);
+        }
+    };
 
     private JwtClaimsTableModel claimsTableModel;
 
@@ -103,7 +120,7 @@ public class JwtPanel implements Disposable {
 
     private JPanel claimsTablePanel;
 
-    private JBSplitter payloadSplitter;
+    private JBSplitter contentSplitter;
 
     private final JPanel secretPanelContainer = new JPanel(new BorderLayout());
 
@@ -146,6 +163,7 @@ public class JwtPanel implements Disposable {
 
         initializeClaimsTableModel(this.claimsTable);
         configureClaimsTablePopup();
+        configureHeaderTablePopup();
         configureClipboardCopy(this.claimsTable);
 
         replaceSecretPanelContent(this.secretPanel);
@@ -166,24 +184,27 @@ public class JwtPanel implements Disposable {
         this.claimsTablePanel = configureClaimsTableActions();
         updateClaimsTablePreferredSize();
 
-        this.rootPanel.add(createHeaderTableAndClaimsLabelGroup(), BorderLayout.NORTH);
-        this.rootPanel.add(createPayloadAndSecretPanels(), BorderLayout.CENTER);
+        this.rootPanel.add(createTabbedContentAndSecretPanels(), BorderLayout.CENTER);
         this.rootPanel.add(this.validateButton, BorderLayout.SOUTH);
     }
 
-    private JComponent createHeaderTableAndClaimsLabelGroup() {
+    private JComponent createTabbedContentAndSecretPanels() {
+        this.headerTableModel = new JwtHeaderTableModel(Jwt.EMPTY);
+        this.headerTable.setModel(this.headerTableModel);
         this.headerTable.setAutoResizeMode(JBTable.AUTO_RESIZE_ALL_COLUMNS);
-        this.headerTable.setTableHeader(null);
-        this.headerTable.setPreferredScrollableViewportSize(new Dimension(0, 2 * this.headerTable.getRowHeight()));
+        this.headerTable.getEmptyText().setText("No valid JWT to display");
+        this.claimsTable.getEmptyText().setText("No valid JWT to display");
 
-        return this.headerTable;
-    }
+        JBScrollPane headerScrollPane = new JBScrollPane(this.headerTable);
+        headerScrollPane.setBorder(JBUI.Borders.empty());
 
-    private JComponent createPayloadAndSecretPanels() {
-        this.payloadSplitter = new JBSplitter(true);
-        this.payloadSplitter.setFirstComponent(this.claimsTablePanel);
-        this.payloadSplitter.setSecondComponent(this.secretPanelContainer);
-        return this.payloadSplitter;
+        this.parsedTabs.addTab("Payload", this.claimsTablePanel);
+        this.parsedTabs.addTab("Header", headerScrollPane);
+
+        this.contentSplitter = new JBSplitter(true);
+        this.contentSplitter.setFirstComponent(this.parsedTabs);
+        this.contentSplitter.setSecondComponent(this.secretPanelContainer);
+        return this.contentSplitter;
     }
 
     public JPanel getRootPanel() {
@@ -214,7 +235,6 @@ public class JwtPanel implements Disposable {
                 .setRemoveAction(button -> onRemoveClaim())
                 .setRemoveActionUpdater(event -> isRemoveClaimActionEnabled())
                 .createPanel();
-        this.claimsTablePanel.setBorder(IdeBorderFactory.createTitledBorder("Payload", false));
         return this.claimsTablePanel;
     }
 
@@ -227,6 +247,15 @@ public class JwtPanel implements Disposable {
         ActionPopupMenu popup = ActionManager.getInstance().createActionPopupMenu(ActionPlaces.POPUP, actions);
         popup.setTargetComponent(this.claimsTable);
         this.claimsTable.setComponentPopupMenu(popup.getComponent());
+    }
+
+    private void configureHeaderTablePopup() {
+        DefaultActionGroup actions = new DefaultActionGroup();
+        actions.add(new CopyHeaderValueAction());
+
+        ActionPopupMenu popup = ActionManager.getInstance().createActionPopupMenu(ActionPlaces.POPUP, actions);
+        popup.setTargetComponent(this.headerTable);
+        this.headerTable.setComponentPopupMenu(popup.getComponent());
     }
 
     private void configureSecretTextFieldListeners() {
@@ -262,6 +291,15 @@ public class JwtPanel implements Disposable {
         TextTransferable textTransferable = new TextTransferable(claimName + "=" + claimValue.toString());
 
         CopyPasteManagerEx.getInstanceEx().setContents(textTransferable);
+    }
+
+    void copySelectedHeaderValue() {
+        int row = this.headerTable.getSelectedRow();
+        if (row < 0) {
+            return;
+        }
+        String value = (String) this.headerTable.getValueAt(row, 1);
+        CopyPasteManagerEx.getInstanceEx().setContents(new TextTransferable(value));
     }
 
     private void onValidateButtonClick(@SuppressWarnings("unused") ActionEvent event) {
@@ -424,6 +462,17 @@ public class JwtPanel implements Disposable {
     }
 
     public void setJwt(Jwt jwt) {
+        applyJwt(jwt, true);
+        if (!jwt.isEmpty()) {
+            this.parsedTabs.setSelectedIndex(0);
+        }
+    }
+
+    public void clearParsedJwtKeepingSigningInput() {
+        applyJwt(Jwt.EMPTY, false);
+    }
+
+    private void applyJwt(Jwt jwt, boolean updateSecretPanel) {
         if (this.jwtUpdateInProgress) {
             // This means that a change in the claims triggered
             // a change in String representation that
@@ -435,17 +484,21 @@ public class JwtPanel implements Disposable {
         this.jwt = jwt;
         this.headerTableModel = new JwtHeaderTableModel(jwt);
         this.headerTable.setModel(this.headerTableModel);
-        this.headerTable.setPreferredScrollableViewportSize(new Dimension(0, this.headerTableModel.getRowCount() * this.headerTable.getRowHeight()));
-        this.headerTable.getParent().revalidate();
+        this.headerTable.getEmptyText().setText(jwt.isEmpty() ? "No valid JWT to display" : "No header claims");
+        this.headerTable.revalidate();
+        this.headerTable.repaint();
 
         this.claimsTableModel = new JwtClaimsTableModel(jwt);
         this.claimsTableModel.setClaimErrors(validateClaims(jwt));
         this.claimsTable.setModel(this.claimsTableModel);
+        this.claimsTable.getEmptyText().setText(jwt.isEmpty() ? "No valid JWT to display" : "No payload claims");
         this.claimsTable.setDefaultRenderer(Object.class, this.claimsTableModel);
         this.claimsTableModel.addTableModelListener(e -> updateClaimsTablePreferredSize());
         updateClaimsTablePreferredSize();
 
-        configureSecretPanel(jwt);
+        if (updateSecretPanel) {
+            configureSecretPanel(jwt);
+        }
 
         refreshValidateButton();
     }
@@ -456,9 +509,10 @@ public class JwtPanel implements Disposable {
         this.claimsTable.setPreferredScrollableViewportSize(new Dimension(0, rows * this.claimsTable.getRowHeight()));
         this.claimsTable.getParent().revalidate();
         SwingUtilities.invokeLater(() -> {
-            if (this.payloadSplitter != null && this.payloadSplitter.getHeight() > 0) {
-                int prefHeight = this.claimsTablePanel.getPreferredSize().height;
-                this.payloadSplitter.setProportion((float) prefHeight / this.payloadSplitter.getHeight());
+            if (this.contentSplitter != null && this.contentSplitter.getHeight() > 0) {
+                int prefHeight = this.claimsTablePanel.getPreferredSize().height + JBUI.scale(32);
+                float proportion = (float) prefHeight / this.contentSplitter.getHeight();
+                this.contentSplitter.setProportion(Math.min(0.75f, Math.max(0.35f, proportion)));
             }
         });
     }
@@ -582,6 +636,7 @@ public class JwtPanel implements Disposable {
 
     public void reset() {
         setJwt(Jwt.EMPTY);
+        this.parsedTabs.setSelectedIndex(0);
         for (SecretPanel panel : this.secretPanels.values()) {
             Disposer.dispose(panel);
         }
@@ -642,6 +697,27 @@ public class JwtPanel implements Disposable {
         @Override
         public void update(@NotNull AnActionEvent e) {
             e.getPresentation().setEnabled(JwtPanel.this.claimsTable.getSelectedRow() >= 0);
+        }
+
+        @Override
+        public @NotNull ActionUpdateThread getActionUpdateThread() {
+            return ActionUpdateThread.EDT;
+        }
+    }
+
+    private final class CopyHeaderValueAction extends AnAction {
+        private CopyHeaderValueAction() {
+            super("Copy value");
+        }
+
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent e) {
+            copySelectedHeaderValue();
+        }
+
+        @Override
+        public void update(@NotNull AnActionEvent e) {
+            e.getPresentation().setEnabled(JwtPanel.this.headerTable.getSelectedRow() >= 0);
         }
 
         @Override
