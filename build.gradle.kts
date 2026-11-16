@@ -42,6 +42,7 @@ intellijPlatform {
                 <li>Validate RS256 keys before creating a JWT, report errors on the affected key field, and process keys in the background to keep the UI responsive.</li>
                 <li>Fix settings change detection and validate configured RSA key files before saving.</li>
                 <li>Accept pasted RS256 keys with escaped newlines without changing paste behavior in other editors.</li>
+                <li>Fix RS256 key paste crashes in IntelliJ IDEA 2026.3.</li>
                 <li>Refresh claim actions and the Validate button as JWT state changes, and fix stale payload highlighting and error popup placement.</li>
                 <li>Format new JWT payload scratch files with the IDE code style even when another editor is selected.</li>
                 <li>Require IntelliJ IDEA 2024.3 or later.</li>
