@@ -42,4 +42,12 @@ For a local ZIP, download it from [GitHub Releases](https://github.com/novotnyr/
 2. Enter the matching secret or RS256 public key, then select **Validate** to check its signature and claims.
 3. To edit and re-sign a token, provide its signing secret or RS256 key pair and use the controls above the payload table. Use **New JWT** to create a token from scratch.
 
-<img src="screenshot.png" alt="JWT tool window with decoded claims" width="515">
+## Screenshots
+
+**HS256:** The tool window shows decoded claims and a shared secret field. The expired `exp` claim is highlighted in red.
+
+<img src="screenshot.png" alt="HS256 token with decoded claims and shared secret field" width="515">
+
+**RS256:** The public key field is used to verify the signature. The private key field lets you edit claims and sign the updated token.
+
+<img src="screenshot-keypair.png" alt="RS256 token with separate public and private key fields" width="515">
