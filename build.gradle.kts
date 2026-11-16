@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.novotnyr"
-version = "0.30"
+version = "0.31-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -36,16 +36,7 @@ intellijPlatform {
     pluginConfiguration {
         changeNotes = """
             <ul>
-                <li>Fix validation of optional <code>exp</code>, <code>nbf</code>, and <code>iat</code> claims</li>
-                <li>Support fractional timestamps when editing and re-signing JWTs.</li>
-                <li>Keep New JWT dialog secrets separate from the tool window, so Cancel leaves the active JWT unchanged and algorithm switches retain draft secrets.</li>
-                <li>Validate RS256 keys before creating a JWT, report errors on the affected key field, and process keys in the background to keep the UI responsive.</li>
-                <li>Fix settings change detection and validate configured RSA key files before saving.</li>
-                <li>Accept pasted RS256 keys with escaped newlines without changing paste behavior in other editors.</li>
-                <li>Fix RS256 key paste crashes in IntelliJ IDEA 2026.3.</li>
-                <li>Refresh claim actions and the Validate button as JWT state changes, and fix stale payload highlighting and error popup placement.</li>
-                <li>Format new JWT payload scratch files with the IDE code style even when another editor is selected.</li>
-                <li>Require IntelliJ IDEA 2024.3 or later.</li>
+                <li>/li>
             </ul>
         """.trimIndent()
     }
