@@ -20,8 +20,6 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataProvider;
-import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressManager;
@@ -66,7 +64,7 @@ import static com.github.novotnyr.idea.jwt.ClaimDialog.Mode.EDIT;
 import static com.github.novotnyr.idea.jwt.ClaimDialog.Mode.VIEW;
 import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.MUTABLE;
 
-public class JwtPanel implements DataProvider, Disposable {
+public class JwtPanel implements Disposable {
     private static final Logger LOG = Logger.getInstance(JwtPanel.class);
 
     private final Project project;
@@ -118,20 +116,6 @@ public class JwtPanel implements DataProvider, Disposable {
 
     /** Invalidates older default-key loads after a newer load or Reset. */
     private long rsaDefaultsGeneration;
-
-    /**
-     * Last successfully parsed RSA context. Cleared when the key text changes; volatile because
-     * action-system data lookups may read it on another thread without parsing editor text.
-     */
-    private volatile RS256SignatureContext parsedRsaContext;
-
-    /** JWT and parsed keys produced together by an RSA claim update on a worker thread. */
-    private record RsaMutation(Jwt jwt, SignatureContext context) {
-    }
-
-    /** Signature-validation result and parsed keys produced together on a worker thread. */
-    private record RsaValidation(JwtValidator validator, SignatureContext context) {
-    }
 
     public JwtPanel(Project project) {
         this(project, AppExecutorUtil.getAppExecutorService());
@@ -262,12 +246,7 @@ public class JwtPanel implements DataProvider, Disposable {
     }
 
     private void configureSecretTextFieldListeners() {
-        this.secretPanel.setSignatureContextChangedListener(() -> {
-            if (this.secretPanel instanceof RS256Panel) {
-                this.parsedRsaContext = null;
-            }
-            refreshValidateButton();
-        });
+        this.secretPanel.setSignatureContextChangedListener(this::refreshValidateButton);
     }
 
     private void editClaimAtRow(int row) {
@@ -309,17 +288,16 @@ public class JwtPanel implements DataProvider, Disposable {
         try {
             JwtValidator jwtValidator;
             if (rsaPanel != null) {
-                RsaValidation validation = runRsaOperation("Validating RSA JWT", () -> {
+                JwtValidator validation = runRsaOperation("Validating RSA JWT", () -> {
                     SignatureContext context = RsaKeyParser.parse(keyText.publicKey(), keyText.privateKey());
                     JwtValidator validator = new JwtValidator();
                     validator.validate(new Jwt(encodedJwt), context);
-                    return new RsaValidation(validator, context);
+                    return validator;
                 });
                 if (validation == null || !isCurrentRsaInput(rsaPanel, keyText, originalJwt, encodedJwt)) {
                     return;
                 }
-                jwtValidator = validation.validator();
-                this.parsedRsaContext = (RS256SignatureContext) validation.context();
+                jwtValidator = validation;
             } else {
                 jwtValidator = new JwtValidator();
                 jwtValidator.validate(this.jwt, this.secretPanel.getSignatureContext());
@@ -389,22 +367,21 @@ public class JwtPanel implements DataProvider, Disposable {
             Jwt originalJwt = this.jwt;
             String encodedJwt = originalJwt.toString();
             try {
-                RsaMutation mutation = runRsaOperation("Updating RSA JWT", () -> {
+                Jwt updatedJwt = runRsaOperation("Updating RSA JWT", () -> {
                     SignatureContext context = RsaKeyParser.parse(keyText.publicKey(), keyText.privateKey());
-                    Jwt updatedJwt = new Jwt(encodedJwt);
-                    updatedJwt.setSignatureContext(context);
+                    Jwt jwtToUpdate = new Jwt(encodedJwt);
+                    jwtToUpdate.setSignatureContext(context);
                     if (updatedClaim != null) {
-                        updatedJwt.setPayloadClaim(updatedClaim);
+                        jwtToUpdate.setPayloadClaim(updatedClaim);
                     } else {
-                        updatedJwt.removeClaim(removedClaimName);
+                        jwtToUpdate.removeClaim(removedClaimName);
                     }
-                    return new RsaMutation(updatedJwt, context);
+                    return jwtToUpdate;
                 });
-                if (mutation == null || !isCurrentRsaInput(rsaPanel, keyText, originalJwt, encodedJwt)) {
+                if (updatedJwt == null || !isCurrentRsaInput(rsaPanel, keyText, originalJwt, encodedJwt)) {
                     return;
                 }
-                this.jwt = mutation.jwt();
-                this.parsedRsaContext = (RS256SignatureContext) mutation.context();
+                this.jwt = updatedJwt;
                 refreshJwt();
             } catch (SignatureContextException e) {
                 if (isCurrentRsaInput(rsaPanel, keyText, originalJwt, encodedJwt)) {
@@ -453,27 +430,6 @@ public class JwtPanel implements DataProvider, Disposable {
 
     private void refreshValidateButton() {
         this.validateButton.setEnabled(!Jwt.EMPTY.equals(this.jwt) && isValidatable());
-    }
-
-    @Nullable
-    @Override
-    public Object getData(@NonNull String dataId) {
-        if (Constants.DataKeys.SECRET.is(dataId)) {
-            if (this.secretPanel instanceof RS256Panel) {
-                // DataProvider may be queried during action updates; never parse editor text here.
-                return this.parsedRsaContext;
-            }
-            return this.secretPanel.getSignatureContext();
-        }
-        if (PlatformDataKeys.SELECTED_ITEM.is(dataId)) {
-            int selectedRow = this.claimsTable.getSelectedRow();
-            if (selectedRow < 0) {
-                return null;
-            }
-            return this.claimsTableModel.getClaimAt(selectedRow);
-        }
-
-        return null;
     }
 
     private void refreshJwt() {
@@ -580,7 +536,6 @@ public class JwtPanel implements DataProvider, Disposable {
                             setSignatureContext(context);
                         } else {
                             panel.setSignatureContext(context);
-                            this.parsedRsaContext = (RS256SignatureContext) context;
                         }
                         this.rsaDefaultsText = panel.snapshotKeyText();
                     }
@@ -607,9 +562,6 @@ public class JwtPanel implements DataProvider, Disposable {
         this.secretPanel.removeSignatureContextChangedListener();
         try {
             this.secretPanel.setSignatureContext(signatureContext);
-            if (this.secretPanel instanceof RS256Panel) {
-                this.parsedRsaContext = (RS256SignatureContext) signatureContext;
-            }
         } finally {
             configureSecretTextFieldListeners();
         }
@@ -652,7 +604,6 @@ public class JwtPanel implements DataProvider, Disposable {
         this.secretPanels.clear();
         this.rsaDefaultsText = null;
         this.rsaDefaultsGeneration++;
-        this.parsedRsaContext = null;
     }
 
     public void addJwtListener(PropertyChangeListener listener) {
@@ -664,6 +615,5 @@ public class JwtPanel implements DataProvider, Disposable {
         this.disposed = true;
         this.secretPanel.removeSignatureContextChangedListener();
         this.secretPanels.clear();
-        this.parsedRsaContext = null;
     }
 }
