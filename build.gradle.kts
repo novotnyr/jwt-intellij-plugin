@@ -71,4 +71,11 @@ intellijPlatformTesting {
             version = "2026.3"
         }
     }
+    testIde {
+        register("testIde263") {
+            type = IntelliJPlatformType.IntellijIdea
+            version = "2026.3"
+            testFramework(TestFrameworkType.Platform)
+        }
+    }
 }
