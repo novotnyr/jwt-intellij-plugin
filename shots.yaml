@@ -1,0 +1,76 @@
+output:
+  width: 1920
+  dir: build/marketplace-screenshots
+
+theme: dark
+
+brand:
+  name: JWT Analyzer
+  logo: src/main/resources/icons/toolwindow-icon_dark.svg
+  accent: "#7B61FF"
+
+defaults:
+  uiScale: 2
+
+slides:
+  - id: overview
+    layout: text-left
+    align: top
+    headline: Inspect JWTs without leaving IntelliJ IDEA
+    body:
+      - Paste a token to explore its decoded header and claims
+      - Validate signatures, edit payloads, and sign updated tokens
+    footnote: Supports HS256, HS384, and RS256
+    screenshot:
+      src: src/screenshots/toolwindow-hs256.png
+      crop: [ 2413, 129, 1303, 1935 ]
+
+  - id: hs256
+    layout: text-left
+    align: center
+    headline: Symmetric HS256 secrets are supported
+    body: Validate and sign JWT tokens based on HS256 secrets
+    screenshot:
+      src: src/screenshots/toolwindow-hs256.png
+      crop: [2390, 604, 1355, 1460]
+      highlight:
+        - [2406, 1590, 1304, 100]
+
+  - id: rs256
+    layout: text-left
+    align: center
+    headline: RS256 keypairs are supported
+    body: Validate and sign JWT tokens based on RS256 private and public keys
+    screenshot:
+      src: src/screenshots/toolwindow-rs256.png
+      crop: [2390, 604, 1355, 1460]
+      highlight:
+        - [2406, 1590, 1304, 352]
+
+  - id: edit-claim
+    layout: text-left
+    align: center
+    headline: Create and edit any JWT claim
+    body:
+      - Open a focused editor
+      - Use controls suited to text, numbers, timestamps, booleans, and raw JSON
+    screenshot:
+      src: src/screenshots/edit-claim.png
+      crop: [2390, 260, 1355, 1460]
+      highlight:
+        - [2472, 494, 988, 880]
+
+  - id: relative-times
+    layout: text-right
+    align: center
+    headline: Token timing at a glance
+    body:
+      - See expiration and issuance as relative dates, like “6 hours ago”
+      - Switch to ISO or Unix timestamps whenever you need exact values
+    footnote: Expired claims are highlighted in the payload table
+    screenshot:
+      src: src/screenshots/toolwindow-jwt-relative-times.png
+      crop: [2390, 604, 1355, 1460]
+      highlight:
+        - [2406, 1362, 1304, 118]
+
