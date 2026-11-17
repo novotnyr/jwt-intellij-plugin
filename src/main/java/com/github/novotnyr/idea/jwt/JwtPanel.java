@@ -47,6 +47,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.table.TableColumnModel;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Point;
@@ -86,37 +87,11 @@ public class JwtPanel implements Disposable {
 
     private JwtHeaderTableModel headerTableModel;
 
-    private final JBTable headerTable = new JBTable() {
-        @Override
-        public Point getPopupLocation(MouseEvent event) {
-            if (event != null) {
-                int row = rowAtPoint(event.getPoint());
-                if (row >= 0) {
-                    setRowSelectionInterval(row, row);
-                } else {
-                    clearSelection();
-                }
-            }
-            return super.getPopupLocation(event);
-        }
-    };
+    private final JBTable headerTable = new ClaimValueTable();
 
     private JwtClaimsTableModel claimsTableModel;
 
-    private final JBTable claimsTable = new JBTable() {
-        @Override
-        public Point getPopupLocation(MouseEvent event) {
-            if (event != null) {
-                int row = rowAtPoint(event.getPoint());
-                if (row >= 0) {
-                    setRowSelectionInterval(row, row);
-                } else {
-                    clearSelection();
-                }
-            }
-            return super.getPopupLocation(event);
-        }
-    };
+    private final JBTable claimsTable = new ClaimValueTable();
 
     private JPanel claimsTablePanel;
 
@@ -191,7 +166,7 @@ public class JwtPanel implements Disposable {
     private JComponent createTabbedContentAndSecretPanels() {
         this.headerTableModel = new JwtHeaderTableModel(Jwt.EMPTY);
         this.headerTable.setModel(this.headerTableModel);
-        this.headerTable.setAutoResizeMode(JBTable.AUTO_RESIZE_ALL_COLUMNS);
+        configureClaimValueColumns(this.headerTable);
         this.headerTable.getEmptyText().setText("No valid JWT to display");
         this.claimsTable.getEmptyText().setText("No valid JWT to display");
 
@@ -215,6 +190,12 @@ public class JwtPanel implements Disposable {
     private void initializeClaimsTableModel(JBTable claimsTable) {
         this.claimsTableModel = new JwtClaimsTableModel(Jwt.EMPTY);
         claimsTable.setModel(this.claimsTableModel);
+        configureClaimValueColumns(claimsTable);
+    }
+
+    private static void configureClaimValueColumns(JBTable table) {
+        table.setAutoResizeMode(JBTable.AUTO_RESIZE_ALL_COLUMNS);
+        table.setAutoCreateColumnsFromModel(false);
     }
 
 
@@ -727,6 +708,38 @@ public class JwtPanel implements Disposable {
         @Override
         public @NotNull ActionUpdateThread getActionUpdateThread() {
             return ActionUpdateThread.EDT;
+        }
+    }
+
+    private static final class ClaimValueTable extends JBTable {
+        private boolean initialWidthsApplied;
+
+        @Override
+        public void doLayout() {
+            if (!this.initialWidthsApplied && getWidth() >= JBUI.scale(200) && getColumnCount() == 2) {
+                int claimWidth = Math.max(JBUI.scale(65), Math.round(getWidth() * 0.3f));
+                int valueWidth = getWidth() - claimWidth;
+                TableColumnModel columns = getColumnModel();
+                columns.getColumn(0).setPreferredWidth(claimWidth);
+                columns.getColumn(0).setWidth(claimWidth);
+                columns.getColumn(1).setPreferredWidth(valueWidth);
+                columns.getColumn(1).setWidth(valueWidth);
+                this.initialWidthsApplied = true;
+            }
+            super.doLayout();
+        }
+
+        @Override
+        public Point getPopupLocation(MouseEvent event) {
+            if (event != null) {
+                int row = rowAtPoint(event.getPoint());
+                if (row >= 0) {
+                    setRowSelectionInterval(row, row);
+                } else {
+                    clearSelection();
+                }
+            }
+            return super.getPopupLocation(event);
         }
     }
 

@@ -112,6 +112,42 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
         }
     }
 
+    public void testClaimColumnsStartNarrowAndKeepUserResizing() {
+        JwtPanel panel = new JwtPanel(getProject());
+        try {
+            JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
+            assertNotNull(tabs);
+            JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
+            JBTable header = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(1), JBTable.class);
+            assertNotNull(claims);
+            assertNotNull(header);
+
+            assertClaimColumnNearThirtyPercent(claims, 350);
+            assertClaimColumnNearThirtyPercent(header, 700);
+
+            claims.getColumnModel().getColumn(0).setPreferredWidth(190);
+            header.getColumnModel().getColumn(0).setPreferredWidth(180);
+            Jwt jwt = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
+                    new HS256SignatureContext("secret"), false);
+            panel.setJwt(new Jwt(jwt.toString()));
+            assertEquals(190, claims.getColumnModel().getColumn(0).getPreferredWidth());
+            assertEquals(180, header.getColumnModel().getColumn(0).getPreferredWidth());
+            assertTrue(claims.getTableHeader().getResizingAllowed());
+            assertTrue(header.getTableHeader().getResizingAllowed());
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    private static void assertClaimColumnNearThirtyPercent(JBTable table, int tableWidth) {
+        table.setSize(tableWidth, 100);
+        table.doLayout();
+        int claimWidth = table.getColumnModel().getColumn(0).getWidth();
+        float claimShare = (float) claimWidth / tableWidth;
+        assertTrue("Claim share at width " + tableWidth + " was " + claimShare,
+                claimShare >= 0.25f && claimShare <= 0.35f);
+    }
+
     public void testUnsupportedAlgorithmIsNamedInSharedControls() {
         JwtPanel panel = new JwtPanel(getProject());
         try {
