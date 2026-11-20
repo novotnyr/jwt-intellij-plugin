@@ -1,12 +1,14 @@
 package com.github.novotnyr.idea.jwt.validation;
 
-public class SignatureError extends GlobalError {
+public class SignatureError {
+    private final String message;
+
     public SignatureError() {
-        super("Signature failed");
+        this("Signature failed");
     }
 
     public SignatureError(String message) {
-        super(message);
+        this.message = message;
     }
 
     public static SignatureError forEmptySecret() {
@@ -15,5 +17,14 @@ public class SignatureError extends GlobalError {
 
     public static SignatureError forUnknownAlgorithm(String algorithmName) {
         return new SignatureError("Unsupported algorithm " + algorithmName);
+    }
+
+    public String getMessage() {
+        return this.message;
+    }
+
+    @Override
+    public String toString() {
+        return this.message;
     }
 }

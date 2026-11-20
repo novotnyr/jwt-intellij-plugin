@@ -20,7 +20,6 @@ import java.util.Base64;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -101,7 +100,7 @@ public class JwtValidatorTest {
         validator.validate(new Jwt(signed.toString()), new HS256SignatureContext("wrong secret"));
         assertTrue(validator.getClaimErrors().isEmpty());
         assertTrue(validator.hasSignatureError());
-        assertFalse(validator.getGlobalErrors().isEmpty());
+        assertEquals("Signature failed", validator.getSignatureError().getMessage());
     }
 
     @Test

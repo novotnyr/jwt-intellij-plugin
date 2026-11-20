@@ -18,7 +18,7 @@ public class JwtValidator {
 
     private final JwtClaimsValidator claimsValidator;
 
-    private final List<GlobalError> globalErrors = new ArrayList<>();
+    private SignatureError signatureError;
 
     private final List<ClaimError> claimErrors = new ArrayList<>();
 
@@ -47,32 +47,20 @@ public class JwtValidator {
 
     private void validate(DecodedJWT jwt, SignatureContext signatureContext) {
         validateClaims(jwt);
-        this.signatureValidator.validate(jwt, signatureContext).ifPresent(this.globalErrors::add);
+        this.signatureValidator.validate(jwt, signatureContext)
+                .filter(ignored -> this.signatureError == null)
+                .ifPresent(error -> this.signatureError = error);
     }
 
     public SignatureError getSignatureError() {
-        for (GlobalError globalError : this.globalErrors) {
-            if (globalError instanceof SignatureError) {
-                return (SignatureError) globalError;
-            }
-        }
-        return null;
+        return this.signatureError;
     }
 
     public boolean hasSignatureError() {
-        for (GlobalError globalError : this.globalErrors) {
-            if (globalError instanceof SignatureError) {
-                return true;
-            }
-        }
-        return false;
+        return this.signatureError != null;
     }
 
     public List<ClaimError> getClaimErrors() {
         return this.claimErrors;
-    }
-
-    public List<GlobalError> getGlobalErrors() {
-        return this.globalErrors;
     }
 }
