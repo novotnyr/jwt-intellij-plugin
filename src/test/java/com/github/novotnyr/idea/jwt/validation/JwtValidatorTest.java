@@ -1,7 +1,9 @@
 package com.github.novotnyr.idea.jwt.validation;
 
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.github.novotnyr.idea.jwt.SignatureAlgorithm;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.JwtFactory;
@@ -100,6 +102,17 @@ public class JwtValidatorTest {
         assertTrue(validator.getClaimErrors().isEmpty());
         assertTrue(validator.hasSignatureError());
         assertFalse(validator.getGlobalErrors().isEmpty());
+    }
+
+    @Test
+    public void signatureValidatorAcceptsValidSignatureOnExpiredJwt() {
+        String secret = "test secret";
+        DecodedJWT jwt = JWT.decode(JWT.create()
+                .withExpiresAt(Instant.EPOCH)
+                .sign(Algorithm.HMAC256(secret)));
+
+        JwtSignatureValidator validator = new JwtSignatureValidator();
+        assertTrue(validator.validate(jwt, new HS256SignatureContext(secret)).isEmpty());
     }
 
     private static JwtValidator validate(String payload) {

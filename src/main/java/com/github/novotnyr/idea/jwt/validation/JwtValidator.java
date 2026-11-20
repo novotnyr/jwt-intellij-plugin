@@ -1,11 +1,8 @@
 package com.github.novotnyr.idea.jwt.validation;
 
 import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.SignatureVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.github.novotnyr.idea.jwt.SignatureContext;
-import com.github.novotnyr.idea.jwt.core.AlgorithmResolver;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +14,7 @@ import java.util.List;
 public class JwtValidator {
     public final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final AlgorithmResolver algorithmResolver = new AlgorithmResolver();
+    private final JwtSignatureValidator signatureValidator = new JwtSignatureValidator();
 
     private final JwtClaimsValidator claimsValidator;
 
@@ -50,21 +47,12 @@ public class JwtValidator {
 
     private void validate(DecodedJWT jwt, SignatureContext signatureContext) {
         validateClaims(jwt);
-        try {
-            Algorithm algorithm = this.algorithmResolver.resolve(jwt.getAlgorithm(), signatureContext);
-            algorithm.verify(jwt);
-        } catch (SignatureVerificationException e) {
-            this.globalErrors.add(new SignatureError());
-        } catch (IllegalArgumentException e) {
-            this.globalErrors.add(SignatureError.forEmptySecret());
-        } catch (UnknownAlgorithmException e) {
-            this.globalErrors.add(SignatureError.forUnknownAlgorithm(jwt.getAlgorithm()));
-        }
+        this.signatureValidator.validate(jwt, signatureContext).ifPresent(this.globalErrors::add);
     }
 
     public SignatureError getSignatureError() {
         for (GlobalError globalError : this.globalErrors) {
-            if(globalError instanceof SignatureError) {
+            if (globalError instanceof SignatureError) {
                 return (SignatureError) globalError;
             }
         }
@@ -73,7 +61,7 @@ public class JwtValidator {
 
     public boolean hasSignatureError() {
         for (GlobalError globalError : this.globalErrors) {
-            if(globalError instanceof SignatureError) {
+            if (globalError instanceof SignatureError) {
                 return true;
             }
         }
