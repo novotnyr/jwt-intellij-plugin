@@ -105,7 +105,7 @@ public class JwtValidatorTest {
         validator.validate(new Jwt(signed.toString()), new HS256SignatureContext("wrong secret"));
         assertTrue(validator.getClaimErrors().isEmpty());
         assertTrue(validator.hasSignatureError());
-        assertEquals("Signature failed", validator.getSignatureError().getMessage());
+        assertEquals("Signature failed", validator.getSignatureError().message());
     }
 
     @Test
@@ -140,7 +140,7 @@ public class JwtValidatorTest {
 
         assertEquals(List.of("exp"), validator.getClaimErrors().stream().map(ClaimError::getClaim).toList());
         assertTrue(validator.hasSignatureError());
-        assertEquals("Signature failed", validator.getSignatureError().getMessage());
+        assertEquals("Signature failed", validator.getSignatureError().message());
     }
 
     @Test

@@ -1,14 +1,10 @@
 package com.github.novotnyr.idea.jwt.validation;
 
-public class SignatureError {
-    private final String message;
+import org.jetbrains.annotations.NotNull;
 
+public record SignatureError(String message) {
     public SignatureError() {
         this("Signature failed");
-    }
-
-    public SignatureError(String message) {
-        this.message = message;
     }
 
     public static SignatureError forEmptySecret() {
@@ -19,12 +15,9 @@ public class SignatureError {
         return new SignatureError("Unsupported algorithm " + algorithmName);
     }
 
-    public String getMessage() {
-        return this.message;
-    }
-
     @Override
+    @NotNull
     public String toString() {
-        return this.message;
+        return String.valueOf(this.message);
     }
 }

@@ -21,7 +21,7 @@ public abstract class SecretPanel implements Disposable {
 
     public void notifySignatureErrors(SignatureError signatureError) {
         JBPopupFactory.getInstance()
-                .createHtmlTextBalloonBuilder(signatureError.getMessage(), MessageType.ERROR, null)
+                .createHtmlTextBalloonBuilder(signatureError.message(), MessageType.ERROR, null)
                 .setFadeoutTime(7500)
                 .createBalloon()
                 .show(RelativePoint.getNorthWestOf(getBaloonableComponent()),
