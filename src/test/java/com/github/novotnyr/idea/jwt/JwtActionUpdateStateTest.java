@@ -14,7 +14,12 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.testFramework.LightPlatformTestCase;
 import com.intellij.testFramework.TestActionEvent;
 import com.intellij.ui.CommonActionsPanel;
+import com.intellij.ui.components.JBTextArea;
+import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.UIUtil;
+
+import javax.swing.JComponent;
+import javax.swing.JTabbedPane;
 
 public class JwtActionUpdateStateTest extends LightPlatformTestCase {
     public void testExplorerActionsFollowCurrentToken() {
@@ -34,6 +39,21 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
             encoded.setJwt(tokenWithClaim());
             assertTrue(isEnabled(copy));
             assertTrue(isEnabled(scratch));
+
+            JBTextArea input = UIUtil.findComponentOfType(encoded, JBTextArea.class);
+            assertNotNull(input);
+            input.setText("invalid.jwt");
+            assertFalse(isEnabled(copy));
+            assertFalse(isEnabled(scratch));
+
+            JTabbedPane tabs = UIUtil.findComponentOfType(explorer, JTabbedPane.class);
+            assertNotNull(tabs);
+            JBTable header = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(1), JBTable.class);
+            JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
+            assertNotNull(header);
+            assertNotNull(claims);
+            assertEquals(0, header.getRowCount());
+            assertEquals(0, claims.getRowCount());
 
             encoded.reset();
             assertFalse(isEnabled(copy));

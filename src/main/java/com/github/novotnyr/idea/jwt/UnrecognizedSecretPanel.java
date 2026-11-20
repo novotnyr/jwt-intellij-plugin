@@ -16,10 +16,17 @@ import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.NONE;
 public class UnrecognizedSecretPanel extends SecretPanel {
     private final JPanel root = new JPanel(new BorderLayout());
 
+    private final JLabel statusLabel = new JLabel("No valid JWT to validate");
+
     public UnrecognizedSecretPanel() {
-        JLabel label = new JLabel("Empty or unsupported JWT");
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-        this.root.add(label, BorderLayout.CENTER);
+        this.statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        this.root.add(this.statusLabel, BorderLayout.CENTER);
+    }
+
+    void showUnsupportedAlgorithm(String algorithm) {
+        this.statusLabel.setText(algorithm == null || algorithm.isBlank()
+                ? "No valid JWT to validate"
+                : "Unsupported algorithm: " + algorithm);
     }
 
     @Override
