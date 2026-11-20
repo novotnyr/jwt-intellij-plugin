@@ -44,7 +44,7 @@ public class HS384Panel extends SecretPanel {
             throw new UnsupportedSignatureContext(signatureContext);
         }
         HS384SignatureContext ctx = (HS384SignatureContext) signatureContext;
-        setSecret(ctx.getSecret());
+        setSecret(ctx.secret());
     }
 
     @Override

@@ -25,7 +25,7 @@ public class AlgorithmResolver {
                 if(signatureContext == null) {
                     throw new SecretNotSpecifiedException();
                 } else if (signatureContext instanceof HS256SignatureContext) {
-                    String secret = ((HS256SignatureContext) signatureContext).getSecret();
+                    String secret = ((HS256SignatureContext) signatureContext).secret();
                     return Algorithm.HMAC256(secret);
                 }
             }
@@ -33,7 +33,7 @@ public class AlgorithmResolver {
                 if(signatureContext == null) {
                     throw new SecretNotSpecifiedException();
                 } else if (signatureContext instanceof HS384SignatureContext) {
-                    String secret = ((HS384SignatureContext) signatureContext).getSecret();
+                    String secret = ((HS384SignatureContext) signatureContext).secret();
                     return Algorithm.HMAC384(secret);
                 }
             }

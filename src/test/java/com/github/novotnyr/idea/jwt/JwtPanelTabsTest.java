@@ -102,7 +102,7 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertEquals(0, header.getRowCount());
             assertEquals(0, claims.getRowCount());
             assertSame(secret, panel.getSecretPanel());
-            assertEquals("secret", ((HS256SignatureContext) secret.getSignatureContext()).getSecret());
+            assertEquals("secret", ((HS256SignatureContext) secret.getSignatureContext()).secret());
             assertFalse(validate.isEnabled());
 
             panel.reset();

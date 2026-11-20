@@ -72,7 +72,7 @@ public class NewJwtDialogOwnershipTest extends LightPlatformTestCase {
 
                 assertTrue(dialog.isDisposed());
                 assertSame(ownerParent, ownerSecret.getRoot().getParent());
-                assertEquals("window secret", ((HS256SignatureContext) ownerSecret.getSignatureContext()).getSecret());
+                assertEquals("window secret", ((HS256SignatureContext) ownerSecret.getSignatureContext()).secret());
             } finally {
                 if (!dialog.isDisposed()) {
                     dialog.doCancelAction();
@@ -95,19 +95,19 @@ public class NewJwtDialogOwnershipTest extends LightPlatformTestCase {
                 JTextField dialogSecret = findComponents(dialog.center(), JTextField.class).getFirst();
                 assertEquals("", dialogSecret.getText());
                 dialogSecret.setText("accepted secret");
-                assertEquals("window secret", ((HS256SignatureContext) ownerSecret.getSignatureContext()).getSecret());
+                assertEquals("window secret", ((HS256SignatureContext) ownerSecret.getSignatureContext()).secret());
 
                 dialog.accept();
                 assertTrue(dialog.isDisposed());
                 Jwt acceptedJwt = dialog.getJwt();
                 SignatureContext acceptedContext = dialog.getSignatureContext();
                 assertEquals(SignatureAlgorithm.HS256, acceptedJwt.getAlgorithm());
-                assertEquals("accepted secret", ((HS256SignatureContext) acceptedContext).getSecret());
+                assertEquals("accepted secret", ((HS256SignatureContext) acceptedContext).secret());
 
                 owner.setJwt(acceptedJwt);
                 owner.setSignatureContext(acceptedContext);
                 assertSame(ownerSecret, owner.getSecretPanel());
-                assertEquals("accepted secret", ((HS256SignatureContext) ownerSecret.getSignatureContext()).getSecret());
+                assertEquals("accepted secret", ((HS256SignatureContext) ownerSecret.getSignatureContext()).secret());
             } finally {
                 if (!dialog.isDisposed()) {
                     dialog.doCancelAction();
@@ -180,11 +180,11 @@ public class NewJwtDialogOwnershipTest extends LightPlatformTestCase {
                 owner.setJwt(dialog.getJwt());
                 owner.setSignatureContext(dialog.getSignatureContext());
                 assertSame(hs384, owner.getSecretPanel());
-                assertEquals("hs384 accepted", ((HS384SignatureContext) hs384.getSignatureContext()).getSecret());
+                assertEquals("hs384 accepted", ((HS384SignatureContext) hs384.getSignatureContext()).secret());
 
                 owner.setJwt(jwtForAlgorithm(SignatureAlgorithm.HS256));
                 assertSame(hs256, owner.getSecretPanel());
-                assertEquals("hs256 original", ((HS256SignatureContext) hs256.getSignatureContext()).getSecret());
+                assertEquals("hs256 original", ((HS256SignatureContext) hs256.getSignatureContext()).secret());
             } finally {
                 if (!dialog.isDisposed()) {
                     dialog.doCancelAction();

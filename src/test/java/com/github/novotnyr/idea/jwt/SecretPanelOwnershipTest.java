@@ -76,13 +76,13 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
 
             firstSecret.setSecret("first window");
             secondSecret.setSecret("second window");
-            assertEquals("first window", ((HS256SignatureContext) firstSecret.getSignatureContext()).getSecret());
-            assertEquals("second window", ((HS256SignatureContext) secondSecret.getSignatureContext()).getSecret());
+            assertEquals("first window", ((HS256SignatureContext) firstSecret.getSignatureContext()).secret());
+            assertEquals("second window", ((HS256SignatureContext) secondSecret.getSignatureContext()).secret());
 
             first.setJwt(tokenWithIat(true));
             assertSame(firstSecret, first.getSecretPanel());
-            assertEquals("first window", ((HS256SignatureContext) first.getSecretPanel().getSignatureContext()).getSecret());
-            assertEquals("second window", ((HS256SignatureContext) second.getSecretPanel().getSignatureContext()).getSecret());
+            assertEquals("first window", ((HS256SignatureContext) first.getSecretPanel().getSignatureContext()).secret());
+            assertEquals("second window", ((HS256SignatureContext) second.getSecretPanel().getSignatureContext()).secret());
         } finally {
             Disposer.dispose(first);
             Disposer.dispose(second);
@@ -105,7 +105,7 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
 
             panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.HS256));
             assertSame(hs256, panel.getSecretPanel());
-            assertEquals("hs256 value", ((HS256SignatureContext) hs256.getSignatureContext()).getSecret());
+            assertEquals("hs256 value", ((HS256SignatureContext) hs256.getSignatureContext()).secret());
             panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.HS384));
             assertSame(hs384, panel.getSecretPanel());
 
@@ -116,7 +116,7 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
 
             panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.HS256));
             assertNotSame(hs256, panel.getSecretPanel());
-            assertEquals("", ((HS256SignatureContext) panel.getSecretPanel().getSignatureContext()).getSecret());
+            assertEquals("", ((HS256SignatureContext) panel.getSecretPanel().getSignatureContext()).secret());
             panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.RS256));
             assertNotSame(rs256, panel.getSecretPanel());
         } finally {
