@@ -4,16 +4,12 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.core.Jwt;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 
 public class JwtValidator {
-    public final Logger logger = LoggerFactory.getLogger(getClass());
-
     private final JwtSignatureValidator signatureValidator = new JwtSignatureValidator();
 
     private final JwtClaimsValidator claimsValidator;
