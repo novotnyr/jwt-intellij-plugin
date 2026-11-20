@@ -1,5 +1,6 @@
 package com.github.novotnyr.idea.jwt.validation;
 
+import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.github.novotnyr.idea.jwt.SignatureAlgorithm;
 import com.github.novotnyr.idea.jwt.core.Jwt;
@@ -58,6 +59,19 @@ public class JwtValidatorTest {
     }
 
     @Test
+    public void issuedAtIsOptionalAndMustBeANumericDate() {
+        JwtClaimsValidator validator = new JwtClaimsValidator(CLOCK);
+
+        assertTrue(validator.validate(JWT.decode(encodedToken("{\"nbf\":0}"))).isEmpty());
+        assertTrue(validator.validate(JWT.decode(encodedToken("{\"iat\":0}"))).isEmpty());
+        assertTrue(validator.validate(JWT.decode(encodedToken("{\"iat\":0.25}"))).isEmpty());
+
+        List<ClaimError> nullIssuedAtErrors = validator.validate(JWT.decode(encodedToken("{\"iat\":null}")));
+        assertEquals(List.of("iat"), nullIssuedAtErrors.stream().map(ClaimError::getClaim).toList());
+        assertThrows(JWTDecodeException.class, () -> JWT.decode(encodedToken("{\"iat\":\"0\"}")));
+    }
+
+    @Test
     public void explicitNullIsInvalidButAbsenceIsAllowed() {
         assertErrors("{\"exp\":null,\"nbf\":null,\"iat\":null}", "exp", "nbf", "iat");
     }
@@ -67,6 +81,14 @@ public class JwtValidatorTest {
         assertThrows(JWTDecodeException.class, () -> token("{\"exp\":\"123\"}"));
         assertThrows(JWTDecodeException.class, () -> token("{\"nbf\":true}"));
         assertThrows(JWTDecodeException.class, () -> token("{\"iat\":[]}"));
+    }
+
+    @Test
+    public void decodedJwtClaimErrorsAreIndependentPerCall() {
+        JwtClaimsValidator validator = new JwtClaimsValidator(CLOCK);
+        List<ClaimError> expired = validator.validate(JWT.decode(encodedToken("{\"exp\":0}")));
+        assertTrue(validator.validate(JWT.decode(encodedToken("{}"))).isEmpty());
+        assertEquals(List.of("exp"), expired.stream().map(ClaimError::getClaim).toList());
     }
 
     @Test
@@ -90,8 +112,12 @@ public class JwtValidatorTest {
     }
 
     private static Jwt token(String payload) {
+        return new Jwt(encodedToken(payload));
+    }
+
+    private static String encodedToken(String payload) {
         String header = encode("{\"alg\":\"HS256\",\"typ\":\"JWT\"}");
-        return new Jwt(header + "." + encode(payload) + ".c2ln");
+        return header + "." + encode(payload) + ".c2ln";
     }
 
     private static String encode(String json) {
