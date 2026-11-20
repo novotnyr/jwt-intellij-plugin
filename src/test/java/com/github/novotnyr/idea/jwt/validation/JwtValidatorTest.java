@@ -20,6 +20,9 @@ import java.util.Base64;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -29,6 +32,8 @@ public class JwtValidatorTest {
     private static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);
 
     private static final BigDecimal NOW_SECONDS = NumericDate.fromInstant(NOW);
+
+    private static final String SIGNING_SECRET = "test secret";
 
     @Test
     public void missingTimestampClaimsAreAllowed() {
@@ -104,14 +109,60 @@ public class JwtValidatorTest {
     }
 
     @Test
-    public void signatureValidatorAcceptsValidSignatureOnExpiredJwt() {
-        String secret = "test secret";
-        DecodedJWT jwt = JWT.decode(JWT.create()
-                .withExpiresAt(Instant.EPOCH)
-                .sign(Algorithm.HMAC256(secret)));
+    public void decodedJwtWithValidSignatureAndClaimsHasNoErrors() {
+        DecodedJWT jwt = signedToken(NOW.plusSeconds(60));
+        JwtValidator validator = new JwtValidator(CLOCK);
 
+        validator.validate(jwt, new HS256SignatureContext(SIGNING_SECRET));
+
+        assertTrue(validator.getClaimErrors().isEmpty());
+        assertFalse(validator.hasSignatureError());
+        assertNull(validator.getSignatureError());
+    }
+
+    @Test
+    public void decodedJwtReportsExpirationErrorWithValidSignature() {
+        DecodedJWT jwt = signedToken(Instant.EPOCH);
+        JwtValidator validator = new JwtValidator(CLOCK);
+
+        validator.validate(jwt, new HS256SignatureContext(SIGNING_SECRET));
+
+        assertEquals(List.of("exp"), validator.getClaimErrors().stream().map(ClaimError::getClaim).toList());
+        assertFalse(validator.hasSignatureError());
+    }
+
+    @Test
+    public void decodedJwtReportsBothExpirationAndSignatureErrors() {
+        DecodedJWT jwt = signedToken(Instant.EPOCH);
+        JwtValidator validator = new JwtValidator(CLOCK);
+
+        validator.validate(jwt, new HS256SignatureContext("wrong secret"));
+
+        assertEquals(List.of("exp"), validator.getClaimErrors().stream().map(ClaimError::getClaim).toList());
+        assertTrue(validator.hasSignatureError());
+        assertEquals("Signature failed", validator.getSignatureError().getMessage());
+    }
+
+    @Test
+    public void decodedJwtValidationRetainsFirstSignatureFailure() {
+        DecodedJWT jwt = signedToken(NOW.plusSeconds(60));
+        JwtValidator validator = new JwtValidator(CLOCK);
+        validator.validate(jwt, new HS256SignatureContext("wrong secret"));
+        assertTrue(validator.hasSignatureError());
+        SignatureError firstError = validator.getSignatureError();
+
+        validator.validate(jwt, new HS256SignatureContext("another wrong secret"));
+        assertSame(firstError, validator.getSignatureError());
+
+        validator.validate(jwt, new HS256SignatureContext(SIGNING_SECRET));
+        assertSame(firstError, validator.getSignatureError());
+    }
+
+    @Test
+    public void signatureValidatorAcceptsValidSignatureOnExpiredJwt() {
+        DecodedJWT jwt = signedToken(Instant.EPOCH);
         JwtSignatureValidator validator = new JwtSignatureValidator();
-        assertTrue(validator.validate(jwt, new HS256SignatureContext(secret)).isEmpty());
+        assertTrue(validator.validate(jwt, new HS256SignatureContext(SIGNING_SECRET)).isEmpty());
     }
 
     private static JwtValidator validate(String payload) {
@@ -125,6 +176,12 @@ public class JwtValidatorTest {
 
     private static Jwt token(String payload) {
         return new Jwt(encodedToken(payload));
+    }
+
+    private static DecodedJWT signedToken(Instant expiresAt) {
+        return JWT.decode(JWT.create()
+                .withExpiresAt(expiresAt)
+                .sign(Algorithm.HMAC256(SIGNING_SECRET)));
     }
 
     private static String encodedToken(String payload) {

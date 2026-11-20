@@ -45,7 +45,7 @@ public class JwtValidator {
         validate(decodedJWT, signatureContext);
     }
 
-    private void validate(DecodedJWT jwt, SignatureContext signatureContext) {
+    public void validate(DecodedJWT jwt, SignatureContext signatureContext) {
         validateClaims(jwt);
         this.signatureValidator.validate(jwt, signatureContext)
                 .filter(ignored -> this.signatureError == null)
