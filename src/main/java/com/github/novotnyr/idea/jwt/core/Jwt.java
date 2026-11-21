@@ -81,13 +81,13 @@ public class Jwt {
                 break;
             }
         }
-        updatePayload(null);
+        updatePayload();
     }
 
 
     public void setPayloadClaim(NamedClaim<?> claim) {
         doSetClaim(claim, this.payloadClaims);
-        updatePayload(claim);
+        updatePayload();
     }
 
     public void setHeaderClaim(NamedClaim<?> claim) {
@@ -111,7 +111,7 @@ public class Jwt {
         }
     }
 
-    private void updatePayload(NamedClaim<?> claim) {
+    private void updatePayload() {
         JwtBuilder builder = new JwtBuilder().withHeaderClaims(this.headerClaims);
         for (NamedClaim<?> payloadClaim : this.payloadClaims) {
             builder.withClaim(payloadClaim);
@@ -121,7 +121,7 @@ public class Jwt {
     }
 
     public void rebuild() {
-        updatePayload(null);
+        updatePayload();
     }
 
     public void setSignatureContext(SignatureContext signatureContext) {
