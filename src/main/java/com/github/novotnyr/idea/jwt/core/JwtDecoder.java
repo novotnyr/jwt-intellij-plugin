@@ -80,6 +80,11 @@ public final class JwtDecoder {
      * Exposes unmodified claims and preserves the encoded segments used to verify the signature.
      * A date accessor returns null when a claim cannot be represented as a date. The original
      * value remains available through {@link #getClaim(String)}.
+     * <p>
+     * {@link com.auth0.jwt.JWT#decode(String) Auth0's decoder} throws a {@link JWTDecodeException}
+     * for timestamp claims such as {@code "iat": "yes"}
+     * {@code PayloadDeserializer.getInstantFromSeconds()}</a>. Parsing the claims directly lets
+     * the plugin display the original value and report a claim error.
      */
     private record ParsedJwt(String token, String encodedHeader, String encodedPayload, String signature,
                              ObjectNode header, ObjectNode payload) implements DecodedJWT {
