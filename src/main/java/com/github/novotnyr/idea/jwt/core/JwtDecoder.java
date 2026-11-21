@@ -1,9 +1,12 @@
 package com.github.novotnyr.idea.jwt.core;
 
 import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.validation.JwtClaimsValidator;
 import com.github.novotnyr.idea.jwt.validation.JwtErrors;
+import com.github.novotnyr.idea.jwt.validation.JwtValidator;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -26,6 +29,16 @@ public final class JwtDecoder {
         this.claimsValidator = new JwtClaimsValidator(clock);
     }
 
+    /**
+     * Decodes the JWT and checks its timestamp claims using this decoder's clock.
+     * Pass {@link JsonWebToken#decodedJwt()} and a signature context to
+     * {@link JwtValidator#validate(DecodedJWT, SignatureContext)} to verify the signature
+     * and reevaluate timestamp claims using the validator's clock.
+     *
+     * @param token the compact JWT
+     * @return the decoded token and its timestamp claim errors
+     * @throws JWTDecodeException if the token structure is invalid or its header or payload cannot be decoded
+     */
     public JsonWebToken decode(String token) {
         ParsedJwt decoded = parse(token);
         return new JsonWebToken(decoded, new JwtErrors(this.claimsValidator.validate(decoded), null));
