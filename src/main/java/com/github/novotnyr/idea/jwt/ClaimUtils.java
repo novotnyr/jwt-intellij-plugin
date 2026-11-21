@@ -22,7 +22,7 @@ public class ClaimUtils {
 
     /** The raw JSON value preserves precision for registered NumericDate claims. */
     public static NamedClaim<?> getClaim(String claimName, Claim claimValue, JsonNode rawValue) {
-        if (isDateClaim(claimName, claimValue)) {
+        if (isDateClaim(claimName)) {
             BigDecimal timestamp = NumericDate.fromJson(rawValue);
             if (timestamp != null) {
                 return DateClaim.fromNumericDate(claimName, timestamp);
@@ -52,7 +52,7 @@ public class ClaimUtils {
 
     }
 
-    public static boolean isDateClaim(String claimName, Claim claimValue) {
+    public static boolean isDateClaim(String claimName) {
         return Configuration.INSTANCE.getTimestampDateFields().contains(claimName);
     }
 

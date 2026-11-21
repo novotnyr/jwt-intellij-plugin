@@ -46,7 +46,7 @@ public class Jwt {
             String name = entry.getKey();
             Claim claim = entry.getValue();
             JsonNode rawValue = null;
-            if (ClaimUtils.isDateClaim(name, claim)) {
+            if (ClaimUtils.isDateClaim(name)) {
                 rawValue = claim.isNull() ? NullNode.getInstance() : claim.as(JsonNode.class);
             }
             this.payloadClaims.add(ClaimUtils.getClaim(name, claim, rawValue));
