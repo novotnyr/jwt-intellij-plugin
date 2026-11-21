@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.novotnyr.idea.jwt.validation.JwtClaimsValidator;
 import com.github.novotnyr.idea.jwt.validation.JwtErrors;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -285,7 +286,7 @@ public final class JwtDecoder {
         }
 
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return this.value.toString();
         }
 
