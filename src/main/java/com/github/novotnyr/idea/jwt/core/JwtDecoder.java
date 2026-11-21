@@ -6,6 +6,9 @@ import com.github.novotnyr.idea.jwt.validation.JwtClaimsValidator;
 import com.github.novotnyr.idea.jwt.validation.JwtErrors;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.Base64;
 
@@ -49,11 +52,14 @@ public final class JwtDecoder {
 
     private ObjectNode parseObject(String encoded, String partName) {
         try {
-            byte[] json = Base64.getUrlDecoder().decode(encoded);
+            byte[] bytes = Base64.getUrlDecoder().decode(encoded);
+            String json = StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes)).toString();
             if (MAPPER.readTree(json) instanceof ObjectNode claims) {
                 return claims;
             }
             throw new JWTDecodeException("The JWT " + partName + " must be a JSON object");
+        } catch (CharacterCodingException e) {
+            throw new JWTDecodeException("The JWT " + partName + " must be UTF-8 encoded", e);
         } catch (IOException | IllegalArgumentException e) {
             throw new JWTDecodeException("Cannot decode the JWT " + partName, e);
         }
