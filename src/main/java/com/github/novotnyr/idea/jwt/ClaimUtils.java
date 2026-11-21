@@ -1,6 +1,5 @@
 package com.github.novotnyr.idea.jwt;
 
-import com.auth0.jwt.interfaces.Claim;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.MissingNode;
@@ -15,44 +14,30 @@ import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry.DataType;
 
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 public class ClaimUtils {
 
-    /** The raw JSON value preserves precision for registered NumericDate claims. */
-    public static NamedClaim<?> getClaim(String claimName, Claim claimValue, JsonNode rawValue) {
+    /** Converts a parsed JSON field to the claim type used by the payload editor. */
+    public static NamedClaim<?> toPayloadClaim(String claimName, JsonNode value) {
         if (isDateClaim(claimName)) {
-            BigDecimal timestamp = NumericDate.fromJson(rawValue);
+            BigDecimal timestamp = NumericDate.fromJson(value);
             if (timestamp != null) {
                 return DateClaim.fromNumericDate(claimName, timestamp);
             }
-            return rawValue != null && rawValue.isTextual()
-                    ? new StringClaim(claimName, rawValue.textValue())
-                    : new RawClaim(claimName, rawValue);
-        }
-        Boolean bool = claimValue.asBoolean();
-        if(bool != null) {
-            return new BooleanClaim(claimName, bool);
-        }
-        Long longClaim = claimValue.asLong();
-        if(longClaim != null) {
-            return new NumericClaim(claimName, longClaim);
-        }
-        List<Object> objects = claimValue.asList(Object.class);
-        if (objects != null) {
-            return new RawClaim(claimName, claimValue);
-        }
-        Map<String, Object> map = claimValue.asMap();
-        if (map != null) {
-            return new RawClaim(claimName, claimValue);
+            if (!value.isTextual()) {
+                return new RawClaim(claimName, value.deepCopy());
+            }
         }
 
-        return new StringClaim(claimName, claimValue.asString());
-
+        return switch (value.getNodeType()) {
+            case BOOLEAN -> new BooleanClaim(claimName, value.booleanValue());
+            case NUMBER -> new NumericClaim(claimName, value.longValue());
+            case ARRAY, OBJECT -> new RawClaim(claimName, value.deepCopy());
+            default -> new StringClaim(claimName, value.textValue());
+        };
     }
 
-    public static boolean isDateClaim(String claimName) {
+    private static boolean isDateClaim(String claimName) {
         return Configuration.INSTANCE.getTimestampDateFields().contains(claimName);
     }
 

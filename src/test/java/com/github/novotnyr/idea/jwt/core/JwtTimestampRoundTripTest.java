@@ -3,6 +3,10 @@ package com.github.novotnyr.idea.jwt.core;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.novotnyr.idea.jwt.SignatureAlgorithm;
 import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
 import org.junit.Test;
@@ -11,6 +15,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -18,6 +23,46 @@ import static org.junit.Assert.assertTrue;
 
 public class JwtTimestampRoundTripTest {
     private final JwtDecoder decoder = new JwtDecoder();
+
+    @Test
+    public void mixedPayloadKeepsEditorTypesAndIsolatesMutableValues() {
+        Jwt jwt = token("""
+                {
+                  "exp": 1735689601.125,
+                  "iat": "123",
+                  "nbf": false,
+                  "sub": "alice",
+                  "active": true,
+                  "count": 42.75,
+                  "unset": null,
+                  "options": {"enabled": true},
+                  "roles": ["reader"]
+                }
+                """);
+
+        List<NamedClaim<?>> claims = jwt.getPayloadClaims();
+        JsonNodeFactory nodes = JsonNodeFactory.instance;
+        assertEquals(List.of(
+                DateClaim.fromNumericDate("exp", new BigDecimal("1735689601.125")),
+                new StringClaim("iat", "123"),
+                new RawClaim("nbf", BooleanNode.FALSE),
+                new StringClaim("sub", "alice"),
+                new BooleanClaim("active", true),
+                new NumericClaim("count", 42L),
+                new StringClaim("unset", null),
+                new RawClaim("options", nodes.objectNode().put("enabled", true)),
+                new RawClaim("roles", nodes.arrayNode().add("reader"))
+        ), claims);
+
+        ObjectNode editableOptions = (ObjectNode) claims.get(7).getValue();
+        ArrayNode editableRoles = (ArrayNode) claims.getLast().getValue();
+        editableOptions.put("enabled", false);
+        editableRoles.add("writer");
+
+        JsonNode options = jwt.getDecodedJwt().getClaim("options").as(JsonNode.class);
+        assertTrue(options.get("enabled").booleanValue());
+        assertEquals(List.of("reader"), jwt.getDecodedJwt().getClaim("roles").asList(String.class));
+    }
 
     @Test
     public void editingAnotherClaimPreservesFractionalNumericDatesAsJsonNumbers() {
