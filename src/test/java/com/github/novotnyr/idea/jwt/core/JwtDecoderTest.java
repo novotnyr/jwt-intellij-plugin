@@ -8,6 +8,7 @@ import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
@@ -21,6 +22,8 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class JwtDecoderTest {
+    private static final String HEADER = "{\"alg\":\"HS256\"}";
+
     private final JwtDecoder decoder = new JwtDecoder();
 
     @Test
@@ -78,11 +81,49 @@ public class JwtDecoderTest {
         assertThrows(JWTDecodeException.class, () -> this.decoder.decode(token("{")));
     }
 
+    @Test
+    public void decodesUnicodeInHeaderAndPayload() {
+        String header = encode("{\"alg\":\"HS256\",\"kid\":\"kľúč\"}");
+        String payload = encode("{\"sub\":\"Žofia 🌍\"}");
+        DecodedJWT jwt = this.decoder.decode(header + "." + payload + ".c2ln").decodedJwt();
+
+        assertEquals("kľúč", jwt.getKeyId());
+        assertEquals("Žofia 🌍", jwt.getSubject());
+    }
+
+    @Test
+    public void rejectsUtf16AndUtf32Segments() {
+        String header = encode(HEADER);
+        String payload = encode("{}");
+        for (Charset charset : List.of(StandardCharsets.UTF_16LE, Charset.forName("UTF-32BE"))) {
+            String nonUtf8Header = encode(HEADER.getBytes(charset));
+            String nonUtf8Payload = encode("{}".getBytes(charset));
+            assertThrows("Header encoded as " + charset, JWTDecodeException.class,
+                    () -> this.decoder.decode(nonUtf8Header + "." + payload + ".c2ln"));
+            assertThrows("Payload encoded as " + charset, JWTDecodeException.class,
+                    () -> this.decoder.decode(header + "." + nonUtf8Payload + ".c2ln"));
+        }
+    }
+
+    @Test
+    public void rejectsMalformedUtf8InsideAStringClaim() {
+        byte[] payload = "{\"sub\":\"?\"}".getBytes(StandardCharsets.UTF_8);
+        payload[payload.length - 3] = (byte) 0x80; // Continuation byte without a leading byte.
+        String encoded = encode(HEADER) + "." + encode(payload) + ".c2ln";
+
+        JWTDecodeException error = assertThrows(JWTDecodeException.class, () -> this.decoder.decode(encoded));
+        assertEquals("The JWT payload must be UTF-8 encoded", error.getMessage());
+    }
+
     private static String token(String payload) {
-        return encode("{\"alg\":\"HS256\"}") + "." + encode(payload) + ".c2ln";
+        return encode(HEADER) + "." + encode(payload) + ".c2ln";
     }
 
     private static String encode(String json) {
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(json.getBytes(StandardCharsets.UTF_8));
+        return encode(json.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static String encode(byte[] bytes) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 }
