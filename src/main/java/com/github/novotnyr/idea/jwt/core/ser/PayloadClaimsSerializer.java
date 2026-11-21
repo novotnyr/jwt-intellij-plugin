@@ -4,7 +4,6 @@ import com.auth0.jwt.RegisteredClaims;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import com.github.novotnyr.idea.jwt.core.DateClaim;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.core.PayloadClaims;
 
@@ -52,12 +51,7 @@ public class PayloadClaimsSerializer extends StdSerializer<PayloadClaims> {
     }
 
     private Object getValue(NamedClaim<?> claim) {
-        if (claim instanceof DateClaim dateClaim) {
-            return dateClaim.getValue();
-        } else if (claim.getValue() instanceof Date date) {
-            return date.getTime() / 1000;
-        } else {
-            return claim.getValueString();
-        }
+        Object value = claim.getValue();
+        return value instanceof Date date ? date.getTime() / 1000 : value;
     }
 }
