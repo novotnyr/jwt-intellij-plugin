@@ -6,17 +6,12 @@ import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 
 import java.time.Clock;
-import java.util.ArrayList;
 import java.util.List;
 
 public class JwtValidator {
     private final JwtSignatureValidator signatureValidator = new JwtSignatureValidator();
 
     private final JwtClaimsValidator claimsValidator;
-
-    private SignatureError signatureError;
-
-    private final List<ClaimError> claimErrors = new ArrayList<>();
 
     public JwtValidator() {
         this(Clock.systemUTC());
@@ -26,37 +21,19 @@ public class JwtValidator {
         this.claimsValidator = new JwtClaimsValidator(clock);
     }
 
-    public JwtValidator validateClaims(Jwt jwt) {
+    public JwtErrors validateClaims(Jwt jwt) {
         DecodedJWT decodedJWT = JWT.decode(jwt.toString());
-        return validateClaims(decodedJWT);
+        return new JwtErrors(this.claimsValidator.validate(decodedJWT), null);
     }
 
-    private JwtValidator validateClaims(DecodedJWT jwt) {
-        this.claimErrors.addAll(this.claimsValidator.validate(jwt));
-        return this;
-    }
-
-    public void validate(Jwt jwt, SignatureContext signatureContext) {
+    public JwtErrors validate(Jwt jwt, SignatureContext signatureContext) {
         DecodedJWT decodedJWT = JWT.decode(jwt.toString());
-        validate(decodedJWT, signatureContext);
+        return validate(decodedJWT, signatureContext);
     }
 
-    public void validate(DecodedJWT jwt, SignatureContext signatureContext) {
-        validateClaims(jwt);
-        this.signatureValidator.validate(jwt, signatureContext)
-                .filter(ignored -> this.signatureError == null)
-                .ifPresent(error -> this.signatureError = error);
-    }
-
-    public SignatureError getSignatureError() {
-        return this.signatureError;
-    }
-
-    public boolean hasSignatureError() {
-        return this.signatureError != null;
-    }
-
-    public List<ClaimError> getClaimErrors() {
-        return this.claimErrors;
+    public JwtErrors validate(DecodedJWT jwt, SignatureContext signatureContext) {
+        List<ClaimError> claimErrors = this.claimsValidator.validate(jwt);
+        SignatureError signatureError = this.signatureValidator.validate(jwt, signatureContext).orElse(null);
+        return new JwtErrors(claimErrors, signatureError);
     }
 }

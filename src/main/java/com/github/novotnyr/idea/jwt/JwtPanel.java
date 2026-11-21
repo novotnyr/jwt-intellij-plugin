@@ -12,6 +12,7 @@ import com.github.novotnyr.idea.jwt.ui.IdePreferenceNewSignatureContextProvider;
 import com.github.novotnyr.idea.jwt.ui.preferences.PluginPreferences;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
+import com.github.novotnyr.idea.jwt.validation.JwtErrors;
 import com.github.novotnyr.idea.jwt.validation.JwtValidator;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.CopyPasteManagerEx;
@@ -106,6 +107,8 @@ public class JwtPanel implements Disposable {
     private SecretPanel secretPanel = this.unrecognizedSecretPanel;
 
     private final JButton validateButton = new JButton("Validate");
+
+    private final JwtValidator jwtValidator = new JwtValidator();
 
     private Jwt jwt = Jwt.EMPTY;
 
@@ -289,25 +292,21 @@ public class JwtPanel implements Disposable {
         Jwt originalJwt = this.jwt;
         String encodedJwt = originalJwt.toString();
         try {
-            JwtValidator jwtValidator;
+            JwtErrors errors;
             if (rsaPanel != null) {
-                JwtValidator validation = runRsaOperation("Validating RSA JWT", () -> {
+                errors = runRsaOperation("Validating RSA JWT", () -> {
                     SignatureContext context = RsaKeyParser.parse(keyText.publicKey(), keyText.privateKey());
-                    JwtValidator validator = new JwtValidator();
-                    validator.validate(new Jwt(encodedJwt), context);
-                    return validator;
+                    return this.jwtValidator.validate(new Jwt(encodedJwt), context);
                 });
-                if (validation == null || !isCurrentRsaInput(rsaPanel, keyText, originalJwt, encodedJwt)) {
+                if (errors == null || !isCurrentRsaInput(rsaPanel, keyText, originalJwt, encodedJwt)) {
                     return;
                 }
-                jwtValidator = validation;
             } else {
-                jwtValidator = new JwtValidator();
-                jwtValidator.validate(this.jwt, this.secretPanel.getSignatureContext());
+                errors = this.jwtValidator.validate(this.jwt, this.secretPanel.getSignatureContext());
             }
-            this.claimsTableModel.setClaimErrors(jwtValidator.getClaimErrors());
-            if(jwtValidator.hasSignatureError()) {
-                this.secretPanel.notifySignatureErrors(jwtValidator.getSignatureError());
+            this.claimsTableModel.setClaimErrors(errors.claimErrors());
+            if (errors.hasSignatureError()) {
+                this.secretPanel.notifySignatureErrors(errors.signatureError());
             } else {
                 this.secretPanel.notifySignatureValid();
             }
@@ -577,7 +576,7 @@ public class JwtPanel implements Disposable {
         if (Jwt.EMPTY.equals(jwt)) {
             return Collections.emptyList();
         }
-        return new JwtValidator().validateClaims(jwt).getClaimErrors();
+        return this.jwtValidator.validateClaims(jwt).claimErrors();
     }
 
 

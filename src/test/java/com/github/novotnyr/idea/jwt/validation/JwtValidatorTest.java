@@ -22,7 +22,6 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -37,21 +36,21 @@ public class JwtValidatorTest {
 
     @Test
     public void missingTimestampClaimsAreAllowed() {
-        assertTrue(validate("{}").getClaimErrors().isEmpty());
+        assertTrue(validate("{}").claimErrors().isEmpty());
     }
 
     @Test
     public void expirationRequiresNowToBeStrictlyBeforeIt() {
         assertErrors("{\"exp\":" + NOW_SECONDS + "}", "exp");
         assertTrue(validate("{\"exp\":" + NOW_SECONDS.add(new BigDecimal("0.001")) + "}")
-                .getClaimErrors().isEmpty());
+                .claimErrors().isEmpty());
         assertTrue(validate("{\"exp\":" + NOW_SECONDS.add(new BigDecimal("0.000000001")) + "}")
-                .getClaimErrors().isEmpty());
+                .claimErrors().isEmpty());
     }
 
     @Test
     public void notBeforeAllowsEqualityButRejectsFutureTime() {
-        assertTrue(validate("{\"nbf\":" + NOW_SECONDS + "}").getClaimErrors().isEmpty());
+        assertTrue(validate("{\"nbf\":" + NOW_SECONDS + "}").claimErrors().isEmpty());
         assertErrors("{\"nbf\":" + NOW_SECONDS.add(new BigDecimal("0.001")) + "}", "nbf");
     }
 
@@ -60,8 +59,8 @@ public class JwtValidatorTest {
         String payload = "{\"exp\":" + NOW_SECONDS.add(new BigDecimal("0.125"))
                 + ",\"nbf\":" + NOW_SECONDS.subtract(new BigDecimal("0.125"))
                 + ",\"iat\":" + NOW_SECONDS.add(new BigDecimal("3600.25")) + "}";
-        assertTrue(validate(payload).getClaimErrors().isEmpty());
-        assertTrue(validate("{\"iat\":-0.5}").getClaimErrors().isEmpty());
+        assertTrue(validate(payload).claimErrors().isEmpty());
+        assertTrue(validate("{\"iat\":-0.5}").claimErrors().isEmpty());
     }
 
     @Test
@@ -102,10 +101,10 @@ public class JwtValidatorTest {
         Jwt signed = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
                 new HS256SignatureContext("right secret"), false);
         JwtValidator validator = new JwtValidator(CLOCK);
-        validator.validate(new Jwt(signed.toString()), new HS256SignatureContext("wrong secret"));
-        assertTrue(validator.getClaimErrors().isEmpty());
-        assertTrue(validator.hasSignatureError());
-        assertEquals("Signature failed", validator.getSignatureError().message());
+        JwtErrors errors = validator.validate(new Jwt(signed.toString()), new HS256SignatureContext("wrong secret"));
+        assertTrue(errors.claimErrors().isEmpty());
+        assertTrue(errors.hasSignatureError());
+        assertEquals("Signature failed", errors.signatureError().message());
     }
 
     @Test
@@ -113,11 +112,11 @@ public class JwtValidatorTest {
         DecodedJWT jwt = signedToken(NOW.plusSeconds(60));
         JwtValidator validator = new JwtValidator(CLOCK);
 
-        validator.validate(jwt, new HS256SignatureContext(SIGNING_SECRET));
+        JwtErrors errors = validator.validate(jwt, new HS256SignatureContext(SIGNING_SECRET));
 
-        assertTrue(validator.getClaimErrors().isEmpty());
-        assertFalse(validator.hasSignatureError());
-        assertNull(validator.getSignatureError());
+        assertTrue(errors.claimErrors().isEmpty());
+        assertFalse(errors.hasSignatureError());
+        assertNull(errors.signatureError());
     }
 
     @Test
@@ -125,10 +124,10 @@ public class JwtValidatorTest {
         DecodedJWT jwt = signedToken(Instant.EPOCH);
         JwtValidator validator = new JwtValidator(CLOCK);
 
-        validator.validate(jwt, new HS256SignatureContext(SIGNING_SECRET));
+        JwtErrors errors = validator.validate(jwt, new HS256SignatureContext(SIGNING_SECRET));
 
-        assertEquals(List.of("exp"), validator.getClaimErrors().stream().map(ClaimError::getClaim).toList());
-        assertFalse(validator.hasSignatureError());
+        assertEquals(List.of("exp"), errors.claimErrors().stream().map(ClaimError::getClaim).toList());
+        assertFalse(errors.hasSignatureError());
     }
 
     @Test
@@ -136,26 +135,28 @@ public class JwtValidatorTest {
         DecodedJWT jwt = signedToken(Instant.EPOCH);
         JwtValidator validator = new JwtValidator(CLOCK);
 
-        validator.validate(jwt, new HS256SignatureContext("wrong secret"));
+        JwtErrors errors = validator.validate(jwt, new HS256SignatureContext("wrong secret"));
 
-        assertEquals(List.of("exp"), validator.getClaimErrors().stream().map(ClaimError::getClaim).toList());
-        assertTrue(validator.hasSignatureError());
-        assertEquals("Signature failed", validator.getSignatureError().message());
+        assertEquals(List.of("exp"), errors.claimErrors().stream().map(ClaimError::getClaim).toList());
+        assertTrue(errors.hasSignatureError());
+        assertEquals("Signature failed", errors.signatureError().message());
     }
 
     @Test
-    public void decodedJwtValidationRetainsFirstSignatureFailure() {
-        DecodedJWT jwt = signedToken(NOW.plusSeconds(60));
+    public void reusedValidatorReturnsIndependentResults() {
         JwtValidator validator = new JwtValidator(CLOCK);
-        validator.validate(jwt, new HS256SignatureContext("wrong secret"));
-        assertTrue(validator.hasSignatureError());
-        SignatureError firstError = validator.getSignatureError();
 
-        validator.validate(jwt, new HS256SignatureContext("another wrong secret"));
-        assertSame(firstError, validator.getSignatureError());
+        JwtErrors invalid = validator.validate(signedToken(Instant.EPOCH), new HS256SignatureContext("wrong secret"));
+        JwtErrors claimsOnly = validator.validateClaims(token("{}"));
+        JwtErrors valid = validator.validate(signedToken(NOW.plusSeconds(60)),
+                new HS256SignatureContext(SIGNING_SECRET));
 
-        validator.validate(jwt, new HS256SignatureContext(SIGNING_SECRET));
-        assertSame(firstError, validator.getSignatureError());
+        assertEquals(List.of("exp"), invalid.claimErrors().stream().map(ClaimError::getClaim).toList());
+        assertEquals("Signature failed", invalid.signatureError().message());
+        assertTrue(claimsOnly.claimErrors().isEmpty());
+        assertFalse(claimsOnly.hasSignatureError());
+        assertTrue(valid.claimErrors().isEmpty());
+        assertFalse(valid.hasSignatureError());
     }
 
     @Test
@@ -165,12 +166,12 @@ public class JwtValidatorTest {
         assertTrue(validator.validate(jwt, new HS256SignatureContext(SIGNING_SECRET)).isEmpty());
     }
 
-    private static JwtValidator validate(String payload) {
+    private static JwtErrors validate(String payload) {
         return new JwtValidator(CLOCK).validateClaims(token(payload));
     }
 
     private static void assertErrors(String payload, String... claimNames) {
-        List<String> actual = validate(payload).getClaimErrors().stream().map(ClaimError::getClaim).toList();
+        List<String> actual = validate(payload).claimErrors().stream().map(ClaimError::getClaim).toList();
         assertEquals(List.of(claimNames), actual);
     }
 
