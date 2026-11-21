@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.github.novotnyr.idea.jwt.SignatureAlgorithm;
+import com.github.novotnyr.idea.jwt.core.DateClaim;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.JwtDecoder;
 import com.github.novotnyr.idea.jwt.core.JwtFactory;
@@ -211,6 +212,25 @@ public class JwtValidatorTest {
 
         assertEquals(List.of("exp"), errors.claimErrors().stream().map(ClaimError::getClaim).toList());
         assertFalse(errors.hasSignatureError());
+    }
+
+    @Test
+    public void decodedJwtExpirationUsesThePrecisionRetainedByItsDecoder() {
+        HS256SignatureContext context = new HS256SignatureContext(SIGNING_SECRET);
+        Jwt jwt = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256, context, false);
+        jwt.setPayloadClaim(DateClaim.fromNumericDate("exp", NumericDate.fromInstant(NOW.plusNanos(1))));
+        JwtValidator validator = new JwtValidator(CLOCK);
+
+        JwtErrors pluginErrors = validator.validate(jwt.getDecodedJwt(), context);
+        JwtErrors auth0Errors = validator.validate(JWT.decode(jwt.toString()), context);
+
+        assertTrue(pluginErrors.claimErrors().isEmpty());
+        assertFalse(pluginErrors.hasSignatureError());
+
+        // Auth0 4.5.1 rounds this expiration to the clock time.
+        assertEquals(List.of("exp"), auth0Errors.claimErrors().stream().map(ClaimError::getClaim).toList());
+        assertEquals("Expiration time has passed", auth0Errors.claimErrors().getFirst().getMessage());
+        assertFalse(auth0Errors.hasSignatureError());
     }
 
     @Test
