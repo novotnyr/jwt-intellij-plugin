@@ -83,8 +83,8 @@ public final class JwtDecoder {
      * value remains available through {@link #getClaim(String)}.
      * <p>
      * {@link com.auth0.jwt.JWT#decode(String) Auth0's decoder} throws a {@link JWTDecodeException}
-     * for timestamp claims such as {@code "iat": "yes"}
-     * {@code PayloadDeserializer.getInstantFromSeconds()}</a>. Parsing the claims directly lets
+     * for timestamp claims such as {@code "iat": "yes"}.
+     * Parsing the claims directly lets
      * the plugin display the original value and report a claim error.
      */
     private record ParsedJwt(String token, String encodedHeader, String encodedPayload, String signature,
