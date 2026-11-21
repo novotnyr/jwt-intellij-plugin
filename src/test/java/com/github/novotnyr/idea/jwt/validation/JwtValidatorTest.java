@@ -12,6 +12,7 @@ import com.github.novotnyr.idea.jwt.core.StringClaim;
 import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
 import org.junit.Test;
 
+import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
@@ -118,6 +119,22 @@ public class JwtValidatorTest {
         List<ClaimError> expired = validator.validate(JWT.decode(encodedToken("{\"exp\":0}")));
         assertTrue(validator.validate(JWT.decode(encodedToken("{}"))).isEmpty());
         assertEquals(List.of("exp"), expired.stream().map(ClaimError::getClaim).toList());
+    }
+
+    @Test
+    public void validatesDecodedClaimsWithoutReadingEncodedPayload() {
+        String payload = "{\"exp\":" + NumericDate.fromInstant(NOW.plusNanos(1)) + ",\"iat\":\"123\"}";
+        DecodedJWT decoded = new JwtDecoder(CLOCK).decode(encodedToken(payload)).decodedJwt();
+        DecodedJWT jwt = (DecodedJWT) Proxy.newProxyInstance(
+                DecodedJWT.class.getClassLoader(), new Class<?>[]{DecodedJWT.class}, (proxy, method, args) -> {
+                    if (method.getName().equals("getPayload")) {
+                        throw new AssertionError("The encoded payload should not be read during claim validation");
+                    }
+                    return method.invoke(decoded, args);
+                });
+
+        List<ClaimError> errors = new JwtClaimsValidator(CLOCK).validate(jwt);
+        assertEquals(List.of("iat"), errors.stream().map(ClaimError::getClaim).toList());
     }
 
     @Test

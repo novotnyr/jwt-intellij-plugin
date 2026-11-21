@@ -52,7 +52,7 @@ public final class JwtDecoder {
         ObjectNode header = parseHeader(parts[0]);
         ObjectNode payload = parsePayload(parts[1]);
         DecodedJWT decoded = new ParsedJwt(token, parts[0], parts[1], parts[2], header, payload);
-        return new JsonWebToken(decoded, new JwtErrors(this.claimsValidator.validatePayload(payload), null));
+        return new JsonWebToken(decoded, new JwtErrors(this.claimsValidator.validate(decoded), null));
     }
 
     ObjectNode parseHeader(String encodedHeader) {
