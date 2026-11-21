@@ -2,12 +2,13 @@ package com.github.novotnyr.idea.jwt.validation;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.github.novotnyr.idea.jwt.SignatureAlgorithm;
 import com.github.novotnyr.idea.jwt.core.Jwt;
+import com.github.novotnyr.idea.jwt.core.JwtDecoder;
 import com.github.novotnyr.idea.jwt.core.JwtFactory;
 import com.github.novotnyr.idea.jwt.core.NumericDate;
+import com.github.novotnyr.idea.jwt.core.StringClaim;
 import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
 import org.junit.Test;
 
@@ -22,7 +23,6 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class JwtValidatorTest {
@@ -73,7 +73,10 @@ public class JwtValidatorTest {
 
         List<ClaimError> nullIssuedAtErrors = validator.validate(JWT.decode(encodedToken("{\"iat\":null}")));
         assertEquals(List.of("iat"), nullIssuedAtErrors.stream().map(ClaimError::getClaim).toList());
-        assertThrows(JWTDecodeException.class, () -> JWT.decode(encodedToken("{\"iat\":\"0\"}")));
+
+        DecodedJWT stringIssuedAt = new JwtDecoder(CLOCK).decode(encodedToken("{\"iat\":\"0\"}")).decodedJwt();
+        List<ClaimError> stringIssuedAtErrors = validator.validate(stringIssuedAt);
+        assertEquals(List.of("iat"), stringIssuedAtErrors.stream().map(ClaimError::getClaim).toList());
     }
 
     @Test
@@ -82,10 +85,31 @@ public class JwtValidatorTest {
     }
 
     @Test
-    public void nonNumericTimestampClaimsAreRejected() {
-        assertThrows(JWTDecodeException.class, () -> token("{\"exp\":\"123\"}"));
-        assertThrows(JWTDecodeException.class, () -> token("{\"nbf\":true}"));
-        assertThrows(JWTDecodeException.class, () -> token("{\"iat\":[]}"));
+    public void nonNumericTimestampClaimsAreReported() {
+        assertErrors("{\"exp\":\"123\"}", "exp");
+        assertErrors("{\"nbf\":true}", "nbf");
+        assertErrors("{\"iat\":[]}", "iat");
+        assertErrors("{\"exp\":\"bad\",\"nbf\":false,\"iat\":{}}", "exp", "nbf", "iat");
+    }
+
+    @Test
+    public void invalidIssuedAtStillVerifiesTheOriginalSignedPayload() {
+        HS256SignatureContext context = new HS256SignatureContext("secret");
+        Jwt jwt = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256, context, true);
+        jwt.removeClaim("iat");
+        jwt.setPayloadClaim(new StringClaim("iat", "yes"));
+
+        JwtValidator validator = new JwtValidator(CLOCK);
+        JwtErrors validSignature = validator.validate(jwt, context);
+        assertEquals(List.of("iat"), validSignature.claimErrors().stream().map(ClaimError::getClaim).toList());
+        assertEquals("Illegal type: NumericDate must be a JSON number",
+                validSignature.claimErrors().getFirst().getMessage());
+        assertFalse(validSignature.hasSignatureError());
+
+        String[] parts = jwt.toString().split("\\.");
+        Jwt tampered = new Jwt(parts[0] + "." + encode("{\"iat\":\"no\"}") + "." + parts[2]);
+        JwtErrors invalidSignature = validator.validate(tampered, context);
+        assertTrue(invalidSignature.hasSignatureError());
     }
 
     @Test

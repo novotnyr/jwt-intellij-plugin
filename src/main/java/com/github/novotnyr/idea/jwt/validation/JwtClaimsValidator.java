@@ -3,6 +3,7 @@ package com.github.novotnyr.idea.jwt.validation;
 import com.auth0.jwt.RegisteredClaims;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.github.novotnyr.idea.jwt.core.JwtDecoder;
 import com.github.novotnyr.idea.jwt.core.NumericDate;
 
 import java.math.BigDecimal;
@@ -18,18 +19,21 @@ public class JwtClaimsValidator {
         this(Clock.systemUTC());
     }
 
-    JwtClaimsValidator(Clock clock) {
+    public JwtClaimsValidator(Clock clock) {
         this.clock = Objects.requireNonNull(clock);
     }
 
     /** Returns the timestamp claim errors for the decoded JWT. */
     public List<ClaimError> validate(DecodedJWT jwt) {
-        List<ClaimError> claimErrors = new ArrayList<>();
         if (!hasTimestampClaims(jwt)) {
-            return claimErrors;
+            return List.of();
         }
+        return validatePayload(new JwtDecoder().parsePayload(jwt.getPayload()));
+    }
 
-        JsonNode payload = NumericDate.parsePayload(jwt);
+    /** Validates the original JSON values of the timestamp claims. */
+    public List<ClaimError> validatePayload(JsonNode payload) {
+        List<ClaimError> claimErrors = new ArrayList<>();
         BigDecimal now = NumericDate.fromInstant(this.clock.instant());
 
         validateExpiration(payload, now, claimErrors);

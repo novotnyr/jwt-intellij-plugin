@@ -112,6 +112,28 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
         }
     }
 
+    public void testEditingIssuedAtToStringKeepsClaimVisible() {
+        JwtPanel panel = new JwtPanel(getProject());
+        try {
+            HS256SignatureContext context = new HS256SignatureContext("secret");
+            Jwt jwt = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256, context, true);
+            panel.setJwt(jwt);
+            panel.setSignatureContext(context);
+
+            panel.updateClaim(null, "iat");
+            panel.updateClaim(new StringClaim("iat", "yes"), null);
+
+            JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
+            JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
+            assertNotNull(claims);
+            assertEquals(1, claims.getRowCount());
+            assertEquals("iat", claims.getValueAt(0, 0));
+            assertEquals("yes", claims.getValueAt(0, 1));
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
     public void testClaimColumnsStartNarrowAndKeepUserResizing() {
         JwtPanel panel = new JwtPanel(getProject());
         try {
