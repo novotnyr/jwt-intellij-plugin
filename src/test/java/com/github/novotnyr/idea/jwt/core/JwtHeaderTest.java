@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
 import org.junit.Test;
 
@@ -13,6 +14,7 @@ import java.util.Base64;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class JwtHeaderTest {
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -47,6 +49,16 @@ public class JwtHeaderTest {
         assertEquals(originalHeader, decodedHeader(jwt));
         assertEquals("alice", JWT.require(Algorithm.HMAC256("secret")).build().verify(jwt.toString())
                 .getClaim("subject").asString());
+    }
+
+    @Test
+    public void editableHeaderValueDoesNotChangeTheDecodedSnapshot() {
+        Jwt jwt = new Jwt(signedToken("{\"alg\":\"HS256\",\"custom\":{\"enabled\":true}}"));
+        ObjectNode editableValue = (ObjectNode) jwt.getHeaderClaims().get(1).getValue();
+        editableValue.put("enabled", false);
+
+        JsonNode decodedValue = jwt.getDecodedJwt().getHeaderClaim("custom").as(JsonNode.class);
+        assertTrue(decodedValue.get("enabled").booleanValue());
     }
 
     private static String signedToken(String headerJson) {
