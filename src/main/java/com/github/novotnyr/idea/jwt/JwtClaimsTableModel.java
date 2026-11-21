@@ -103,7 +103,7 @@ public class JwtClaimsTableModel extends AbstractTableModel implements TableCell
 
             if(row == i) {
                 for (ClaimError claimError : this.claimErrors) {
-                    if(claimError.getClaim().equalsIgnoreCase(claim.getName())) {
+                    if (claimError.getClaim().equals(claim.getName())) {
                         return this.errorTableCellRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                     }
                 }
