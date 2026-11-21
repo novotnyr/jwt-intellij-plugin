@@ -29,12 +29,15 @@ public class PayloadClaimsSerializer extends StdSerializer<PayloadClaims> {
                         safePayload.put(name, value);
                         break;
                     }
-                    String[] audArray = (String[]) claim.getValue();
-                    if (audArray.length == 1) {
-                        safePayload.put(name, audArray[0]);
-                    } else if (audArray.length > 1) {
-                        safePayload.put(name, audArray);
+                    if (claim.getValue() instanceof String[] audArray) {
+                        if (audArray.length == 1) {
+                            safePayload.put(name, audArray[0]);
+                        } else if (audArray.length > 1) {
+                            safePayload.put(name, audArray);
+                        }
+                        break;
                     }
+                    safePayload.put(name, getValue(claim));
                     break;
                 case RegisteredClaims.EXPIRES_AT:
                 case RegisteredClaims.ISSUED_AT:

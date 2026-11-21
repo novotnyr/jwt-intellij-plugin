@@ -1,6 +1,7 @@
 package com.github.novotnyr.idea.jwt.core;
 
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -89,6 +90,40 @@ public class JwtTimestampRoundTripTest {
     }
 
     @Test
+    public void removingIssuedAtPreservesAudienceArrayAndProducesValidSignature() {
+        Jwt jwt = token("{\"iat\":1735689600,\"aud\":[\"one\",\"two\"],\"sub\":\"alice\"}");
+        ObjectNode expected = this.decoder.parsePayload(jwt.getPayloadString());
+        expected.remove("iat");
+        jwt.setSignatureContext(new HS256SignatureContext("secret"));
+
+        jwt.removeClaim("iat");
+
+        assertEquals(expected, this.decoder.parsePayload(jwt.getPayloadString()));
+        Algorithm.HMAC256("secret").verify(jwt.getDecodedJwt());
+    }
+
+    @Test
+    public void removingIssuedAtPreservesJsonAudienceShapes() {
+        for (String audience : List.of("\"service\"", "[\"service\"]", "[]", "[\"service\",{\"id\":1}]")) {
+            Jwt jwt = token("{\"iat\":1735689600,\"aud\":" + audience + ",\"sub\":\"alice\"}");
+            ObjectNode expected = this.decoder.parsePayload(jwt.getPayloadString());
+            expected.remove("iat");
+            jwt.setSignatureContext(new HS256SignatureContext("secret"));
+
+            jwt.removeClaim("iat");
+
+            assertEquals("audience " + audience, expected, this.decoder.parsePayload(jwt.getPayloadString()));
+        }
+    }
+
+    @Test
+    public void builderKeepsLegacyJavaAudienceArrayNormalization() {
+        assertEquals("service", builderPayload(new String[]{"service"}).get("aud").textValue());
+        assertFalse(builderPayload(new String[0]).has("aud"));
+        assertEquals("[\"one\",\"two\"]", builderPayload(new String[]{"one", "two"}).get("aud").toString());
+    }
+
+    @Test
     public void failedSigningKeepsTheOriginalSnapshotAndRows() {
         Jwt jwt = token("{\"sub\":\"alice\"}");
         DecodedJWT snapshot = jwt.getDecodedJwt();
@@ -166,6 +201,22 @@ public class JwtTimestampRoundTripTest {
     private static void assertNumericDate(JsonNode claim, String expected) {
         assertTrue(claim.isNumber());
         assertEquals(0, new BigDecimal(expected).compareTo(claim.decimalValue()));
+    }
+
+    private ObjectNode builderPayload(String[] audience) {
+        String signed = new JwtBuilder()
+                .withClaim(javaArrayAudience(audience))
+                .sign("HS256", new HS256SignatureContext("secret"));
+        return this.decoder.parsePayload(signed.split("\\.")[1]);
+    }
+
+    private static NamedClaim<String[]> javaArrayAudience(String[] audience) {
+        return new NamedClaim<>("aud", audience) {
+            @Override
+            public NamedClaim<String[]> copy() {
+                return javaArrayAudience(getValue());
+            }
+        };
     }
 
     private static Jwt token(String payload) {
