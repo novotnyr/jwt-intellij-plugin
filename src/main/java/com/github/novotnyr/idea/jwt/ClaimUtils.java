@@ -24,9 +24,12 @@ public class ClaimUtils {
     public static NamedClaim<?> getClaim(String claimName, Claim claimValue, JsonNode rawValue) {
         if (isDateClaim(claimName, claimValue)) {
             BigDecimal timestamp = NumericDate.fromJson(rawValue);
-            return timestamp == null
-                    ? new RawClaim(claimName, rawValue)
-                    : DateClaim.fromNumericDate(claimName, timestamp);
+            if (timestamp != null) {
+                return DateClaim.fromNumericDate(claimName, timestamp);
+            }
+            return rawValue != null && rawValue.isTextual()
+                    ? new StringClaim(claimName, rawValue.textValue())
+                    : new RawClaim(claimName, rawValue);
         }
         Boolean bool = claimValue.asBoolean();
         if(bool != null) {

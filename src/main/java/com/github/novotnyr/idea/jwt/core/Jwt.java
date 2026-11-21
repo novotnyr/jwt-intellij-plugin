@@ -1,17 +1,13 @@
 package com.github.novotnyr.idea.jwt.core;
 
-import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.github.novotnyr.idea.jwt.ClaimUtils;
 import com.github.novotnyr.idea.jwt.SignatureContext;
 
-import java.io.IOException;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -22,9 +18,7 @@ import java.util.Objects;
 public class Jwt {
     public static Jwt EMPTY = new Jwt();
 
-    private static final ObjectMapper HEADER_MAPPER = new ObjectMapper()
-            .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
-            .enable(DeserializationFeature.USE_BIG_INTEGER_FOR_INTS);
+    private final JwtDecoder decoder = new JwtDecoder();
 
     private final List<NamedClaim<?>> headerClaims = new LinkedList<>();
 
@@ -42,42 +36,32 @@ public class Jwt {
     public Jwt(String encodedJwt) {
         this.jwtString = encodedJwt;
 
-        DecodedJWT decodedJwt = JWT.decode(encodedJwt);
+        DecodedJWT decodedJwt = this.decoder.decode(encodedJwt).decodedJwt();
 
         readHeaderClaims(decodedJwt);
 
         this.algorithm = decodedJwt.getAlgorithm();
 
-        JsonNode rawPayload = null;
-        for (Map.Entry<String, Claim> claim : getClaims(decodedJwt).entrySet()) {
-            if (rawPayload == null && ClaimUtils.isDateClaim(claim.getKey(), claim.getValue())) {
-                rawPayload = NumericDate.parsePayload(decodedJwt);
+        for (Map.Entry<String, Claim> entry : decodedJwt.getClaims().entrySet()) {
+            String name = entry.getKey();
+            Claim claim = entry.getValue();
+            JsonNode rawValue = null;
+            if (ClaimUtils.isDateClaim(name, claim)) {
+                rawValue = claim.isNull() ? NullNode.getInstance() : claim.as(JsonNode.class);
             }
-            JsonNode rawValue = rawPayload == null ? null : rawPayload.get(claim.getKey());
-            this.payloadClaims.add(ClaimUtils.getClaim(claim.getKey(), claim.getValue(), rawValue));
+            this.payloadClaims.add(ClaimUtils.getClaim(name, claim, rawValue));
         }
-    }
-
-    private Map<String, Claim> getClaims(DecodedJWT decodedJwt) {
-        return decodedJwt.getClaims();
     }
 
     private void readHeaderClaims(DecodedJWT decodedJwt) {
-        try {
-            JsonNode header = HEADER_MAPPER.readTree(Base64.getUrlDecoder().decode(decodedJwt.getHeader()));
-            if (header == null || !header.isObject()) {
-                throw new JWTDecodeException("JWT header must be a JSON object");
-            }
-            this.headerClaims.clear();
-            header.properties().forEach(entry -> {
-                JsonNode value = entry.getValue();
-                this.headerClaims.add(value.isTextual()
-                        ? new StringClaim(entry.getKey(), value.textValue())
-                        : new RawClaim(entry.getKey(), value));
-            });
-        } catch (IOException | IllegalArgumentException e) {
-            throw new JWTDecodeException("Cannot decode JWT header", e);
-        }
+        JsonNode header = this.decoder.parseHeader(decodedJwt.getHeader());
+        this.headerClaims.clear();
+        header.properties().forEach(entry -> {
+            JsonNode value = entry.getValue();
+            this.headerClaims.add(value.isTextual()
+                    ? new StringClaim(entry.getKey(), value.textValue())
+                    : new RawClaim(entry.getKey(), value));
+        });
     }
 
     public List<NamedClaim<?>> getHeaderClaims() {
@@ -133,7 +117,7 @@ public class Jwt {
             builder.withClaim(payloadClaim);
         }
         this.jwtString = builder.sign(this.algorithm, this.signatureContext);
-        readHeaderClaims(JWT.decode(this.jwtString));
+        readHeaderClaims(this.decoder.decode(this.jwtString).decodedJwt());
     }
 
     public void rebuild() {

@@ -2,8 +2,8 @@ package com.github.novotnyr.idea.jwt.core;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
-import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.github.novotnyr.idea.jwt.SignatureAlgorithm;
 import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
 import org.junit.Test;
 
@@ -17,6 +17,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class JwtTimestampRoundTripTest {
+    private final JwtDecoder decoder = new JwtDecoder();
+
     @Test
     public void editingAnotherClaimPreservesFractionalNumericDatesAsJsonNumbers() {
         Jwt jwt = token("{\"exp\":1735689601.123456789,\"nbf\":1735689500.25,\"iat\":1735689400.75}");
@@ -24,8 +26,7 @@ public class JwtTimestampRoundTripTest {
         jwt.setSignatureContext(new HS256SignatureContext("secret"));
         jwt.setPayloadClaim(new StringClaim("subject", "alice"));
 
-        DecodedJWT decoded = JWT.decode(jwt.toString());
-        JsonNode payload = NumericDate.parsePayload(decoded);
+        JsonNode payload = this.decoder.parsePayload(jwt.getPayloadString());
         assertNumericDate(payload.get("exp"), "1735689601.123456789");
         assertNumericDate(payload.get("nbf"), "1735689500.25");
         assertNumericDate(payload.get("iat"), "1735689400.75");
@@ -59,8 +60,23 @@ public class JwtTimestampRoundTripTest {
         jwt.setSignatureContext(new HS256SignatureContext("secret"));
         jwt.setPayloadClaim(new DateClaim("customTimestamp", new Date(1735689601000L)));
 
-        JsonNode payload = NumericDate.parsePayload(JWT.decode(jwt.toString()));
+        JsonNode payload = this.decoder.parsePayload(jwt.getPayloadString());
         assertNumericDate(payload.get("customTimestamp"), "1735689601");
+    }
+
+    @Test
+    public void stringIssuedAtCanBeAddedAndSurvivesReloadAndAnotherEdit() {
+        HS256SignatureContext context = new HS256SignatureContext("secret");
+        Jwt jwt = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256, context, true);
+        jwt.removeClaim("iat");
+        jwt.setPayloadClaim(new StringClaim("iat", "yes"));
+        assertEquals("yes", this.decoder.parsePayload(jwt.getPayloadString()).get("iat").textValue());
+
+        Jwt reloaded = new Jwt(jwt.toString());
+        assertEquals(new StringClaim("iat", "yes"), reloaded.getPayloadClaims().getFirst());
+        reloaded.setSignatureContext(context);
+        reloaded.setPayloadClaim(new StringClaim("sub", "alice"));
+        assertEquals("yes", this.decoder.parsePayload(reloaded.getPayloadString()).get("iat").textValue());
     }
 
     private static void assertNumericDate(JsonNode claim, String expected) {
