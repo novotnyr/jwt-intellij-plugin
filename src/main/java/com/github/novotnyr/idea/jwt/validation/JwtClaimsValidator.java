@@ -16,10 +16,6 @@ import java.util.Objects;
 public class JwtClaimsValidator {
     private final Clock clock;
 
-    public JwtClaimsValidator() {
-        this(Clock.systemUTC());
-    }
-
     public JwtClaimsValidator(Clock clock) {
         this.clock = Objects.requireNonNull(clock);
     }
