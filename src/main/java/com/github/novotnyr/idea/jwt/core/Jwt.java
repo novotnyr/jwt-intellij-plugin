@@ -5,7 +5,6 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.novotnyr.idea.jwt.ClaimUtils;
 import com.github.novotnyr.idea.jwt.SignatureContext;
-import com.github.novotnyr.idea.jwt.core.JwtDecoder.ParsedJwt;
 
 import java.util.Collections;
 import java.util.Iterator;
