@@ -6,11 +6,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.github.novotnyr.idea.jwt.ClaimUtils;
 import com.github.novotnyr.idea.jwt.SignatureContext;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 public class Jwt {
@@ -32,28 +31,27 @@ public class Jwt {
     }
 
     public Jwt(String encodedJwt) {
-        this.parsedJwt = this.decoder.parse(encodedJwt);
-
-        readHeaderClaims(this.parsedJwt);
-
+        applySnapshot(this.decoder.parse(encodedJwt));
         this.algorithm = this.parsedJwt.getAlgorithm();
-
-        for (Map.Entry<String, JsonNode> entry : this.parsedJwt.payload().properties()) {
-            String claimName = entry.getKey();
-            JsonNode claimValue = entry.getValue();
-            NamedClaim<?> payloadClaim = ClaimUtils.toPayloadClaim(claimName, claimValue);
-            this.payloadClaims.add(payloadClaim);
-        }
     }
 
-    private void readHeaderClaims(ParsedJwt parsedJwt) {
-        this.headerClaims.clear();
+    private void applySnapshot(ParsedJwt parsedJwt) {
+        List<NamedClaim<?>> headers = new ArrayList<>();
         parsedJwt.header().properties().forEach(entry -> {
             JsonNode value = entry.getValue().deepCopy();
-            this.headerClaims.add(value.isTextual()
+            headers.add(value.isTextual()
                     ? new StringClaim(entry.getKey(), value.textValue())
                     : new RawClaim(entry.getKey(), value));
         });
+        List<NamedClaim<?>> payload = new ArrayList<>();
+        parsedJwt.payload().properties().forEach(entry ->
+                payload.add(ClaimUtils.toPayloadClaim(entry.getKey(), entry.getValue())));
+
+        this.headerClaims.clear();
+        this.headerClaims.addAll(headers);
+        this.payloadClaims.clear();
+        this.payloadClaims.addAll(payload);
+        this.parsedJwt = parsedJwt;
     }
 
     public List<NamedClaim<?>> getHeaderClaims() {
@@ -65,21 +63,15 @@ public class Jwt {
     }
 
     public void removeClaim(String claimName) {
-        Iterator<NamedClaim<?>> iterator = this.payloadClaims.iterator();
-        while(iterator.hasNext()) {
-            NamedClaim<?> claim = iterator.next();
-            if (claim.getName().equals(claimName)) {
-                iterator.remove();
-                break;
-            }
-        }
-        updatePayload();
+        List<NamedClaim<?>> candidate = new ArrayList<>(this.payloadClaims);
+        candidate.removeIf(claim -> claim.getName().equals(claimName));
+        signPayload(candidate);
     }
 
-
     public void setPayloadClaim(NamedClaim<?> claim) {
-        doSetClaim(claim, this.payloadClaims);
-        updatePayload();
+        List<NamedClaim<?>> candidate = new ArrayList<>(this.payloadClaims);
+        doSetClaim(claim, candidate);
+        signPayload(candidate);
     }
 
     public void setHeaderClaim(NamedClaim<?> claim) {
@@ -103,18 +95,16 @@ public class Jwt {
         }
     }
 
-    private void updatePayload() {
+    private void signPayload(List<NamedClaim<?>> candidate) {
         JwtBuilder builder = new JwtBuilder().withHeaderClaims(this.headerClaims);
-        for (NamedClaim<?> payloadClaim : this.payloadClaims) {
+        for (NamedClaim<?> payloadClaim : candidate) {
             builder.withClaim(payloadClaim);
         }
-        ParsedJwt signedJwt = this.decoder.parse(builder.sign(this.algorithm, this.signatureContext));
-        readHeaderClaims(signedJwt);
-        this.parsedJwt = signedJwt;
+        applySnapshot(this.decoder.parse(builder.sign(this.algorithm, this.signatureContext)));
     }
 
     public void rebuild() {
-        updatePayload();
+        signPayload(this.payloadClaims);
     }
 
     public void setSignatureContext(SignatureContext signatureContext) {

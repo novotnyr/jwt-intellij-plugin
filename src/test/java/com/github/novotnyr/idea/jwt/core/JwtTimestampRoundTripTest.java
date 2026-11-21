@@ -2,16 +2,19 @@ package com.github.novotnyr.idea.jwt.core;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.github.novotnyr.idea.jwt.SecretNotSpecifiedException;
 import com.github.novotnyr.idea.jwt.SignatureAlgorithm;
 import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Date;
@@ -19,26 +22,32 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class JwtTimestampRoundTripTest {
+    private static final String MIXED_PAYLOAD = """
+            {
+              "exp": 1735689601.125,
+              "iat": "123",
+              "nbf": false,
+              "sub": "alice",
+              "active": true,
+              "count": 42,
+              "fraction": 42.75,
+              "large": 9223372036854775808,
+              "unset": null,
+              "options": {"enabled": true},
+              "roles": ["reader"]
+            }
+            """;
+
     private final JwtDecoder decoder = new JwtDecoder();
 
     @Test
     public void mixedPayloadKeepsEditorTypesAndIsolatesMutableValues() {
-        Jwt jwt = token("""
-                {
-                  "exp": 1735689601.125,
-                  "iat": "123",
-                  "nbf": false,
-                  "sub": "alice",
-                  "active": true,
-                  "count": 42.75,
-                  "unset": null,
-                  "options": {"enabled": true},
-                  "roles": ["reader"]
-                }
-                """);
+        Jwt jwt = token(MIXED_PAYLOAD);
 
         List<NamedClaim<?>> claims = jwt.getPayloadClaims();
         JsonNodeFactory nodes = JsonNodeFactory.instance;
@@ -49,12 +58,14 @@ public class JwtTimestampRoundTripTest {
                 new StringClaim("sub", "alice"),
                 new BooleanClaim("active", true),
                 new NumericClaim("count", 42L),
+                new RawClaim("fraction", nodes.numberNode(new BigDecimal("42.75"))),
+                new RawClaim("large", nodes.numberNode(new BigInteger("9223372036854775808"))),
                 new StringClaim("unset", null),
                 new RawClaim("options", nodes.objectNode().put("enabled", true)),
                 new RawClaim("roles", nodes.arrayNode().add("reader"))
         ), claims);
 
-        ObjectNode editableOptions = (ObjectNode) claims.get(7).getValue();
+        ObjectNode editableOptions = (ObjectNode) claims.get(9).getValue();
         ArrayNode editableRoles = (ArrayNode) claims.getLast().getValue();
         editableOptions.put("enabled", false);
         editableRoles.add("writer");
@@ -62,6 +73,33 @@ public class JwtTimestampRoundTripTest {
         JsonNode options = jwt.getDecodedJwt().getClaim("options").as(JsonNode.class);
         assertTrue(options.get("enabled").booleanValue());
         assertEquals(List.of("reader"), jwt.getDecodedJwt().getClaim("roles").asList(String.class));
+    }
+
+    @Test
+    public void signingAnEditPreservesUntouchedJsonValuesAndRefreshesTheRows() {
+        Jwt jwt = token(MIXED_PAYLOAD);
+        ObjectNode expected = this.decoder.parsePayload(jwt.getPayloadString());
+        expected.put("sub", "bob");
+
+        jwt.setSignatureContext(new HS256SignatureContext("secret"));
+        jwt.setPayloadClaim(new StringClaim("sub", "bob"));
+
+        assertEquals(expected, this.decoder.parsePayload(jwt.getPayloadString()));
+        assertEquals(new Jwt(jwt.toString()).getPayloadClaims(), jwt.getPayloadClaims());
+    }
+
+    @Test
+    public void failedSigningKeepsTheOriginalSnapshotAndRows() {
+        Jwt jwt = token("{\"sub\":\"alice\"}");
+        DecodedJWT snapshot = jwt.getDecodedJwt();
+        List<NamedClaim<?>> rows = List.copyOf(jwt.getPayloadClaims());
+
+        assertThrows(SecretNotSpecifiedException.class, () -> jwt.setPayloadClaim(new StringClaim("sub", "bob")));
+        assertEquals(rows, jwt.getPayloadClaims());
+
+        assertThrows(SecretNotSpecifiedException.class, () -> jwt.removeClaim("sub"));
+        assertEquals(rows, jwt.getPayloadClaims());
+        assertSame(snapshot, jwt.getDecodedJwt());
     }
 
     @Test
@@ -107,6 +145,7 @@ public class JwtTimestampRoundTripTest {
 
         JsonNode payload = this.decoder.parsePayload(jwt.getPayloadString());
         assertNumericDate(payload.get("customTimestamp"), "1735689601");
+        assertEquals(new NumericClaim("customTimestamp", 1735689601L), jwt.getPayloadClaims().getFirst());
     }
 
     @Test
