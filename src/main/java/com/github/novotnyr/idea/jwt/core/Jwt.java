@@ -1,10 +1,8 @@
 package com.github.novotnyr.idea.jwt.core;
 
 import com.auth0.jwt.exceptions.JWTDecodeException;
-import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.NullNode;
 import com.github.novotnyr.idea.jwt.ClaimUtils;
 import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.core.JwtDecoder.ParsedJwt;
@@ -41,14 +39,11 @@ public class Jwt {
 
         this.algorithm = this.parsedJwt.getAlgorithm();
 
-        for (Map.Entry<String, Claim> entry : this.parsedJwt.getClaims().entrySet()) {
-            String name = entry.getKey();
-            Claim claim = entry.getValue();
-            JsonNode rawValue = null;
-            if (ClaimUtils.isDateClaim(name)) {
-                rawValue = claim.isNull() ? NullNode.getInstance() : claim.as(JsonNode.class);
-            }
-            this.payloadClaims.add(ClaimUtils.getClaim(name, claim, rawValue));
+        for (Map.Entry<String, JsonNode> entry : this.parsedJwt.payload().properties()) {
+            String claimName = entry.getKey();
+            JsonNode claimValue = entry.getValue();
+            NamedClaim<?> payloadClaim = ClaimUtils.toPayloadClaim(claimName, claimValue);
+            this.payloadClaims.add(payloadClaim);
         }
     }
 
