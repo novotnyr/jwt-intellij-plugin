@@ -1,5 +1,6 @@
 package com.github.novotnyr.idea.jwt;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.github.novotnyr.idea.jwt.action.AddClaimActionButtonController;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
@@ -294,9 +295,10 @@ public class JwtPanel implements Disposable {
         try {
             JwtErrors errors;
             if (rsaPanel != null) {
+                DecodedJWT decodedJwt = originalJwt.getDecodedJwt();
                 errors = runRsaOperation("Validating RSA JWT", () -> {
                     SignatureContext context = RsaKeyParser.parse(keyText.publicKey(), keyText.privateKey());
-                    return this.jwtValidator.validate(new Jwt(encodedJwt), context);
+                    return this.jwtValidator.validate(decodedJwt, context);
                 });
                 if (errors == null || !isCurrentRsaInput(rsaPanel, keyText, originalJwt, encodedJwt)) {
                     return;

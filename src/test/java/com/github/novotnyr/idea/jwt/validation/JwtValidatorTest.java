@@ -18,6 +18,7 @@ import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Base64;
@@ -26,7 +27,9 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class JwtValidatorTest {
@@ -120,7 +123,11 @@ public class JwtValidatorTest {
         HS256SignatureContext context = new HS256SignatureContext("secret");
         Jwt jwt = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256, context, true);
         jwt.removeClaim("iat");
+        DecodedJWT beforeEdit = jwt.getDecodedJwt();
         jwt.setPayloadClaim(new StringClaim("iat", "yes"));
+
+        assertNotSame(beforeEdit, jwt.getDecodedJwt());
+        assertEquals("yes", jwt.getDecodedJwt().getClaim("iat").asString());
 
         JwtValidator validator = new JwtValidator(CLOCK);
         JwtErrors validSignature = validator.validate(jwt, context);
@@ -133,6 +140,19 @@ public class JwtValidatorTest {
         Jwt tampered = new Jwt(parts[0] + "." + encode("{\"iat\":\"no\"}") + "." + parts[2]);
         JwtErrors invalidSignature = validator.validate(tampered, context);
         assertTrue(invalidSignature.hasSignatureError());
+    }
+
+    @Test
+    public void validatingTheSameSnapshotAtALaterTimeReportsExpiration() {
+        Jwt jwt = token("{\"exp\":" + NumericDate.fromInstant(NOW.plusSeconds(1)) + "}");
+        DecodedJWT snapshot = jwt.getDecodedJwt();
+
+        assertTrue(new JwtValidator(CLOCK).validateClaims(jwt).claimErrors().isEmpty());
+
+        JwtValidator laterValidator = new JwtValidator(Clock.offset(CLOCK, Duration.ofSeconds(1)));
+        List<ClaimError> errors = laterValidator.validateClaims(jwt).claimErrors();
+        assertEquals(List.of("exp"), errors.stream().map(ClaimError::getClaim).toList());
+        assertSame(snapshot, jwt.getDecodedJwt());
     }
 
     @Test

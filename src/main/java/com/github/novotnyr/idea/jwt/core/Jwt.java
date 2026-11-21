@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.github.novotnyr.idea.jwt.ClaimUtils;
 import com.github.novotnyr.idea.jwt.SignatureContext;
+import com.github.novotnyr.idea.jwt.core.JwtDecoder.ParsedJwt;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -26,7 +27,7 @@ public class Jwt {
 
     private SignatureContext signatureContext;
 
-    private String jwtString;
+    private ParsedJwt parsedJwt;
 
     private String algorithm;
 
@@ -34,15 +35,13 @@ public class Jwt {
     }
 
     public Jwt(String encodedJwt) {
-        this.jwtString = encodedJwt;
+        this.parsedJwt = this.decoder.parse(encodedJwt);
 
-        DecodedJWT decodedJwt = this.decoder.decode(encodedJwt).decodedJwt();
+        readHeaderClaims(this.parsedJwt);
 
-        readHeaderClaims(decodedJwt);
+        this.algorithm = this.parsedJwt.getAlgorithm();
 
-        this.algorithm = decodedJwt.getAlgorithm();
-
-        for (Map.Entry<String, Claim> entry : decodedJwt.getClaims().entrySet()) {
+        for (Map.Entry<String, Claim> entry : this.parsedJwt.getClaims().entrySet()) {
             String name = entry.getKey();
             Claim claim = entry.getValue();
             JsonNode rawValue = null;
@@ -53,11 +52,10 @@ public class Jwt {
         }
     }
 
-    private void readHeaderClaims(DecodedJWT decodedJwt) {
-        JsonNode header = this.decoder.parseHeader(decodedJwt.getHeader());
+    private void readHeaderClaims(ParsedJwt parsedJwt) {
         this.headerClaims.clear();
-        header.properties().forEach(entry -> {
-            JsonNode value = entry.getValue();
+        parsedJwt.header().properties().forEach(entry -> {
+            JsonNode value = entry.getValue().deepCopy();
             this.headerClaims.add(value.isTextual()
                     ? new StringClaim(entry.getKey(), value.textValue())
                     : new RawClaim(entry.getKey(), value));
@@ -116,8 +114,9 @@ public class Jwt {
         for (NamedClaim<?> payloadClaim : this.payloadClaims) {
             builder.withClaim(payloadClaim);
         }
-        this.jwtString = builder.sign(this.algorithm, this.signatureContext);
-        readHeaderClaims(this.decoder.decode(this.jwtString).decodedJwt());
+        ParsedJwt signedJwt = this.decoder.parse(builder.sign(this.algorithm, this.signatureContext));
+        readHeaderClaims(signedJwt);
+        this.parsedJwt = signedJwt;
     }
 
     public void rebuild() {
@@ -133,23 +132,20 @@ public class Jwt {
     }
 
     public String getPayloadString() {
-        return splitToken(this.jwtString)[1];
+        return getDecodedJwt().getPayload();
     }
 
-    protected String[] splitToken(String token) throws JWTDecodeException {
-        String[] parts = token.split("\\.");
-        if (parts.length == 2 && token.endsWith(".")) {
-            //Tokens with alg='none' have empty String as Signature.
-            parts = new String[]{ parts[0], parts[1], "" };
+    /** Returns the decoded snapshot of the current encoded token. */
+    public DecodedJWT getDecodedJwt() {
+        if (this.parsedJwt == null) {
+            throw new JWTDecodeException("The token is null");
         }
-        if (parts.length != 3) {
-            throw new IllegalArgumentException("Expecting 3 token parts, but got " + parts.length);
-        }
-        return parts;
+        return this.parsedJwt;
     }
 
+    @Override
     public String toString() {
-        return this.jwtString;
+        return this.parsedJwt == null ? null : this.parsedJwt.getToken();
     }
 
     public String getAlgorithm() {
@@ -164,13 +160,13 @@ public class Jwt {
         return Objects.equals(getHeaderClaims(), jwt.getHeaderClaims()) &&
                 Objects.equals(getPayloadClaims(), jwt.getPayloadClaims()) &&
                 Objects.equals(this.signatureContext, jwt.signatureContext) &&
-                Objects.equals(this.jwtString, jwt.jwtString) &&
+                Objects.equals(toString(), jwt.toString()) &&
                 Objects.equals(getAlgorithm(), jwt.getAlgorithm());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getHeaderClaims(), getPayloadClaims(), this.signatureContext, this.jwtString, getAlgorithm());
+        return Objects.hash(getHeaderClaims(), getPayloadClaims(), this.signatureContext, toString(), getAlgorithm());
     }
 
     public boolean isEmpty() {

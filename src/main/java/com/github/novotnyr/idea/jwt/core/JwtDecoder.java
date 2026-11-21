@@ -42,6 +42,11 @@ public final class JwtDecoder {
     }
 
     public JsonWebToken decode(String token) {
+        ParsedJwt decoded = parse(token);
+        return new JsonWebToken(decoded, new JwtErrors(this.claimsValidator.validate(decoded), null));
+    }
+
+    ParsedJwt parse(String token) {
         if (token == null) {
             throw new JWTDecodeException("The token is null");
         }
@@ -50,14 +55,9 @@ public final class JwtDecoder {
             throw new JWTDecodeException("The JWT must have three parts");
         }
 
-        ObjectNode header = parseHeader(parts[0]);
+        ObjectNode header = parseObject(parts[0], "header");
         ObjectNode payload = parsePayload(parts[1]);
-        DecodedJWT decoded = new ParsedJwt(token, parts[0], parts[1], parts[2], header, payload);
-        return new JsonWebToken(decoded, new JwtErrors(this.claimsValidator.validate(decoded), null));
-    }
-
-    ObjectNode parseHeader(String encodedHeader) {
-        return parseObject(encodedHeader, "header");
+        return new ParsedJwt(token, parts[0], parts[1], parts[2], header, payload);
     }
 
     /** Parses a Base64URL payload segment as JSON with full numeric precision. */
@@ -87,8 +87,8 @@ public final class JwtDecoder {
      * Parsing the claims directly lets
      * the plugin display the original value and report a claim error.
      */
-    private record ParsedJwt(String token, String encodedHeader, String encodedPayload, String signature,
-                             ObjectNode header, ObjectNode payload) implements DecodedJWT {
+    record ParsedJwt(String token, String encodedHeader, String encodedPayload, String signature,
+                     ObjectNode header, ObjectNode payload) implements DecodedJWT {
         @Override
         public String getToken() {
             return this.token;
