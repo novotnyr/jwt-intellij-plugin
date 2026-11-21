@@ -12,6 +12,8 @@ import com.github.novotnyr.idea.jwt.core.StringClaim;
 import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -23,6 +25,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -78,6 +81,25 @@ public class JwtValidatorTest {
         DecodedJWT stringIssuedAt = new JwtDecoder(CLOCK).decode(encodedToken("{\"iat\":\"0\"}")).decodedJwt();
         List<ClaimError> stringIssuedAtErrors = validator.validate(stringIssuedAt);
         assertEquals(List.of("iat"), stringIssuedAtErrors.stream().map(ClaimError::getClaim).toList());
+    }
+
+    @Test
+    public void parsesAndValidatesStringIssuedAtFixture() throws IOException {
+        String encoded;
+        try (InputStream fixture = JwtValidatorTest.class.getResourceAsStream("/string-iat.jwt")) {
+            assertNotNull("Missing test resource string-iat.jwt", fixture);
+            encoded = new String(fixture.readAllBytes(), StandardCharsets.UTF_8).strip();
+        }
+
+        Jwt jwt = new Jwt(encoded);
+        assertEquals(new StringClaim("iat", "1516239022"), jwt.getPayloadClaims().stream()
+                .filter(claim -> "iat".equals(claim.getName()))
+                .findFirst()
+                .orElseThrow());
+
+        List<ClaimError> errors = new JwtValidator(CLOCK).validateClaims(jwt).claimErrors();
+        assertEquals(List.of("iat"), errors.stream().map(ClaimError::getClaim).toList());
+        assertEquals("Illegal type: NumericDate must be a JSON number", errors.getFirst().getMessage());
     }
 
     @Test
