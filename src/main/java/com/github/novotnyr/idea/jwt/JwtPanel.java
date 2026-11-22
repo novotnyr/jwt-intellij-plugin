@@ -1146,6 +1146,11 @@ public class JwtPanel implements Disposable {
     private static final class ClaimValueTable extends JBTable {
         private boolean initialWidthsApplied;
 
+        private ClaimValueTable() {
+            setShowGrid(false);
+            setIntercellSpacing(new Dimension(0, 0));
+        }
+
         @Override
         public void doLayout() {
             if (!this.initialWidthsApplied && getWidth() >= JBUI.scale(200) && getColumnCount() == 2) {

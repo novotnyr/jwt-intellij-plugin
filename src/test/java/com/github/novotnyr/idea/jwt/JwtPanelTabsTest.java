@@ -32,6 +32,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.datatransfer.DataFlavor;
@@ -80,8 +81,12 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             jwt.rebuild();
             panel.setJwt(new Jwt(jwt.toString()));
 
+            JBTable payload = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
             JBTable header = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(1), JBTable.class);
+            assertNotNull(payload);
             assertNotNull(header);
+            assertTableHasNoInnerBorders(payload);
+            assertTableHasNoInnerBorders(header);
             assertEquals("Claim", header.getColumnName(0));
             assertEquals("Value", header.getColumnName(1));
             assertEquals(3, header.getRowCount());
@@ -112,6 +117,12 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             panel.getRootPanel().removeNotify();
             Disposer.dispose(panel);
         }
+    }
+
+    private static void assertTableHasNoInnerBorders(JBTable table) {
+        assertFalse(table.getShowHorizontalLines());
+        assertFalse(table.getShowVerticalLines());
+        assertEquals(new Dimension(0, 0), table.getIntercellSpacing());
     }
 
     public void testVerifySignatureFeedbackTracksInputs() {
