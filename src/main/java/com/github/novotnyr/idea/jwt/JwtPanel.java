@@ -34,6 +34,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
@@ -49,6 +50,7 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.JBColor;
+import com.intellij.ui.NewUI;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBScrollPane;
@@ -136,11 +138,11 @@ public class JwtPanel implements Disposable {
 
     private final JLabel missingVerificationInputMessage = new JLabel();
 
-    private final Color signatureResultWarningBackground = JBColor.namedColor("Notification.warningBackground",
-            new JBColor(0xFFF4D1, 0x4B422A));
+    private final Color warningBackground = JBUI.CurrentTheme.Banner.WARNING_BACKGROUND;
 
-    private final Color signatureResultWarningForeground = JBColor.namedColor("Notification.warningForeground",
-            new JBColor(0x594300, 0xF0D98C));
+    private final Color warningForeground = NewUI.isEnabled()
+            ? JBUI.CurrentTheme.Banner.FOREGROUND
+            : EditorColorsManager.getInstance().getGlobalScheme().getDefaultForeground();
 
     private JwtHeaderTableModel headerTableModel;
 
@@ -280,11 +282,11 @@ public class JwtPanel implements Disposable {
     private void configureExpirationWarningPanel() {
         this.expirationWarningPanel.setName("jwt.expiration.warning");
         this.expirationWarningPanel.setOpaque(true);
-        this.expirationWarningPanel.setBackground(this.signatureResultWarningBackground);
+        this.expirationWarningPanel.setBackground(this.warningBackground);
         this.expirationWarningPanel.setBorder(JBUI.Borders.empty(8, 12));
         this.expirationWarningPanel.add(new JLabel(AllIcons.General.BalloonWarning), BorderLayout.WEST);
         this.expirationWarningMessage.setName("jwt.expiration.message");
-        this.expirationWarningMessage.setForeground(this.signatureResultWarningForeground);
+        this.expirationWarningMessage.setForeground(this.warningForeground);
         this.expirationWarningPanel.add(this.expirationWarningMessage, BorderLayout.CENTER);
         this.expirationWarningPanel.setVisible(false);
     }
@@ -297,25 +299,25 @@ public class JwtPanel implements Disposable {
 
         this.signatureResultPanel.setName("jwt.signature.result");
         this.signatureResultPanel.setOpaque(true);
-        this.signatureResultPanel.setBackground(this.signatureResultWarningBackground);
+        this.signatureResultPanel.setBackground(this.warningBackground);
         this.signatureResultPanel.setBorder(JBUI.Borders.empty(8, 12));
         this.signatureResultIcon.setName("jwt.signature.icon");
         this.signatureResultIcon.setIcon(AllIcons.General.BalloonWarning);
         this.signatureResultPanel.add(this.signatureResultIcon, BorderLayout.WEST);
         this.signatureResultMessage.setName("jwt.signature.message");
-        this.signatureResultMessage.setForeground(this.signatureResultWarningForeground);
+        this.signatureResultMessage.setForeground(this.warningForeground);
         this.signatureResultPanel.add(this.signatureResultMessage, BorderLayout.CENTER);
         this.signatureResultPanel.setVisible(false);
         this.feedbackPanel.add(this.signatureResultPanel);
         this.missingVerificationInputPanel.setName("jwt.verification.input.hint");
         this.missingVerificationInputPanel.setOpaque(true);
-        this.missingVerificationInputPanel.setBackground(this.signatureResultWarningBackground);
+        this.missingVerificationInputPanel.setBackground(this.warningBackground);
         this.missingVerificationInputPanel.setBorder(JBUI.Borders.empty(8, 12));
         this.missingVerificationInputIcon.setName("jwt.verification.input.icon");
         this.missingVerificationInputIcon.setIcon(AllIcons.General.BalloonWarning);
         this.missingVerificationInputPanel.add(this.missingVerificationInputIcon, BorderLayout.WEST);
         this.missingVerificationInputMessage.setName("jwt.verification.input.message");
-        this.missingVerificationInputMessage.setForeground(this.signatureResultWarningForeground);
+        this.missingVerificationInputMessage.setForeground(this.warningForeground);
         this.missingVerificationInputPanel.add(this.missingVerificationInputMessage, BorderLayout.CENTER);
         this.missingVerificationInputPanel.setVisible(false);
         this.feedbackPanel.add(this.missingVerificationInputPanel);
@@ -753,9 +755,9 @@ public class JwtPanel implements Disposable {
         this.signatureResultMessage.setToolTipText(result);
         this.signatureResultIcon.setIcon(warning ? AllIcons.General.BalloonWarning : AllIcons.General.InspectionsOK);
         this.signatureResultMessage.setForeground(warning
-                ? this.signatureResultWarningForeground
+                ? this.warningForeground
                 : JBColor.foreground());
-        this.signatureResultPanel.setBackground(this.signatureResultWarningBackground);
+        this.signatureResultPanel.setBackground(this.warningBackground);
         this.signatureResultPanel.setOpaque(warning);
         this.signatureResultPanel.setVisible(true);
         refreshFeedbackPanel();

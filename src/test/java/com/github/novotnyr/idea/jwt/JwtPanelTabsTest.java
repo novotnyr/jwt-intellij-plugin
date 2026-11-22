@@ -15,6 +15,7 @@ import com.intellij.ide.CopyPasteManagerEx;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.testFramework.LightPlatformTestCase;
+import com.intellij.ui.EditorNotificationPanel;
 import com.intellij.ui.EditorTextField;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.UIUtil;
@@ -215,6 +216,81 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
         } finally {
             Disposer.dispose(panel);
         }
+    }
+
+    public void testWarningFeedbackMatchesClaimBannerAndTracksThemeColors() {
+        Color initialWarningBackground = new Color(0xFFE0A0);
+        Color updatedWarningBackground = new Color(0xC08040);
+        Color updatedForeground = new Color(0xE0E0E0);
+        Object previousWarningBackground = UIManager.put("Banner.warningBackground", initialWarningBackground);
+        Object previousForeground = UIManager.put("Banner.foreground", updatedForeground);
+        JwtPanel panel = new JwtPanel(getProject());
+        ClaimDialog dialog = new ClaimDialog(new StringClaim("subject", "alice"), ClaimDialog.Mode.VIEW,
+                "Read-only: Enter a shared secret in Key / Secret to edit claims.");
+        try {
+            JPanel expirationWarning = findComponentNamed(panel.getRootPanel(),
+                    "jwt.expiration.warning", JPanel.class);
+            JPanel signatureResult = findComponentNamed(panel.getRootPanel(), "jwt.signature.result", JPanel.class);
+            JPanel missingInputHint = findComponentNamed(panel.getRootPanel(),
+                    "jwt.verification.input.hint", JPanel.class);
+            JLabel expirationMessage = findComponentNamed(panel.getRootPanel(),
+                    "jwt.expiration.message", JLabel.class);
+            JLabel signatureMessage = findComponentNamed(panel.getRootPanel(),
+                    "jwt.signature.message", JLabel.class);
+            JLabel missingInputMessage = findComponentNamed(panel.getRootPanel(),
+                    "jwt.verification.input.message", JLabel.class);
+            EditorNotificationPanel claimBanner = findComponentNamed((Container) dialog.createCenterPanel(),
+                    "jwt.claim.readOnly.banner", EditorNotificationPanel.class);
+            JLabel claimBannerMessage = findLabelWithText((Container) claimBanner,
+                    "Read-only: Enter a shared secret in Key / Secret to edit claims.");
+
+            assertNotNull(expirationWarning);
+            assertNotNull(signatureResult);
+            assertNotNull(missingInputHint);
+            assertNotNull(expirationMessage);
+            assertNotNull(signatureMessage);
+            assertNotNull(missingInputMessage);
+            assertNotNull(claimBanner);
+            assertNotNull(claimBannerMessage);
+            assertWarningColorsMatchBanner(claimBanner, claimBannerMessage, expirationWarning, expirationMessage);
+            assertWarningColorsMatchBanner(claimBanner, claimBannerMessage, signatureResult, signatureMessage);
+            assertWarningColorsMatchBanner(claimBanner, claimBannerMessage, missingInputHint, missingInputMessage);
+
+            UIManager.put("Banner.warningBackground", updatedWarningBackground);
+            UIManager.put("Banner.foreground", updatedForeground);
+            assertEquals(updatedWarningBackground.getRGB(), claimBanner.getBackground().getRGB());
+            assertEquals(updatedWarningBackground.getRGB(), expirationWarning.getBackground().getRGB());
+            assertEquals(updatedWarningBackground.getRGB(), signatureResult.getBackground().getRGB());
+            assertEquals(updatedWarningBackground.getRGB(), missingInputHint.getBackground().getRGB());
+            assertWarningColorsMatchBanner(claimBanner, claimBannerMessage, expirationWarning, expirationMessage);
+            assertWarningColorsMatchBanner(claimBanner, claimBannerMessage, signatureResult, signatureMessage);
+            assertWarningColorsMatchBanner(claimBanner, claimBannerMessage, missingInputHint, missingInputMessage);
+        } finally {
+            UIManager.put("Banner.warningBackground", previousWarningBackground);
+            UIManager.put("Banner.foreground", previousForeground);
+            Disposer.dispose(panel);
+        }
+    }
+
+    private static void assertWarningColorsMatchBanner(EditorNotificationPanel banner, JLabel bannerMessage,
+                                                       JPanel feedbackPanel, JLabel feedbackMessage) {
+        assertEquals(banner.getBackground().getRGB(), feedbackPanel.getBackground().getRGB());
+        assertEquals(bannerMessage.getForeground().getRGB(), feedbackMessage.getForeground().getRGB());
+    }
+
+    private static JLabel findLabelWithText(Container container, String text) {
+        for (Component component : container.getComponents()) {
+            if (component instanceof JLabel label && text.equals(label.getText())) {
+                return label;
+            }
+            if (component instanceof Container child) {
+                JLabel nested = findLabelWithText(child, text);
+                if (nested != null) {
+                    return nested;
+                }
+            }
+        }
+        return null;
     }
 
     public void testSuccessfulSignatureFeedbackFollowsThemeForeground() {
