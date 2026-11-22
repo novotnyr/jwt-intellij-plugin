@@ -9,6 +9,7 @@ import com.github.novotnyr.idea.jwt.core.NumericDate;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -29,14 +30,19 @@ public class JwtClaimsValidator {
         validateNotBefore(jwt, now, claimErrors);
         validateIssuedAt(jwt, claimErrors);
 
-        return claimErrors;
+        return List.copyOf(claimErrors);
     }
 
     private void validateExpiration(Payload payload, BigDecimal now, List<ClaimError> claimErrors) {
         BigDecimal expiration = getNumericDateOrReportError(payload, RegisteredClaims.EXPIRES_AT, claimErrors);
         if (expiration != null && now.compareTo(expiration) >= 0) {
-            claimErrors.add(new ClaimError(RegisteredClaims.EXPIRES_AT, "Expiration time has passed"));
+            claimErrors.add(new ClaimError(RegisteredClaims.EXPIRES_AT, expirationMessage(expiration)));
         }
+    }
+
+    public static String expirationMessage(BigDecimal expiration) {
+        Instant instant = NumericDate.toInstant(expiration);
+        return instant == null ? "Token expired" : "Token expired at " + instant;
     }
 
     private void validateNotBefore(Payload payload, BigDecimal now, List<ClaimError> claimErrors) {
@@ -62,4 +68,5 @@ public class JwtClaimsValidator {
         }
         return timestamp;
     }
+
 }

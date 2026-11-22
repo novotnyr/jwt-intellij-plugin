@@ -1,9 +1,12 @@
 package com.github.novotnyr.idea.jwt;
 
+import com.auth0.jwt.RegisteredClaims;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.github.novotnyr.idea.jwt.action.AddClaimActionButtonController;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
+import com.github.novotnyr.idea.jwt.core.NumericDate;
 import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry;
 import com.github.novotnyr.idea.jwt.rs256.RS256Panel;
 import com.github.novotnyr.idea.jwt.rs256.RS256SignatureContext;
@@ -13,17 +16,18 @@ import com.github.novotnyr.idea.jwt.ui.IdePreferenceNewSignatureContextProvider;
 import com.github.novotnyr.idea.jwt.ui.preferences.PluginPreferences;
 import com.github.novotnyr.idea.jwt.ui.secretpanel.SecretPanel;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
-import com.github.novotnyr.idea.jwt.validation.JwtErrors;
-import com.github.novotnyr.idea.jwt.validation.JwtValidator;
+import com.github.novotnyr.idea.jwt.validation.JwtClaimsValidator;
+import com.github.novotnyr.idea.jwt.validation.JwtSignatureValidator;
+import com.github.novotnyr.idea.jwt.validation.SignatureError;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.CopyPasteManagerEx;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.actionSystem.ActionUpdateThread;
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.ActionPopupMenu;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProcessCanceledException;
@@ -36,28 +40,32 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.DoubleClickListener;
+import com.intellij.ui.JBColor;
 import com.intellij.ui.JBSplitter;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.table.JBTable;
+import com.intellij.util.concurrency.AppExecutorUtil;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.TextTransferable;
 import com.intellij.util.ui.components.BorderLayoutPanel;
-import com.intellij.util.concurrency.AppExecutorUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
-import javax.swing.SwingUtilities;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableColumnModel;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -69,10 +77,13 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Clock;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
@@ -98,6 +109,10 @@ public class JwtPanel implements Disposable {
     private final JPanel rootPanel = new BorderLayoutPanel();
 
     private final JBTabbedPane parsedTabs = new JBTabbedPane();
+
+    private final JPanel expirationWarningPanel = new JPanel(new BorderLayout(JBUI.scale(8), 0));
+
+    private final JLabel expirationWarningMessage = new JLabel();
 
     private JwtHeaderTableModel headerTableModel;
 
@@ -129,7 +144,13 @@ public class JwtPanel implements Disposable {
 
     private final JButton validateButton = new JButton("Validate");
 
-    private final JwtValidator jwtValidator = new JwtValidator();
+    private final Clock clock;
+
+    private final ExpirationRefreshScheduler expirationRefreshScheduler;
+
+    private final JwtClaimsValidator claimsValidator;
+
+    private final JwtSignatureValidator signatureValidator = new JwtSignatureValidator();
 
     private Jwt jwt = Jwt.EMPTY;
 
@@ -148,14 +169,27 @@ public class JwtPanel implements Disposable {
     private long rsaDefaultsGeneration;
 
     public JwtPanel(Project project) {
-        this(project, AppExecutorUtil.getAppExecutorService());
+        this(project, AppExecutorUtil.getAppExecutorService(), Clock.systemUTC(), new SwingExpirationRefreshScheduler());
     }
 
     JwtPanel(Project project, Executor rsaExecutor) {
+        this(project, rsaExecutor, Clock.systemUTC(), new SwingExpirationRefreshScheduler());
+    }
+
+    JwtPanel(Project project, Clock clock, ExpirationRefreshScheduler expirationRefreshScheduler) {
+        this(project, AppExecutorUtil.getAppExecutorService(), clock, expirationRefreshScheduler);
+    }
+
+    private JwtPanel(Project project, Executor rsaExecutor, Clock clock,
+                     ExpirationRefreshScheduler expirationRefreshScheduler) {
         this.project = project;
         this.rsaExecutor = rsaExecutor;
+        this.clock = clock;
+        this.expirationRefreshScheduler = expirationRefreshScheduler;
+        this.claimsValidator = new JwtClaimsValidator(clock);
         Disposer.register(this, this.unrecognizedSecretPanel);
         PluginPreferences.getInstance(project).addKeyFilesChangeListener(this::onKeyFilesChanged, this);
+        configureExpirationWarningPanel();
         createUIComponents();
 
         this.claimsTable.setName(Constants.CLAIMS_TABLE_NAME);
@@ -201,10 +235,29 @@ public class JwtPanel implements Disposable {
         this.parsedTabs.addTab("Payload", this.claimsTablePanel);
         this.parsedTabs.addTab("Header", headerScrollPane);
 
+        JPanel parsedContent = new JPanel(new BorderLayout());
+        parsedContent.add(this.expirationWarningPanel, BorderLayout.NORTH);
+        parsedContent.add(this.parsedTabs, BorderLayout.CENTER);
+
         this.contentSplitter = new JBSplitter(true);
-        this.contentSplitter.setFirstComponent(this.parsedTabs);
+        this.contentSplitter.setFirstComponent(parsedContent);
         this.contentSplitter.setSecondComponent(this.secretPanelContainer);
         return this.contentSplitter;
+    }
+
+    private void configureExpirationWarningPanel() {
+        Color warningBackground = JBColor.namedColor("Notification.warningBackground",
+                new JBColor(0xFFF4D1, 0x4B422A));
+        this.expirationWarningPanel.setName("jwt.expiration.warning");
+        this.expirationWarningPanel.setOpaque(true);
+        this.expirationWarningPanel.setBackground(warningBackground);
+        this.expirationWarningPanel.setBorder(JBUI.Borders.empty(8, 12));
+        this.expirationWarningPanel.add(new JLabel(AllIcons.General.BalloonWarning), BorderLayout.WEST);
+        this.expirationWarningMessage.setName("jwt.expiration.message");
+        this.expirationWarningMessage.setForeground(JBColor.namedColor("Notification.warningForeground",
+                new JBColor(0x594300, 0xF0D98C)));
+        this.expirationWarningPanel.add(this.expirationWarningMessage, BorderLayout.CENTER);
+        this.expirationWarningPanel.setVisible(false);
     }
 
     public JPanel getRootPanel() {
@@ -439,22 +492,23 @@ public class JwtPanel implements Disposable {
         Jwt originalJwt = this.jwt;
         String encodedJwt = originalJwt.toString();
         try {
-            JwtErrors errors;
+            Optional<SignatureError> signatureError;
             if (rsaPanel != null) {
                 DecodedJWT decodedJwt = originalJwt.getDecodedJwt();
-                errors = runRsaOperation("Validating RSA JWT", () -> {
+                signatureError = runRsaOperation("Validating RSA JWT", () -> {
                     SignatureContext context = RsaKeyParser.parse(keyText.publicKey(), keyText.privateKey());
-                    return this.jwtValidator.validate(decodedJwt, context);
+                    return this.signatureValidator.validate(decodedJwt, context);
                 });
-                if (errors == null || !isCurrentRsaInput(rsaPanel, keyText, originalJwt, encodedJwt)) {
+                if (signatureError == null || !isCurrentRsaInput(rsaPanel, keyText, originalJwt, encodedJwt)) {
                     return;
                 }
             } else {
-                errors = this.jwtValidator.validate(this.jwt, this.secretPanel.getSignatureContext());
+                signatureError = this.signatureValidator.validate(originalJwt.getDecodedJwt(),
+                        this.secretPanel.getSignatureContext());
             }
-            this.claimsTableModel.setClaimErrors(errors.claimErrors());
-            if (errors.hasSignatureError()) {
-                this.secretPanel.notifySignatureErrors(errors.signatureError());
+            applyClaimValidation(this.jwt);
+            if (signatureError.isPresent()) {
+                this.secretPanel.notifySignatureErrors(signatureError.get());
             } else {
                 this.secretPanel.notifySignatureValid();
             }
@@ -621,7 +675,7 @@ public class JwtPanel implements Disposable {
         this.headerTable.repaint();
 
         this.claimsTableModel = new JwtClaimsTableModel(jwt);
-        this.claimsTableModel.setClaimErrors(validateClaims(jwt));
+        applyClaimValidation(jwt);
         this.claimsTable.setModel(this.claimsTableModel);
         this.claimsTable.getEmptyText().setText(jwt.isEmpty() ? "No valid JWT to display" : "No payload claims");
         this.claimsTableModel.addTableModelListener(e -> {
@@ -723,11 +777,64 @@ public class JwtPanel implements Disposable {
         }
     }
 
-    private List<ClaimError> validateClaims(Jwt jwt) {
+    private void applyClaimValidation(Jwt jwt) {
         if (Jwt.EMPTY.equals(jwt)) {
-            return Collections.emptyList();
+            this.claimsTableModel.setClaimErrors(Collections.emptyList());
+            updateExpirationWarning(null);
+            return;
         }
-        return this.jwtValidator.validateClaims(jwt).claimErrors();
+        DecodedJWT decodedJwt = jwt.getDecodedJwt();
+        this.claimsTableModel.setClaimErrors(this.claimsValidator.validate(decodedJwt));
+        updateExpirationWarning(decodedJwt);
+    }
+
+    private void updateExpirationWarning(@Nullable DecodedJWT decodedJwt) {
+        this.expirationRefreshScheduler.cancel();
+        if (decodedJwt == null) {
+            this.expirationWarningMessage.setText("");
+            this.expirationWarningPanel.setVisible(false);
+            refreshExpirationWarningPanel();
+            return;
+        }
+
+        BigDecimal expiration = NumericDate.fromJson(
+                decodedJwt.getClaim(RegisteredClaims.EXPIRES_AT).as(JsonNode.class));
+        if (expiration == null) {
+            this.expirationWarningMessage.setText("");
+            this.expirationWarningPanel.setVisible(false);
+            refreshExpirationWarningPanel();
+            return;
+        }
+
+        BigDecimal now = NumericDate.fromInstant(this.clock.instant());
+        if (now.compareTo(expiration) >= 0) {
+            this.expirationWarningMessage.setText(JwtClaimsValidator.expirationMessage(expiration));
+            this.expirationWarningPanel.setVisible(true);
+            refreshExpirationWarningPanel();
+            return;
+        }
+
+        this.expirationWarningMessage.setText("");
+        this.expirationWarningPanel.setVisible(false);
+        refreshExpirationWarningPanel();
+        BigDecimal delayMillis = expiration.subtract(now).movePointRight(3).setScale(0, RoundingMode.CEILING);
+        long delay = delayMillis.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) >= 0
+                ? Integer.MAX_VALUE : Math.max(1L, delayMillis.longValueExact());
+        this.expirationRefreshScheduler.schedule(delay, this::refreshExpirationWarning);
+    }
+
+    private void refreshExpirationWarning() {
+        if (!this.disposed && !Jwt.EMPTY.equals(this.jwt)) {
+            applyClaimValidation(this.jwt);
+        }
+    }
+
+    private void refreshExpirationWarningPanel() {
+        JPanel parent = (JPanel) this.expirationWarningPanel.getParent();
+        if (parent != null) {
+            parent.revalidate();
+            parent.repaint();
+        }
     }
 
 
@@ -893,9 +1000,52 @@ public class JwtPanel implements Disposable {
         }
     }
 
+    interface ExpirationRefreshScheduler {
+        void schedule(long delayMillis, Runnable task);
+
+        void cancel();
+    }
+
+    private static final class SwingExpirationRefreshScheduler implements ExpirationRefreshScheduler {
+        private Timer timer;
+
+        private long generation;
+
+        @Override
+        public void schedule(long delayMillis, Runnable task) {
+            cancel();
+            long scheduledGeneration = ++this.generation;
+            int delay = (int) Math.max(1L, Math.min(delayMillis, Integer.MAX_VALUE));
+            this.timer = new Timer(delay, event -> {
+                if (scheduledGeneration != this.generation) {
+                    return;
+                }
+                Timer timer = this.timer;
+                this.timer = null;
+                if (timer != null) {
+                    timer.stop();
+                }
+                task.run();
+            });
+            this.timer.setRepeats(false);
+            this.timer.start();
+        }
+
+        @Override
+        public void cancel() {
+            this.generation++;
+            Timer timer = this.timer;
+            this.timer = null;
+            if (timer != null) {
+                timer.stop();
+            }
+        }
+    }
+
     @Override
     public void dispose() {
         this.disposed = true;
+        this.expirationRefreshScheduler.cancel();
         dismissClaimErrorTooltip();
         this.secretPanel.removeSignatureContextChangedListener();
         this.secretPanels.clear();
