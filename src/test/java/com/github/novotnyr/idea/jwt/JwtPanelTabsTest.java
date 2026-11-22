@@ -207,6 +207,179 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
         }
     }
 
+    public void testNotBeforeRefreshesWithoutExpiration() {
+        Instant now = Instant.parse("2025-01-01T00:00:00Z");
+        Instant notBefore = now.plusSeconds(2);
+        MutableClock clock = new MutableClock(now);
+        ManualExpirationScheduler scheduler = new ManualExpirationScheduler();
+        JwtPanel panel = new JwtPanel(getProject(), clock, scheduler);
+        try {
+            panel.setJwt(new Jwt(createJwtWithTimeClaims(null, NumericDate.fromInstant(notBefore), true).toString()));
+
+            JPanel warning = findComponentNamed(panel.getRootPanel(), "jwt.expiration.warning", JPanel.class);
+            JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
+            JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
+            int notBeforeRow = findRow(claims, "nbf");
+            assertNotNull(warning);
+            assertFalse(warning.isVisible());
+            assertTrue(hasErrorIcon(claims, notBeforeRow, 1));
+            assertEquals(2_000, scheduler.delayMillis);
+
+            clock.setInstant(notBefore);
+            scheduler.runScheduledTask();
+
+            assertFalse(warning.isVisible());
+            assertFalse(hasErrorIcon(claims, notBeforeRow, 1));
+            assertNull(scheduler.scheduledTask);
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testBothFutureClaimsScheduleTheEarliestDeadlineRegardlessOfClaimOrder() {
+        Instant now = Instant.parse("2025-01-01T00:00:00Z");
+        MutableClock clock = new MutableClock(now);
+        ManualExpirationScheduler scheduler = new ManualExpirationScheduler();
+        JwtPanel panel = new JwtPanel(getProject(), clock, scheduler);
+        try {
+            panel.setJwt(new Jwt(createJwtWithTimeClaims(
+                    NumericDate.fromInstant(now.plusSeconds(5)), NumericDate.fromInstant(now.plusSeconds(2)), true)
+                    .toString()));
+            assertEquals(2_000, scheduler.delayMillis);
+
+            panel.setJwt(new Jwt(createJwtWithTimeClaims(
+                    NumericDate.fromInstant(now.plusSeconds(2)), NumericDate.fromInstant(now.plusSeconds(5)), false)
+                    .toString()));
+            assertEquals(2_000, scheduler.delayMillis);
+            assertEquals(2, scheduler.scheduleCount);
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testEqualExpirationAndNotBeforeDeadlinesUseOneRefresh() {
+        Instant now = Instant.parse("2025-01-01T00:00:00Z");
+        Instant deadline = now.plusSeconds(3);
+        MutableClock clock = new MutableClock(now);
+        ManualExpirationScheduler scheduler = new ManualExpirationScheduler();
+        JwtPanel panel = new JwtPanel(getProject(), clock, scheduler);
+        try {
+            BigDecimal timestamp = NumericDate.fromInstant(deadline);
+            panel.setJwt(new Jwt(createJwtWithTimeClaims(timestamp, timestamp, true).toString()));
+            assertEquals(3_000, scheduler.delayMillis);
+            assertEquals(1, scheduler.scheduleCount);
+
+            clock.setInstant(deadline);
+            scheduler.runScheduledTask();
+
+            JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
+            JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
+            assertTrue(hasErrorIcon(claims, findRow(claims, "exp"), 1));
+            assertFalse(hasErrorIcon(claims, findRow(claims, "nbf"), 1));
+            assertEquals(1, scheduler.scheduleCount);
+            assertNull(scheduler.scheduledTask);
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testMalformedExpirationDoesNotPreventNotBeforeRefresh() {
+        Instant now = Instant.parse("2025-01-01T00:00:00Z");
+        Instant notBefore = now.plusSeconds(2);
+        MutableClock clock = new MutableClock(now);
+        ManualExpirationScheduler scheduler = new ManualExpirationScheduler();
+        Jwt malformedExpiration = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
+                new HS256SignatureContext("secret"), false);
+        malformedExpiration.setPayloadClaim(new StringClaim("exp", "not a number"));
+        malformedExpiration.setPayloadClaim(DateClaim.fromNumericDate("nbf", NumericDate.fromInstant(notBefore)));
+        malformedExpiration.rebuild();
+        JwtPanel panel = new JwtPanel(getProject(), clock, scheduler);
+        try {
+            panel.setJwt(new Jwt(malformedExpiration.toString()));
+            assertEquals(2_000, scheduler.delayMillis);
+
+            clock.setInstant(notBefore);
+            scheduler.runScheduledTask();
+
+            JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
+            JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
+            assertTrue(hasErrorIcon(claims, findRow(claims, "exp"), 1));
+            assertFalse(hasErrorIcon(claims, findRow(claims, "nbf"), 1));
+            JPanel warning = findComponentNamed(panel.getRootPanel(), "jwt.expiration.warning", JPanel.class);
+            assertFalse(warning.isVisible());
+            assertNull(scheduler.scheduledTask);
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testExpiredExpirationDoesNotPreventNotBeforeRefresh() {
+        Instant now = Instant.parse("2025-01-01T00:00:00Z");
+        Instant expiration = now.minusSeconds(1);
+        Instant notBefore = now.plusSeconds(2);
+        MutableClock clock = new MutableClock(now);
+        ManualExpirationScheduler scheduler = new ManualExpirationScheduler();
+        JwtPanel panel = new JwtPanel(getProject(), clock, scheduler);
+        try {
+            panel.setJwt(new Jwt(createJwtWithTimeClaims(
+                    NumericDate.fromInstant(expiration), NumericDate.fromInstant(notBefore), true).toString()));
+
+            JPanel warning = findComponentNamed(panel.getRootPanel(), "jwt.expiration.warning", JPanel.class);
+            assertTrue(warning.isVisible());
+            assertEquals(2_000, scheduler.delayMillis);
+
+            clock.setInstant(notBefore);
+            scheduler.runScheduledTask();
+
+            JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
+            JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
+            assertTrue(warning.isVisible());
+            assertTrue(hasErrorIcon(claims, findRow(claims, "exp"), 1));
+            assertFalse(hasErrorIcon(claims, findRow(claims, "nbf"), 1));
+            assertNull(scheduler.scheduledTask);
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testClaimRefreshIsCancelledOnReplacementAndClearing() {
+        Instant now = Instant.parse("2025-01-01T00:00:00Z");
+        MutableClock clock = new MutableClock(now);
+        ManualExpirationScheduler scheduler = new ManualExpirationScheduler();
+        JwtPanel panel = new JwtPanel(getProject(), clock, scheduler);
+        try {
+            panel.setJwt(new Jwt(createJwtWithTimeClaims(null,
+                    NumericDate.fromInstant(now.plusSeconds(10)), true).toString()));
+            Runnable staleTask = scheduler.scheduledTask;
+            assertNotNull(staleTask);
+
+            panel.setJwt(new Jwt(createJwtWithTimeClaims(null,
+                    NumericDate.fromInstant(now.plusSeconds(20)), true).toString()));
+            assertNotNull(scheduler.scheduledTask);
+            assertNotSame(staleTask, scheduler.scheduledTask);
+            assertEquals(20_000, scheduler.delayMillis);
+
+            panel.clearParsedJwtKeepingSigningInput();
+            assertNull(scheduler.scheduledTask);
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testDisposingPanelCancelsClaimRefresh() {
+        Instant now = Instant.parse("2025-01-01T00:00:00Z");
+        ManualExpirationScheduler scheduler = new ManualExpirationScheduler();
+        JwtPanel panel = new JwtPanel(getProject(), new MutableClock(now), scheduler);
+        try {
+            panel.setJwt(new Jwt(createJwtWithTimeClaims(null,
+                    NumericDate.fromInstant(now.plusSeconds(10)), true).toString()));
+            assertNotNull(scheduler.scheduledTask);
+        } finally {
+            Disposer.dispose(panel);
+        }
+        assertNull(scheduler.scheduledTask);
+    }
+
     public void testExpirationWarningClearsForMissingMalformedAndEditedClaims() {
         Instant expiration = Instant.now().minusSeconds(10);
         JwtPanel panel = new JwtPanel(getProject());
@@ -462,6 +635,29 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
         return jwt;
     }
 
+    private static Jwt createJwtWithTimeClaims(BigDecimal expiration, BigDecimal notBefore,
+                                               boolean expirationFirst) {
+        Jwt jwt = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
+                new HS256SignatureContext("secret"), false);
+        if (expirationFirst) {
+            if (expiration != null) {
+                jwt.setPayloadClaim(DateClaim.fromNumericDate("exp", expiration));
+            }
+            if (notBefore != null) {
+                jwt.setPayloadClaim(DateClaim.fromNumericDate("nbf", notBefore));
+            }
+        } else {
+            if (notBefore != null) {
+                jwt.setPayloadClaim(DateClaim.fromNumericDate("nbf", notBefore));
+            }
+            if (expiration != null) {
+                jwt.setPayloadClaim(DateClaim.fromNumericDate("exp", expiration));
+            }
+        }
+        jwt.rebuild();
+        return jwt;
+    }
+
     private static final class MutableClock extends Clock {
         private Instant instant;
 
@@ -516,13 +712,15 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
         }
     }
 
-    private static final class ManualExpirationScheduler implements JwtPanel.ExpirationRefreshScheduler {
+    private static final class ManualExpirationScheduler implements JwtPanel.ClaimRefreshScheduler {
         private long delayMillis;
+        private int scheduleCount;
         private Runnable scheduledTask;
 
         @Override
         public void schedule(long delayMillis, Runnable task) {
             this.delayMillis = delayMillis;
+            this.scheduleCount++;
             this.scheduledTask = task;
         }
 
