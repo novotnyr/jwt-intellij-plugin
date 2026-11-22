@@ -156,6 +156,28 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
         }
     }
 
+    public void testFarFutureExpirationUsesCappedRefreshAndNumericFallback() {
+        Instant now = Instant.parse("2025-01-01T00:00:00Z");
+        MutableClock clock = new MutableClock(now);
+        ManualExpirationScheduler scheduler = new ManualExpirationScheduler();
+        JwtPanel panel = new JwtPanel(getProject(), clock, scheduler);
+        try {
+            BigDecimal expiration = new BigDecimal("1E+2147483647");
+            panel.setJwt(new Jwt(createJwtWithExpiration(expiration).toString()));
+
+            assertEquals(Integer.MAX_VALUE, scheduler.delayMillis);
+            JPanel warning = findComponentNamed(panel.getRootPanel(), "jwt.expiration.warning", JPanel.class);
+            assertNotNull(warning);
+            assertFalse(warning.isVisible());
+
+            JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
+            JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
+            assertEquals(expiration.toString(), claims.getValueAt(findRow(claims, "exp"), 1));
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
     public void testExpirationWarningClearsForMissingMalformedAndEditedClaims() {
         Instant expiration = Instant.now().minusSeconds(10);
         JwtPanel panel = new JwtPanel(getProject());

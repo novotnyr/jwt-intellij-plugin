@@ -78,7 +78,6 @@ import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Clock;
 import java.util.Collections;
 import java.util.HashMap;
@@ -817,10 +816,28 @@ public class JwtPanel implements Disposable {
         this.expirationWarningMessage.setText("");
         this.expirationWarningPanel.setVisible(false);
         refreshExpirationWarningPanel();
-        BigDecimal delayMillis = expiration.subtract(now).movePointRight(3).setScale(0, RoundingMode.CEILING);
-        long delay = delayMillis.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) >= 0
-                ? Integer.MAX_VALUE : Math.max(1L, delayMillis.longValueExact());
+        long delay = boundedRefreshDelayMillis(now, expiration);
         this.expirationRefreshScheduler.schedule(delay, this::refreshExpirationWarning);
+    }
+
+    private static long boundedRefreshDelayMillis(BigDecimal now, BigDecimal deadline) {
+        BigDecimal maximumDeadline = now.add(BigDecimal.valueOf(Integer.MAX_VALUE, 3));
+        if (deadline.compareTo(maximumDeadline) >= 0) {
+            return Integer.MAX_VALUE;
+        }
+
+        long lowerBound = 1;
+        long upperBound = Integer.MAX_VALUE;
+        while (lowerBound < upperBound) {
+            long middle = lowerBound + (upperBound - lowerBound) / 2;
+            BigDecimal candidate = now.add(BigDecimal.valueOf(middle, 3));
+            if (candidate.compareTo(deadline) >= 0) {
+                upperBound = middle;
+            } else {
+                lowerBound = middle + 1;
+            }
+        }
+        return lowerBound;
     }
 
     private void refreshExpirationWarning() {

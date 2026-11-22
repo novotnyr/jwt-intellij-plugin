@@ -3,6 +3,7 @@ package com.github.novotnyr.idea.jwt;
 import com.github.novotnyr.idea.jwt.core.DateClaim;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.JwtFactory;
+import com.github.novotnyr.idea.jwt.core.NumericDate;
 import com.github.novotnyr.idea.jwt.core.StringClaim;
 import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
 import com.github.novotnyr.idea.jwt.ui.claimpanel.DateClaimPanel;
@@ -17,6 +18,7 @@ import javax.swing.JTextField;
 import javax.swing.event.TableModelEvent;
 import java.awt.Component;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -107,6 +109,16 @@ public class JwtTimestampUiTest extends LightPlatformTestCase {
         } finally {
             Configuration.INSTANCE.setTimestampFormat(originalFormat);
         }
+    }
+
+    public void testNumericDateConversionsHandleExtremeAndSubUnitValues() {
+        BigDecimal outsideDisplayRange = new BigDecimal("1E+2147483647");
+        assertNull(NumericDate.toInstant(outsideDisplayRange));
+        assertNull(NumericDate.toDate(outsideDisplayRange));
+
+        BigDecimal smallerThanNanosecond = new BigDecimal("-1E-2147483647");
+        assertEquals(Instant.EPOCH, NumericDate.toInstant(smallerThanNanosecond));
+        assertEquals(0L, NumericDate.toDate(smallerThanNanosecond).getTime());
     }
 
     private static int findRow(JwtClaimsTableModel model, String claimName) {

@@ -10,6 +10,22 @@ import java.util.Date;
 
 /** Seconds since the Unix epoch, including the fractional values allowed by RFC 7519. */
 public final class NumericDate {
+    private static final BigDecimal NANOSECOND = BigDecimal.ONE.movePointLeft(9);
+
+    private static final BigDecimal MILLISECOND = BigDecimal.ONE.movePointLeft(3);
+
+    private static final BigDecimal MIN_INSTANT_EXCLUSIVE = BigDecimal.valueOf(Instant.MIN.getEpochSecond())
+            .subtract(NANOSECOND);
+
+    private static final BigDecimal MAX_INSTANT_EXCLUSIVE = BigDecimal.valueOf(Instant.MAX.getEpochSecond())
+            .add(BigDecimal.ONE);
+
+    private static final BigDecimal MIN_DATE_EXCLUSIVE = BigDecimal.valueOf(Long.MIN_VALUE)
+            .subtract(BigDecimal.ONE).movePointLeft(3);
+
+    private static final BigDecimal MAX_DATE_EXCLUSIVE = BigDecimal.valueOf(Long.MAX_VALUE)
+            .add(BigDecimal.ONE).movePointLeft(3);
+
     private NumericDate() {
     }
 
@@ -28,6 +44,12 @@ public final class NumericDate {
         if (seconds == null) {
             return null;
         }
+        if (seconds.compareTo(MIN_INSTANT_EXCLUSIVE) <= 0 || seconds.compareTo(MAX_INSTANT_EXCLUSIVE) >= 0) {
+            return null;
+        }
+        if (seconds.abs().compareTo(NANOSECOND) < 0) {
+            return Instant.EPOCH;
+        }
         try {
             BigDecimal timestamp = seconds.setScale(9, RoundingMode.DOWN);
             BigDecimal epochSecondValue = timestamp.setScale(0, RoundingMode.FLOOR);
@@ -43,6 +65,12 @@ public final class NumericDate {
     public static Date toDate(BigDecimal seconds) {
         if (seconds == null) {
             return null;
+        }
+        if (seconds.compareTo(MIN_DATE_EXCLUSIVE) <= 0 || seconds.compareTo(MAX_DATE_EXCLUSIVE) >= 0) {
+            return null;
+        }
+        if (seconds.abs().compareTo(MILLISECOND) < 0) {
+            return new Date(0);
         }
         try {
             long milliseconds = seconds.movePointRight(3).setScale(0, RoundingMode.DOWN).longValueExact();
