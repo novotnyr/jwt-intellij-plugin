@@ -22,6 +22,7 @@ import com.github.novotnyr.idea.jwt.validation.JwtSignatureValidator;
 import com.github.novotnyr.idea.jwt.validation.SignatureError;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.CopyPasteManagerEx;
+import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
@@ -223,7 +224,7 @@ public class JwtPanel implements Disposable {
         configureSecretTextFieldListeners();
 
         this.verifySignatureButton.setName("jwt.verifySignature.button");
-        this.verifySignatureButton.putClientProperty("JButton.buttonType", "default");
+        this.verifySignatureButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
         this.verifySignatureButton.setIcon(IconLoader.getIcon("/icons/checkConstraint.svg", JwtPanel.class));
         this.verifySignatureButton.setMinimumSize(this.verifySignatureButton.getPreferredSize());
         this.verifySignatureButton.setEnabled(false);

@@ -5,6 +5,7 @@ import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.JwtFactory;
 import com.github.novotnyr.idea.jwt.core.StringClaim;
 import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
+import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -43,7 +44,7 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
             assertTrue("Verify Signature should remain a full-width primary action",
                     verifySignature.getWidth() >= verifySignature.getPreferredSize().width);
             assertEquals(verificationControls.getWidth(), verifySignature.getX() + verifySignature.getWidth());
-            assertEquals("default", verifySignature.getClientProperty("JButton.buttonType"));
+            assertEquals(Boolean.TRUE, verifySignature.getClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY));
 
             toolbar.setSize(280, toolbar.getPreferredSize().height);
             layoutRecursively(toolbar);
