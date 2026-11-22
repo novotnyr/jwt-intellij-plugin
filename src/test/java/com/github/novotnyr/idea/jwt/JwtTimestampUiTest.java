@@ -20,7 +20,9 @@ import java.awt.Component;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.TimeZone;
 
 public class JwtTimestampUiTest extends LightPlatformTestCase {
     public void testClaimErrorsNotifyRowsWithoutClearingSelection() {
@@ -86,6 +88,66 @@ public class JwtTimestampUiTest extends LightPlatformTestCase {
         assertNotNull(panel.getValidationInfo());
     }
 
+    public void testTimestampEditorShowsUtcAndUpdatesLocalPreview() {
+        TimeZone originalZone = TimeZone.getDefault();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"));
+            DateClaimPanel panel = new DateClaimPanel(DateClaim.fromNumericDate("exp", new BigDecimal("1735689601.125")));
+            JTextField valueField = findComponent(panel, JTextField.class);
+            JButton add15Minutes = findButton(panel, "+15 min");
+            assertEquals(List.of("2025-01-01T00:00:01.125Z", "Local: 2024-12-31T19:00:01.125-05:00"),
+                    visiblePreviews(panel));
+
+            valueField.setText("1751328001.125");
+            add15Minutes.doClick();
+            assertEquals(List.of("2025-07-01T00:15:01.125Z", "Local: 2025-06-30T20:15:01.125-04:00"),
+                    visiblePreviews(panel));
+
+            valueField.setText("not a number");
+            assertEquals(List.of("Not a valid timestamp"), visiblePreviews(panel));
+            valueField.setText(NumericDate.fromInstant(Instant.MIN).toString());
+            assertEquals(List.of(Instant.MIN.toString()), visiblePreviews(panel));
+            valueField.setText(NumericDate.fromInstant(Instant.MAX).toString());
+            assertEquals(List.of(Instant.MAX.toString()), visiblePreviews(panel));
+        } finally {
+            TimeZone.setDefault(originalZone);
+        }
+    }
+
+    public void testTimestampEditorDoesNotDuplicateUtcPreview() {
+        TimeZone originalZone = TimeZone.getDefault();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("Etc/UTC"));
+            DateClaimPanel panel = new DateClaimPanel(DateClaim.fromNumericDate("exp", new BigDecimal("1735689601.1")));
+            assertEquals(List.of("2025-01-01T00:00:01.100Z"), visiblePreviews(panel));
+        } finally {
+            TimeZone.setDefault(originalZone);
+        }
+    }
+
+    public void testLocalIsoTableUsesTheOffsetAtEachTimestampAndRetainsRawFallback() {
+        TimeZone originalZone = TimeZone.getDefault();
+        Configuration.TimestampFormat originalFormat = Configuration.INSTANCE.getTimestampFormat();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"));
+            Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.ISO_LOCAL);
+            Jwt jwt = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
+                    new HS256SignatureContext("secret"), false);
+            jwt.setPayloadClaim(DateClaim.fromNumericDate("iat", new BigDecimal("1735689600")));
+            jwt.setPayloadClaim(DateClaim.fromNumericDate("exp", new BigDecimal("1751328001.125")));
+            BigDecimal outsideLocalRange = BigDecimal.valueOf(Instant.MIN.getEpochSecond());
+            jwt.setPayloadClaim(DateClaim.fromNumericDate("nbf", outsideLocalRange));
+            JwtClaimsTableModel model = new JwtClaimsTableModel(jwt);
+
+            assertEquals("2024-12-31T19:00:00-05:00", model.getValueAt(findRow(model, "iat"), 1));
+            assertEquals("2025-06-30T20:00:01.125-04:00", model.getValueAt(findRow(model, "exp"), 1));
+            assertEquals(outsideLocalRange.toString(), model.getValueAt(findRow(model, "nbf"), 1));
+        } finally {
+            Configuration.INSTANCE.setTimestampFormat(originalFormat);
+            TimeZone.setDefault(originalZone);
+        }
+    }
+
     public void testTimestampTableShowsFullIsoDateTimeAndRetainsRawFallback() {
         Configuration.TimestampFormat originalFormat = Configuration.INSTANCE.getTimestampFormat();
         try {
@@ -128,6 +190,13 @@ public class JwtTimestampUiTest extends LightPlatformTestCase {
             }
         }
         return -1;
+    }
+
+    private static List<String> visiblePreviews(DateClaimPanel panel) {
+        return Arrays.stream(panel.getComponents())
+                .filter(component -> component instanceof JLabel && component.isVisible())
+                .map(component -> ((JLabel) component).getText())
+                .toList();
     }
 
     private static <T extends Component> T findComponent(DateClaimPanel panel, Class<T> type) {

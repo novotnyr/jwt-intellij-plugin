@@ -5,7 +5,10 @@ import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Payload;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.github.novotnyr.idea.jwt.Configuration.TimestampFormat;
+import com.github.novotnyr.idea.jwt.TimestampFormatter;
 import com.github.novotnyr.idea.jwt.core.NumericDate;
+import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -17,32 +20,44 @@ import java.util.Objects;
 public class JwtClaimsValidator {
     private final Clock clock;
 
+    private final TimestampFormat timestampFormat;
+
     public JwtClaimsValidator(Clock clock) {
+        this(clock, TimestampFormat.ISO);
+    }
+
+    public JwtClaimsValidator(Clock clock, @NotNull TimestampFormat timestampFormat) {
         this.clock = Objects.requireNonNull(clock);
+        this.timestampFormat = Objects.requireNonNull(timestampFormat);
     }
 
     /** Returns the timestamp claim errors for the decoded JWT. */
     public List<ClaimError> validate(DecodedJWT jwt) {
         List<ClaimError> claimErrors = new ArrayList<>();
-        BigDecimal now = NumericDate.fromInstant(this.clock.instant());
+        Instant reference = this.clock.instant();
+        BigDecimal now = NumericDate.fromInstant(reference);
 
-        validateExpiration(jwt, now, claimErrors);
+        validateExpiration(jwt, now, reference, claimErrors);
         validateNotBefore(jwt, now, claimErrors);
         validateIssuedAt(jwt, claimErrors);
 
         return List.copyOf(claimErrors);
     }
 
-    private void validateExpiration(Payload payload, BigDecimal now, List<ClaimError> claimErrors) {
+    private void validateExpiration(Payload payload, BigDecimal now, Instant reference, List<ClaimError> claimErrors) {
         BigDecimal expiration = getNumericDateOrReportError(payload, RegisteredClaims.EXPIRES_AT, claimErrors);
         if (expiration != null && now.compareTo(expiration) >= 0) {
-            claimErrors.add(new ClaimError(RegisteredClaims.EXPIRES_AT, expirationMessage(expiration)));
+            claimErrors.add(new ClaimError(RegisteredClaims.EXPIRES_AT,
+                    expirationMessage(expiration, this.timestampFormat, reference)));
         }
     }
 
-    public static String expirationMessage(BigDecimal expiration) {
-        Instant instant = NumericDate.toInstant(expiration);
-        return instant == null ? "Token expired" : "Token expired at " + instant;
+    public static String expirationMessage(BigDecimal expiration, TimestampFormat format, Instant reference) {
+        String timestamp = TimestampFormatter.format(expiration, format, reference);
+        if (timestamp == null) {
+            return "Token expired";
+        }
+        return (format == TimestampFormat.RELATIVE ? "Token expired " : "Token expired at ") + timestamp;
     }
 
     private void validateNotBefore(Payload payload, BigDecimal now, List<ClaimError> claimErrors) {

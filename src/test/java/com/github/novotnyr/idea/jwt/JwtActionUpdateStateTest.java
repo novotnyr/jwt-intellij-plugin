@@ -93,20 +93,27 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
             ActionGroup outer = new ToolWindowFactory().getToolWindowActionGroup();
             ActionGroup formats = (ActionGroup) outer.getChildren(null)[0];
             AnAction raw = findAction(formats, "Unix timestamp");
-            AnAction iso = findAction(formats, "ISO");
+            AnAction iso = findAction(formats, "ISO (UTC)");
+            AnAction localIso = findAction(formats, "ISO (Local)");
             AnAction relative = findAction(formats, "Relative");
+            assertEquals(4, formats.getChildren(null).length);
             for (AnAction action : formats.getChildren(null)) {
                 assertEquals(ActionUpdateThread.EDT, action.getActionUpdateThread());
             }
 
             Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.RAW);
-            assertSelected(raw, iso, relative);
+            assertSelected(raw, iso, localIso, relative);
 
             iso.actionPerformed(TestActionEvent.createTestEvent(iso));
-            assertSelected(iso, raw, relative);
+            assertSelected(iso, raw, localIso, relative);
+
+            localIso.actionPerformed(TestActionEvent.createTestEvent(localIso));
+            assertSelected(localIso, raw, iso, relative);
+            localIso.actionPerformed(TestActionEvent.createTestEvent(localIso));
+            assertSelected(localIso, raw, iso, relative);
 
             relative.actionPerformed(TestActionEvent.createTestEvent(relative));
-            assertSelected(relative, raw, iso);
+            assertSelected(relative, raw, iso, localIso);
         } finally {
             Configuration.INSTANCE.setTimestampFormat(original);
         }
@@ -143,9 +150,10 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
         return Toggleable.isSelected(event.getPresentation());
     }
 
-    private static void assertSelected(AnAction selected, AnAction other1, AnAction other2) {
+    private static void assertSelected(AnAction selected, AnAction... others) {
         assertTrue(isSelected(selected));
-        assertFalse(isSelected(other1));
-        assertFalse(isSelected(other2));
+        for (AnAction other : others) {
+            assertFalse(isSelected(other));
+        }
     }
 }
