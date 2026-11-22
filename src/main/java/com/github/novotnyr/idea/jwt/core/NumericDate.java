@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.util.Date;
 
@@ -20,6 +21,22 @@ public final class NumericDate {
     public static BigDecimal fromInstant(Instant instant) {
         return BigDecimal.valueOf(instant.getEpochSecond())
                 .add(BigDecimal.valueOf(instant.getNano(), 9));
+    }
+
+    /** Returns a nanosecond-precision instant, or null when the timestamp exceeds {@link Instant}'s range. */
+    public static Instant toInstant(BigDecimal seconds) {
+        if (seconds == null) {
+            return null;
+        }
+        try {
+            BigDecimal timestamp = seconds.setScale(9, RoundingMode.DOWN);
+            BigDecimal epochSecondValue = timestamp.setScale(0, RoundingMode.FLOOR);
+            long epochSecond = epochSecondValue.longValueExact();
+            long nanos = timestamp.subtract(epochSecondValue).movePointRight(9).longValueExact();
+            return Instant.ofEpochSecond(epochSecond, nanos);
+        } catch (ArithmeticException | DateTimeException e) {
+            return null;
+        }
     }
 
     /** Returns null when the timestamp exceeds the display range of {@link Date}. */
