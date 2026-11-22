@@ -156,6 +156,35 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
         }
     }
 
+    public void testExpirationValidationAndWarningUseOneClockSnapshot() {
+        Instant expiration = Instant.parse("2025-01-01T00:00:02Z");
+        AdvancingClock clock = new AdvancingClock(expiration.minusNanos(1));
+        ManualExpirationScheduler scheduler = new ManualExpirationScheduler();
+        JwtPanel panel = new JwtPanel(getProject(), clock, scheduler);
+        try {
+            panel.setJwt(new Jwt(createJwtWithExpiration(NumericDate.fromInstant(expiration)).toString()));
+
+            JPanel warning = findComponentNamed(panel.getRootPanel(), "jwt.expiration.warning", JPanel.class);
+            assertNotNull(warning);
+            assertFalse(warning.isVisible());
+            assertEquals(1, clock.readCount);
+            assertEquals(1, scheduler.delayMillis);
+
+            JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
+            JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
+            int expirationRow = findRow(claims, "exp");
+            assertFalse(hasErrorIcon(claims, expirationRow, 1));
+
+            scheduler.runScheduledTask();
+
+            assertEquals(2, clock.readCount);
+            assertTrue(warning.isVisible());
+            assertTrue(hasErrorIcon(claims, expirationRow, 1));
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
     public void testFarFutureExpirationUsesCappedRefreshAndNumericFallback() {
         Instant now = Instant.parse("2025-01-01T00:00:00Z");
         MutableClock clock = new MutableClock(now);
@@ -457,6 +486,33 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
 
         private void setInstant(Instant instant) {
             this.instant = instant;
+        }
+    }
+
+    private static final class AdvancingClock extends Clock {
+        private Instant instant;
+        private int readCount;
+
+        private AdvancingClock(Instant instant) {
+            this.instant = instant;
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return ZoneOffset.UTC;
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return Clock.fixed(this.instant, zone);
+        }
+
+        @Override
+        public Instant instant() {
+            Instant result = this.instant;
+            this.instant = this.instant.plusNanos(1);
+            this.readCount++;
+            return result;
         }
     }
 

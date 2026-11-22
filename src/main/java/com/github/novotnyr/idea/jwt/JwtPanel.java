@@ -79,6 +79,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -147,8 +148,6 @@ public class JwtPanel implements Disposable {
 
     private final ExpirationRefreshScheduler expirationRefreshScheduler;
 
-    private final JwtClaimsValidator claimsValidator;
-
     private final JwtSignatureValidator signatureValidator = new JwtSignatureValidator();
 
     private Jwt jwt = Jwt.EMPTY;
@@ -185,7 +184,6 @@ public class JwtPanel implements Disposable {
         this.rsaExecutor = rsaExecutor;
         this.clock = clock;
         this.expirationRefreshScheduler = expirationRefreshScheduler;
-        this.claimsValidator = new JwtClaimsValidator(clock);
         Disposer.register(this, this.unrecognizedSecretPanel);
         PluginPreferences.getInstance(project).addKeyFilesChangeListener(this::onKeyFilesChanged, this);
         configureExpirationWarningPanel();
@@ -779,22 +777,25 @@ public class JwtPanel implements Disposable {
     private void applyClaimValidation(Jwt jwt) {
         if (Jwt.EMPTY.equals(jwt)) {
             this.claimsTableModel.setClaimErrors(Collections.emptyList());
-            updateExpirationWarning(null);
+            clearExpirationWarning();
             return;
         }
         DecodedJWT decodedJwt = jwt.getDecodedJwt();
-        this.claimsTableModel.setClaimErrors(this.claimsValidator.validate(decodedJwt));
-        updateExpirationWarning(decodedJwt);
+        Instant now = this.clock.instant();
+        Clock snapshotClock = Clock.fixed(now, this.clock.getZone());
+        this.claimsTableModel.setClaimErrors(new JwtClaimsValidator(snapshotClock).validate(decodedJwt));
+        updateExpirationWarning(decodedJwt, NumericDate.fromInstant(now));
     }
 
-    private void updateExpirationWarning(@Nullable DecodedJWT decodedJwt) {
+    private void clearExpirationWarning() {
         this.expirationRefreshScheduler.cancel();
-        if (decodedJwt == null) {
-            this.expirationWarningMessage.setText("");
-            this.expirationWarningPanel.setVisible(false);
-            refreshExpirationWarningPanel();
-            return;
-        }
+        this.expirationWarningMessage.setText("");
+        this.expirationWarningPanel.setVisible(false);
+        refreshExpirationWarningPanel();
+    }
+
+    private void updateExpirationWarning(DecodedJWT decodedJwt, BigDecimal now) {
+        this.expirationRefreshScheduler.cancel();
 
         BigDecimal expiration = NumericDate.fromJson(
                 decodedJwt.getClaim(RegisteredClaims.EXPIRES_AT).as(JsonNode.class));
@@ -805,7 +806,6 @@ public class JwtPanel implements Disposable {
             return;
         }
 
-        BigDecimal now = NumericDate.fromInstant(this.clock.instant());
         if (now.compareTo(expiration) >= 0) {
             this.expirationWarningMessage.setText(JwtClaimsValidator.expirationMessage(expiration));
             this.expirationWarningPanel.setVisible(true);
