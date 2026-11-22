@@ -33,6 +33,14 @@ public class ClaimDialog extends DialogWrapper {
 
     private final ClaimPanel claimPanel;
 
+    /**
+     * Creates a dialog for viewing, editing, or adding a claim.
+     *
+     * @param claim the claim to display
+     * @param mode determines whether the claim can be edited
+     * @param viewOnlyReason an optional explanation shown in {@link Mode#VIEW};
+     *                       {@code null} omits the explanation without changing editability
+     */
     protected ClaimDialog(NamedClaim<?> claim, Mode mode, @Nullable String viewOnlyReason) {
         super(false);
         this.claim = claim;
