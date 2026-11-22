@@ -1,5 +1,6 @@
 package com.github.novotnyr.idea.jwt.ui.claimpanel;
 
+import com.github.novotnyr.idea.jwt.TimestampFormatter;
 import com.github.novotnyr.idea.jwt.core.DateClaim;
 import com.github.novotnyr.idea.jwt.core.NumericDate;
 import com.intellij.openapi.ui.ValidationInfo;
@@ -17,6 +18,8 @@ import java.time.Instant;
 public class DateClaimPanel extends AbstractClaimPanel<DateClaim, BigDecimal> {
 
     private JLabel datePreviewLabel;
+
+    private JLabel localDatePreviewLabel;
 
     private JButton nowButton;
 
@@ -36,6 +39,7 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, BigDecimal> {
 
         add(this.claimValueTextField);
         add(this.datePreviewLabel = new JLabel());
+        add(this.localDatePreviewLabel = new JLabel());
         add(this.nowButton = new JButton("Now"));
         add(this.add15MinutesButton = new JButton("+15 min"));
         add(this.subtract15MinutesButton = new JButton("-15 min"));
@@ -76,11 +80,22 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, BigDecimal> {
     }
 
     private void onClaimValueTextFieldChanged() {
+        this.localDatePreviewLabel.setVisible(false);
         try {
             this.validationInfo = null;
             BigDecimal timestamp = new BigDecimal(this.claimValueTextField.getText());
             Instant preview = NumericDate.toInstant(timestamp);
-            this.datePreviewLabel.setText(preview == null ? "Timestamp outside display range" : preview.toString());
+            if (preview == null) {
+                this.datePreviewLabel.setText("Timestamp outside display range");
+                return;
+            }
+            String utcPreview = preview.toString();
+            this.datePreviewLabel.setText(utcPreview);
+            String localPreview = TimestampFormatter.formatLocalIso(preview);
+            if (localPreview != null && !utcPreview.equals(localPreview)) {
+                this.localDatePreviewLabel.setText("Local: " + localPreview);
+                this.localDatePreviewLabel.setVisible(true);
+            }
         } catch (NumberFormatException e) {
             this.datePreviewLabel.setText("Not a valid timestamp");
             this.validationInfo = new ValidationInfo("Not a valid timestamp", this.claimValueTextField);

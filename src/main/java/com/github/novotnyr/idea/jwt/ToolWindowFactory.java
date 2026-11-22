@@ -32,60 +32,35 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
 
     ActionGroup getToolWindowActionGroup() {
         DefaultActionGroup actionGroup = new DefaultActionGroup("Timestamp format", true);
-        actionGroup.add(new CheckboxAction("Unix timestamp") {
-            @Override
-            public boolean isSelected(@NotNull AnActionEvent anActionEvent) {
-                return Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.RAW;
-            }
-
-            @Override
-            public void setSelected(@NotNull AnActionEvent anActionEvent, boolean state) {
-                Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.RAW);
-            }
-
-            @Override
-            public @NotNull ActionUpdateThread getActionUpdateThread() {
-                return ActionUpdateThread.EDT;
-            }
-        });
-        actionGroup.add(new CheckboxAction("ISO") {
-            @Override
-            public boolean isSelected(@NotNull AnActionEvent anActionEvent) {
-                return Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.ISO;
-            }
-
-            @Override
-            public void setSelected(@NotNull AnActionEvent anActionEvent, boolean state) {
-                Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.ISO);
-            }
-
-            @Override
-            public @NotNull ActionUpdateThread getActionUpdateThread() {
-                return ActionUpdateThread.EDT;
-            }
-        });
-        actionGroup.add(new CheckboxAction("Relative") {
-            @Override
-            public boolean isSelected(@NotNull AnActionEvent anActionEvent) {
-                return Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.RELATIVE;
-            }
-
-            @Override
-            public void setSelected(@NotNull AnActionEvent anActionEvent, boolean state) {
-                Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.RELATIVE);
-            }
-
-            @Override
-            public @NotNull ActionUpdateThread getActionUpdateThread() {
-                return ActionUpdateThread.EDT;
-            }
-        });
+        actionGroup.add(timestampFormatAction("Unix timestamp", Configuration.TimestampFormat.RAW));
+        actionGroup.add(timestampFormatAction("ISO (UTC)", Configuration.TimestampFormat.ISO));
+        actionGroup.add(timestampFormatAction("ISO (Local)", Configuration.TimestampFormat.ISO_LOCAL));
+        actionGroup.add(timestampFormatAction("Relative", Configuration.TimestampFormat.RELATIVE));
 
         DefaultActionGroup timestampFormatActionGroup = new DefaultActionGroup();
-
         timestampFormatActionGroup.add(actionGroup);
-
         return timestampFormatActionGroup;
+    }
+
+    private static CheckboxAction timestampFormatAction(String text, Configuration.TimestampFormat format) {
+        return new CheckboxAction(text) {
+            @Override
+            public boolean isSelected(@NotNull AnActionEvent anActionEvent) {
+                return Configuration.INSTANCE.getTimestampFormat() == format;
+            }
+
+            @Override
+            public void setSelected(@NotNull AnActionEvent anActionEvent, boolean state) {
+                if (state) {
+                    Configuration.INSTANCE.setTimestampFormat(format);
+                }
+            }
+
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+        };
     }
 
 }

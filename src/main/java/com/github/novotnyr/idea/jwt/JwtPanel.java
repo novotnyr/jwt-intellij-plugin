@@ -3,6 +3,7 @@ package com.github.novotnyr.idea.jwt;
 import com.auth0.jwt.RegisteredClaims;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.github.novotnyr.idea.jwt.Configuration.TimestampFormat;
 import com.github.novotnyr.idea.jwt.action.AddClaimActionButtonController;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
@@ -209,6 +210,8 @@ public class JwtPanel implements Disposable {
                 return onClaimsTableDoubleClick(mouseEvent);
             }
         }.installOn(this.claimsTable);
+
+        Configuration.INSTANCE.addTimestampFormatChangeListener(this::onTimestampFormatChanged, this);
     }
 
     private void createUIComponents() {
@@ -783,6 +786,15 @@ public class JwtPanel implements Disposable {
         }
     }
 
+    private void onTimestampFormatChanged() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(this::onTimestampFormatChanged);
+        } else if (!this.disposed) {
+            dismissClaimErrorTooltip();
+            refreshClaimValidation();
+        }
+    }
+
     private void applyClaimValidation(Jwt jwt) {
         if (Jwt.EMPTY.equals(jwt)) {
             this.claimsTableModel.setClaimErrors(Collections.emptyList());
@@ -792,24 +804,25 @@ public class JwtPanel implements Disposable {
         DecodedJWT decodedJwt = jwt.getDecodedJwt();
         Instant now = this.clock.instant();
         Clock snapshotClock = Clock.fixed(now, this.clock.getZone());
-        this.claimsTableModel.setClaimErrors(new JwtClaimsValidator(snapshotClock).validate(decodedJwt));
-        updateClaimTimeState(decodedJwt, NumericDate.fromInstant(now));
+        TimestampFormat format = Configuration.INSTANCE.getTimestampFormat();
+        this.claimsTableModel.setClaimErrors(new JwtClaimsValidator(snapshotClock, format).validate(decodedJwt));
+        updateClaimTimeState(decodedJwt, now, format);
     }
 
     private void clearExpirationWarning() {
         this.claimRefreshScheduler.cancel();
-        this.expirationWarningMessage.setText("");
-        this.expirationWarningPanel.setVisible(false);
-        refreshExpirationWarningPanel();
+        updateExpirationWarning(null);
     }
 
-    private void updateClaimTimeState(DecodedJWT decodedJwt, BigDecimal now) {
+    private void updateClaimTimeState(DecodedJWT decodedJwt, Instant reference, TimestampFormat format) {
         this.claimRefreshScheduler.cancel();
+        BigDecimal now = NumericDate.fromInstant(reference);
         BigDecimal expiration = NumericDate.fromJson(
                 decodedJwt.getClaim(RegisteredClaims.EXPIRES_AT).as(JsonNode.class));
         BigDecimal notBefore = NumericDate.fromJson(
                 decodedJwt.getClaim(RegisteredClaims.NOT_BEFORE).as(JsonNode.class));
-        updateExpirationWarning(expiration, now);
+        boolean expired = expiration != null && now.compareTo(expiration) >= 0;
+        updateExpirationWarning(expired ? JwtClaimsValidator.expirationMessage(expiration, format, reference) : null);
 
         BigDecimal deadline = earliestFutureDeadline(now, expiration, notBefore);
         if (deadline != null) {
@@ -818,10 +831,9 @@ public class JwtPanel implements Disposable {
         }
     }
 
-    private void updateExpirationWarning(@Nullable BigDecimal expiration, BigDecimal now) {
-        boolean expired = expiration != null && now.compareTo(expiration) >= 0;
-        this.expirationWarningMessage.setText(expired ? JwtClaimsValidator.expirationMessage(expiration) : "");
-        this.expirationWarningPanel.setVisible(expired);
+    private void updateExpirationWarning(@Nullable String message) {
+        this.expirationWarningMessage.setText(message == null ? "" : message);
+        this.expirationWarningPanel.setVisible(message != null);
         refreshExpirationWarningPanel();
     }
 

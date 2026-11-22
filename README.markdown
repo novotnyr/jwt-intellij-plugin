@@ -12,7 +12,7 @@ Paste a JWT into the tool window. The **Payload** tab shows decoded claims, and 
 
 ### Verify signatures and time claims
 
-The plugin checks the optional `exp` and `nbf` time limits as soon as a token is parsed, without requiring a signing key. An expired token shows a warning above the tabs with its UTC expiration time, and the `exp` value is marked in the payload table. To check a signature, enter a shared secret for HS256 or HS384, or an RSA public key for RS256, then select **Validate**. The plugin also checks that `exp`, `nbf`, and `iat` contain numeric timestamps when present.
+The plugin checks the optional `exp` and `nbf` time limits as soon as a token is parsed, without requiring a signing key. An expired token shows a warning above the tabs with its expiration time in the selected format, and the `exp` value is marked in the payload table. To check a signature, enter a shared secret for HS256 or HS384, or an RSA public key for RS256, then select **Validate**. The plugin also checks that `exp`, `nbf`, and `iat` contain numeric timestamps when present.
 
 ### Create and edit JWTs
 
@@ -20,7 +20,7 @@ Use **New JWT** to create an HS256, HS384, or RS256 token, with an optional `iat
 
 ### Work with timestamps
 
-Use the tool window's gear menu to switch between the **Unix timestamp**, **ISO**, and **Relative** display options. **ISO** shows the full date and time in UTC. The timestamp editor includes **Now**, **+15 min**, and **-15 min** controls and preserves fractional timestamp values while editing.
+Use the tool window's gear menu to switch between **Unix timestamp**, **ISO (UTC)**, **ISO (Local)**, and **Relative**. **ISO (Local)** uses Java's default time zone and shows the offset at the timestamp. The timestamp editor previews both UTC and local time when they differ, includes **Now**, **+15 min**, and **-15 min** controls, and preserves fractional timestamp values while editing.
 
 ### Copy or open the payload
 

@@ -35,6 +35,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Base64;
+import java.util.Locale;
+import java.util.TimeZone;
 
 public class JwtPanelTabsTest extends LightPlatformTestCase {
     public void testPayloadAndHeaderTabsShareSigningControls() {
@@ -153,6 +155,52 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertTrue(hasErrorIcon(claims, findRow(claims, "exp"), 1));
         } finally {
             Disposer.dispose(panel);
+        }
+    }
+
+    public void testVisibleExpirationWarningFollowsTheTimestampFormat() {
+        TimeZone originalZone = TimeZone.getDefault();
+        Locale originalLocale = Locale.getDefault();
+        Configuration.TimestampFormat originalFormat = Configuration.INSTANCE.getTimestampFormat();
+        Instant expiration = Instant.parse("2025-07-01T00:00:00.125Z");
+        BigDecimal expirationSeconds = NumericDate.fromInstant(expiration);
+        MutableClock clock = new MutableClock(expiration);
+        JwtPanel panel = new JwtPanel(getProject(), clock, new ManualExpirationScheduler());
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"));
+            Locale.setDefault(Locale.ENGLISH);
+            Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.ISO);
+            panel.setJwt(new Jwt(createJwtWithExpiration(expirationSeconds).toString()));
+
+            JPanel warning = findComponentNamed(panel.getRootPanel(), "jwt.expiration.warning", JPanel.class);
+            JLabel message = findComponentNamed(warning, "jwt.expiration.message", JLabel.class);
+            JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
+            JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
+            int expirationRow = findRow(claims, "exp");
+            claims.setRowSelectionInterval(expirationRow, expirationRow);
+            assertEquals("Token expired at " + expiration, message.getText());
+
+            Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.RELATIVE);
+            assertEquals("Token expired just now", message.getText());
+
+            clock.setInstant(expiration.plusSeconds(2 * 3600));
+            Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.RAW);
+            assertEquals("Token expired at 1751328000.125", message.getText());
+
+            Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.ISO_LOCAL);
+            assertEquals("Token expired at 2025-06-30T20:00:00.125-04:00", message.getText());
+            assertEquals("2025-06-30T20:00:00.125-04:00", claims.getValueAt(expirationRow, 1));
+
+            Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.RELATIVE);
+            assertEquals("Token expired 2 hours ago", message.getText());
+            assertEquals(message.getText(), panel.getClaimErrorAtViewCell(expirationRow, 1).getMessage());
+            assertTrue(warning.isVisible());
+            assertEquals(expirationRow, claims.getSelectedRow());
+        } finally {
+            Disposer.dispose(panel);
+            Configuration.INSTANCE.setTimestampFormat(originalFormat);
+            Locale.setDefault(originalLocale);
+            TimeZone.setDefault(originalZone);
         }
     }
 
