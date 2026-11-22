@@ -18,7 +18,7 @@ public class JwtValidator {
         this(Clock.systemUTC());
     }
 
-    JwtValidator(Clock clock) {
+    public JwtValidator(Clock clock) {
         this.claimsValidator = new JwtClaimsValidator(clock);
     }
 

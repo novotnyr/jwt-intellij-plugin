@@ -3,6 +3,7 @@ package com.github.novotnyr.idea.jwt;
 import com.github.novotnyr.idea.jwt.core.DateClaim;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.JwtFactory;
+import com.github.novotnyr.idea.jwt.core.NumericDate;
 import com.github.novotnyr.idea.jwt.core.StringClaim;
 import com.github.novotnyr.idea.jwt.hs256.HS256Panel;
 import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
@@ -18,6 +19,7 @@ import javax.swing.JButton;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
@@ -28,6 +30,10 @@ import java.awt.Rectangle;
 import java.awt.datatransfer.DataFlavor;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Base64;
 
 public class JwtPanelTabsTest extends LightPlatformTestCase {
@@ -81,6 +87,111 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertEquals(0, tabs.getSelectedIndex());
         } finally {
             panel.getRootPanel().removeNotify();
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testExpiredTokenShowsWarningWithoutValidatingSignature() {
+        Instant expiration = Instant.now().minusSeconds(10);
+        Jwt jwt = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
+                new HS256SignatureContext("secret"), false);
+        jwt.setPayloadClaim(DateClaim.fromNumericDate("exp", NumericDate.fromInstant(expiration)));
+        jwt.rebuild();
+
+        JwtPanel panel = new JwtPanel(getProject());
+        try {
+            panel.setJwt(new Jwt(jwt.toString()));
+
+            JPanel warning = findComponentNamed(panel.getRootPanel(), "jwt.expiration.warning", JPanel.class);
+            assertNotNull("The expired token should show a warning before signature validation", warning);
+            assertTrue(warning.isVisible());
+            JLabel message = findComponentNamed(warning, "jwt.expiration.message", JLabel.class);
+            assertNotNull(message);
+            assertEquals("Token expired at " + expiration, message.getText());
+
+            JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
+            JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
+            int expirationRow = findRow(claims, "exp");
+            assertTrue(expirationRow >= 0);
+            assertTrue(hasErrorIcon(claims, expirationRow, 1));
+
+            tabs.setSelectedIndex(1);
+            assertTrue(warning.isVisible());
+            panel.setSignatureContext(new HS256SignatureContext("secret"));
+            JButton validate = (JButton) ((BorderLayout) panel.getRootPanel().getLayout())
+                    .getLayoutComponent(BorderLayout.SOUTH);
+            validate.doClick();
+            assertTrue(warning.isVisible());
+            assertTrue(hasErrorIcon(claims, expirationRow, 1));
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testFutureExpirationIsRefreshedWithoutTokenInputOrSignatureValidation() {
+        Instant now = Instant.parse("2025-01-01T00:00:00Z");
+        MutableClock clock = new MutableClock(now);
+        ManualExpirationScheduler scheduler = new ManualExpirationScheduler();
+        JwtPanel panel = new JwtPanel(getProject(), clock, scheduler);
+        try {
+            Instant expiration = now.plusMillis(2_000).plusNanos(500_000);
+            panel.setJwt(new Jwt(createJwtWithExpiration(NumericDate.fromInstant(expiration)).toString()));
+
+            JPanel warning = findComponentNamed(panel.getRootPanel(), "jwt.expiration.warning", JPanel.class);
+            assertNotNull(warning);
+            assertFalse(warning.isVisible());
+            assertEquals(2_001, scheduler.delayMillis);
+
+            clock.setInstant(expiration);
+            scheduler.runScheduledTask();
+
+            assertTrue(warning.isVisible());
+            JLabel message = findComponentNamed(warning, "jwt.expiration.message", JLabel.class);
+            assertEquals("Token expired at " + expiration, message.getText());
+            JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
+            JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
+            assertTrue(hasErrorIcon(claims, findRow(claims, "exp"), 1));
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testExpirationWarningClearsForMissingMalformedAndEditedClaims() {
+        Instant expiration = Instant.now().minusSeconds(10);
+        JwtPanel panel = new JwtPanel(getProject());
+        try {
+            JPanel warning = findComponentNamed(panel.getRootPanel(), "jwt.expiration.warning", JPanel.class);
+            assertNotNull(warning);
+
+            panel.setJwt(new Jwt(createJwtWithExpiration(NumericDate.fromInstant(expiration)).toString()));
+            assertTrue(warning.isVisible());
+
+            panel.setJwt(new Jwt(JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
+                    new HS256SignatureContext("secret"), false).toString()));
+            assertFalse(warning.isVisible());
+
+            Jwt malformedExpiration = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
+                    new HS256SignatureContext("secret"), false);
+            malformedExpiration.setPayloadClaim(new StringClaim("exp", "not a number"));
+            malformedExpiration.rebuild();
+            panel.setJwt(new Jwt(malformedExpiration.toString()));
+            assertFalse(warning.isVisible());
+
+            Jwt issuedAtOnly = createJwtWithIssuedAt(BigDecimal.valueOf(1_700_000_000L));
+            panel.setJwt(new Jwt(issuedAtOnly.toString()));
+            assertFalse(warning.isVisible());
+
+            panel.setJwt(new Jwt(createJwtWithExpiration(NumericDate.fromInstant(expiration)).toString()));
+            assertTrue(warning.isVisible());
+            panel.setSignatureContext(new HS256SignatureContext("secret"));
+            panel.updateClaim(null, "exp");
+            assertFalse(warning.isVisible());
+
+            panel.setJwt(new Jwt(createJwtWithExpiration(NumericDate.fromInstant(expiration)).toString()));
+            assertTrue(warning.isVisible());
+            panel.clearParsedJwtKeepingSigningInput();
+            assertFalse(warning.isVisible());
+        } finally {
             Disposer.dispose(panel);
         }
     }
@@ -292,6 +403,66 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
         return jwt;
     }
 
+    private static Jwt createJwtWithExpiration(BigDecimal expiration) {
+        Jwt jwt = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
+                new HS256SignatureContext("secret"), false);
+        jwt.setPayloadClaim(DateClaim.fromNumericDate("exp", expiration));
+        jwt.rebuild();
+        return jwt;
+    }
+
+    private static final class MutableClock extends Clock {
+        private Instant instant;
+
+        private MutableClock(Instant instant) {
+            this.instant = instant;
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return ZoneOffset.UTC;
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return Clock.fixed(this.instant, zone);
+        }
+
+        @Override
+        public Instant instant() {
+            return this.instant;
+        }
+
+        private void setInstant(Instant instant) {
+            this.instant = instant;
+        }
+    }
+
+    private static final class ManualExpirationScheduler implements JwtPanel.ExpirationRefreshScheduler {
+        private long delayMillis;
+        private Runnable scheduledTask;
+
+        @Override
+        public void schedule(long delayMillis, Runnable task) {
+            this.delayMillis = delayMillis;
+            this.scheduledTask = task;
+        }
+
+        @Override
+        public void cancel() {
+            this.scheduledTask = null;
+        }
+
+        private void runScheduledTask() {
+            Runnable task = this.scheduledTask;
+            this.scheduledTask = null;
+            if (task == null) {
+                throw new AssertionError("No expiration refresh was scheduled");
+            }
+            task.run();
+        }
+    }
+
     private static int findRow(JBTable table, String claimName) {
         for (int row = 0; row < table.getRowCount(); row++) {
             if (claimName.equals(table.getValueAt(row, 0))) {
@@ -299,6 +470,22 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             }
         }
         return -1;
+    }
+
+    private static <T extends JComponent> T findComponentNamed(Container container, String name, Class<T> type) {
+        for (Component component : container.getComponents()) {
+            if (component instanceof JComponent jComponent && name.equals(jComponent.getName())
+                    && type.isInstance(component)) {
+                return type.cast(component);
+            }
+            if (component instanceof Container child) {
+                T nested = findComponentNamed(child, name, type);
+                if (nested != null) {
+                    return nested;
+                }
+            }
+        }
+        return null;
     }
 
     private static boolean hasErrorIcon(JBTable table, int row, int column) {

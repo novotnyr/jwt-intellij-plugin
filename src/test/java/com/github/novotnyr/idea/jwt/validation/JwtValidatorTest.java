@@ -229,8 +229,26 @@ public class JwtValidatorTest {
 
         // Auth0 4.5.1 rounds this expiration to the clock time.
         assertEquals(List.of("exp"), auth0Errors.claimErrors().stream().map(ClaimError::getClaim).toList());
-        assertEquals("Expiration time has passed", auth0Errors.claimErrors().getFirst().getMessage());
+        assertEquals("Token expired at 2025-01-01T00:00:00.500Z",
+                auth0Errors.claimErrors().getFirst().getMessage());
         assertFalse(auth0Errors.hasSignatureError());
+    }
+
+    @Test
+    public void claimValidationReturnsErrorsAndUsesTheExpirationUtcTimestamp() {
+        JwtClaimsValidator validator = new JwtClaimsValidator(CLOCK);
+        BigDecimal futureExpiration = NumericDate.fromInstant(NOW.plusSeconds(10));
+        List<ClaimError> future = validator.validate(token("{\"exp\":" + futureExpiration + "}").getDecodedJwt());
+        assertTrue(future.isEmpty());
+
+        BigDecimal expiredAt = NumericDate.fromInstant(NOW.minusSeconds(1));
+        List<ClaimError> expired = validator.validate(token("{\"exp\":" + expiredAt + "}").getDecodedJwt());
+        assertEquals("Token expired at 2024-12-31T23:59:59.500Z", expired.getFirst().getMessage());
+
+        assertTrue(validator.validate(token("{}").getDecodedJwt()).isEmpty());
+        assertEquals(List.of("exp"), validator.validate(
+                token("{\"exp\":\"not a number\"}").getDecodedJwt()).stream()
+                .map(ClaimError::getClaim).toList());
     }
 
     @Test

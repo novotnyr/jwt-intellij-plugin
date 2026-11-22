@@ -12,7 +12,7 @@ Paste a JWT into the tool window. The **Payload** tab shows decoded claims, and 
 
 ### Verify signatures and time claims
 
-Enter a shared secret for HS256 or HS384, or an RSA public key for RS256, then select **Validate**. The plugin checks the signature and the optional `exp` and `nbf` time limits. It also checks that `exp`, `nbf`, and `iat` contain numeric timestamps when present, and marks invalid claims in the payload table.
+The plugin checks the optional `exp` and `nbf` time limits as soon as a token is parsed, without requiring a signing key. An expired token shows a warning above the tabs with its UTC expiration time, and the `exp` value is marked in the payload table. To check a signature, enter a shared secret for HS256 or HS384, or an RSA public key for RS256, then select **Validate**. The plugin also checks that `exp`, `nbf`, and `iat` contain numeric timestamps when present.
 
 ### Create and edit JWTs
 
