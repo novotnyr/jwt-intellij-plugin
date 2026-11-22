@@ -12,6 +12,7 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.testFramework.LightPlatformTestCase;
 import com.intellij.testFramework.TestActionEvent;
 import com.intellij.ui.AnActionButton;
+import com.intellij.ui.EditorNotificationPanel;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.util.ui.UIUtil;
 
@@ -111,10 +112,22 @@ public class JwtPanelActionStateTest extends LightPlatformTestCase {
             String sharedSecretReason = panel.getClaimViewOnlyReason();
             assertEquals("Read-only: Enter a shared secret in Key / Secret to edit claims.", sharedSecretReason);
             ClaimDialog dialog = new ClaimDialog(claim, ClaimDialog.Mode.VIEW, sharedSecretReason);
-            JLabel note = findComponentNamed((Component) dialog.createCenterPanel(),
-                    "jwt.claim.readOnly.note", JLabel.class);
-            assertNotNull(note);
-            assertEquals(sharedSecretReason, note.getText());
+            Container dialogContent = (Container) dialog.createCenterPanel();
+            EditorNotificationPanel warningBanner = findComponentNamed(dialogContent,
+                    "jwt.claim.readOnly.banner", EditorNotificationPanel.class);
+            assertNotNull(warningBanner);
+            assertSame(warningBanner, dialogContent.getComponent(0));
+            assertNotNull(findLabelWithText(warningBanner, sharedSecretReason));
+
+            ClaimDialog viewWithoutReason = new ClaimDialog(claim, ClaimDialog.Mode.VIEW, null);
+            assertNull(findComponentNamed((Component) viewWithoutReason.createCenterPanel(),
+                    "jwt.claim.readOnly.banner", EditorNotificationPanel.class));
+            ClaimDialog editDialog = new ClaimDialog(claim, ClaimDialog.Mode.EDIT, sharedSecretReason);
+            assertNull(findComponentNamed((Component) editDialog.createCenterPanel(),
+                    "jwt.claim.readOnly.banner", EditorNotificationPanel.class));
+            ClaimDialog newDialog = new ClaimDialog(claim, ClaimDialog.Mode.NEW, sharedSecretReason);
+            assertNull(findComponentNamed((Component) newDialog.createCenterPanel(),
+                    "jwt.claim.readOnly.banner", EditorNotificationPanel.class));
 
             panel.setJwt(new Jwt("eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhbGljZSJ9.c2ln"));
             assertEquals("Read-only: Enter the RSA public and private keys in Key / Secret to edit claims.",
@@ -170,6 +183,21 @@ public class JwtPanelActionStateTest extends LightPlatformTestCase {
         if (root instanceof Container container) {
             for (Component child : container.getComponents()) {
                 T result = findComponentNamed(child, name, type);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static JLabel findLabelWithText(Component root, String text) {
+        if (root instanceof JLabel label && text.equals(label.getText())) {
+            return label;
+        }
+        if (root instanceof Container container) {
+            for (Component child : container.getComponents()) {
+                JLabel result = findLabelWithText(child, text);
                 if (result != null) {
                     return result;
                 }

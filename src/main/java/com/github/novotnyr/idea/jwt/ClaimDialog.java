@@ -14,7 +14,9 @@ import com.github.novotnyr.idea.jwt.ui.claimpanel.RawClaimPanel;
 import com.github.novotnyr.idea.jwt.ui.claimpanel.StringClaimPanel;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.ValidationInfo;
+import com.intellij.ui.EditorNotificationPanel;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.UIUtil;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.JComponent;
@@ -38,7 +40,7 @@ public class ClaimDialog extends DialogWrapper {
      *
      * @param claim the claim to display
      * @param mode determines whether the claim can be edited
-     * @param viewOnlyReason an optional explanation shown in {@link Mode#VIEW};
+     * @param viewOnlyReason an optional warning banner shown in {@link Mode#VIEW};
      *                       {@code null} omits the explanation without changing editability
      */
     protected ClaimDialog(NamedClaim<?> claim, Mode mode, @Nullable String viewOnlyReason) {
@@ -84,8 +86,6 @@ public class ClaimDialog extends DialogWrapper {
 
         protected Mode mode;
 
-        private final @Nullable String viewOnlyReason;
-
         private final JLabel claimTextLabel = new JLabel("Claim:");
 
         protected JTextField claimNameTextField = new JTextField();
@@ -99,7 +99,6 @@ public class ClaimDialog extends DialogWrapper {
 
             this.claim = claim;
             this.mode = mode;
-            this.viewOnlyReason = viewOnlyReason;
 
             GridBagConstraints cColumn1 = new GridBagConstraints();
             cColumn1.fill = GridBagConstraints.NONE;
@@ -117,6 +116,26 @@ public class ClaimDialog extends DialogWrapper {
             cColumns2.gridy = 0;
             cColumns2.insets = JBUI.insets(5);
 
+            if (mode == Mode.VIEW && viewOnlyReason != null) {
+                EditorNotificationPanel viewOnlyBanner = new EditorNotificationPanel(
+                        UIUtil.getPanelBackground(), EditorNotificationPanel.Status.Warning);
+                viewOnlyBanner.setText(viewOnlyReason);
+                viewOnlyBanner.setName("jwt.claim.readOnly.banner");
+
+                GridBagConstraints bannerConstraints = new GridBagConstraints();
+                bannerConstraints.fill = GridBagConstraints.HORIZONTAL;
+                bannerConstraints.anchor = GridBagConstraints.LINE_START;
+                bannerConstraints.weightx = 1;
+                bannerConstraints.gridx = 0;
+                bannerConstraints.gridy = 0;
+                bannerConstraints.gridwidth = 2;
+                bannerConstraints.insets = JBUI.insets(5);
+                add(viewOnlyBanner, bannerConstraints);
+
+                cColumn1.gridy = 1;
+                cColumns2.gridy = 1;
+            }
+
             add(this.claimTextLabel, cColumn1);
             add(this.claimNameTextField, cColumns2);
 
@@ -126,8 +145,8 @@ public class ClaimDialog extends DialogWrapper {
         }
 
         protected void initBottom(NamedClaim<?> claim, GridBagConstraints cColumn1, GridBagConstraints cColumns2) {
-            cColumn1.gridy = 1;
-            cColumns2.gridy = 1;
+            cColumn1.gridy++;
+            cColumns2.gridy++;
             cColumns2.fill = GridBagConstraints.BOTH;
             cColumns2.weighty = 1;
 
@@ -136,19 +155,6 @@ public class ClaimDialog extends DialogWrapper {
             this.nestedClaimPanel.setReadOnly(this.mode == Mode.VIEW);
 
             this.claimNameTextField.setText(claim.getName());
-            if (this.mode == Mode.VIEW && this.viewOnlyReason != null) {
-                JLabel viewOnlyNote = new JLabel(this.viewOnlyReason);
-                viewOnlyNote.setName("jwt.claim.readOnly.note");
-                GridBagConstraints noteConstraints = new GridBagConstraints();
-                noteConstraints.fill = GridBagConstraints.HORIZONTAL;
-                noteConstraints.anchor = GridBagConstraints.LINE_START;
-                noteConstraints.weightx = 1;
-                noteConstraints.gridx = 0;
-                noteConstraints.gridy = 2;
-                noteConstraints.gridwidth = 2;
-                noteConstraints.insets = JBUI.insets(5);
-                add(viewOnlyNote, noteConstraints);
-            }
         }
 
         private @Nullable AbstractClaimPanel<?, ?> createNestedPanel() {
