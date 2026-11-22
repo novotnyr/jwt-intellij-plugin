@@ -38,6 +38,7 @@ import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.DoubleClickListener;
@@ -223,6 +224,7 @@ public class JwtPanel implements Disposable {
 
         this.verifySignatureButton.setName("jwt.verifySignature.button");
         this.verifySignatureButton.putClientProperty("JButton.buttonType", "default");
+        this.verifySignatureButton.setIcon(IconLoader.getIcon("/icons/checkConstraint.svg", JwtPanel.class));
         this.verifySignatureButton.setMinimumSize(this.verifySignatureButton.getPreferredSize());
         this.verifySignatureButton.setEnabled(false);
         this.verifySignatureButton.addActionListener(this::onVerifySignatureButtonClick);
