@@ -143,7 +143,7 @@ public class JwtPanel implements Disposable {
 
     private SecretPanel secretPanel = this.unrecognizedSecretPanel;
 
-    private final JButton validateButton = new JButton("Validate");
+    private final JButton verifySignatureButton = new JButton("Verify Signature");
 
     private final Clock clock;
 
@@ -201,8 +201,8 @@ public class JwtPanel implements Disposable {
         replaceSecretPanelContent(this.secretPanel);
         configureSecretTextFieldListeners();
 
-        this.validateButton.setEnabled(false);
-        this.validateButton.addActionListener(this::onValidateButtonClick);
+        this.verifySignatureButton.setEnabled(false);
+        this.verifySignatureButton.addActionListener(this::onVerifySignatureButtonClick);
 
         new DoubleClickListener() {
             @Override
@@ -219,7 +219,7 @@ public class JwtPanel implements Disposable {
         updateClaimsTablePreferredSize();
 
         this.rootPanel.add(createTabbedContentAndSecretPanels(), BorderLayout.CENTER);
-        this.rootPanel.add(this.validateButton, BorderLayout.SOUTH);
+        this.rootPanel.add(this.verifySignatureButton, BorderLayout.SOUTH);
     }
 
     private JComponent createTabbedContentAndSecretPanels() {
@@ -452,7 +452,7 @@ public class JwtPanel implements Disposable {
     }
 
     private void configureSecretTextFieldListeners() {
-        this.secretPanel.setSignatureContextChangedListener(this::refreshValidateButton);
+        this.secretPanel.setSignatureContextChangedListener(this::refreshVerifySignatureButton);
     }
 
     private void editClaimAtRow(int row) {
@@ -495,7 +495,7 @@ public class JwtPanel implements Disposable {
         CopyPasteManagerEx.getInstanceEx().setContents(new TextTransferable(value));
     }
 
-    private void onValidateButtonClick(@SuppressWarnings("unused") ActionEvent event) {
+    private void onVerifySignatureButtonClick(@SuppressWarnings("unused") ActionEvent event) {
         RS256Panel rsaPanel = this.secretPanel instanceof RS256Panel panel ? panel : null;
         RS256Panel.KeyTextSnapshot keyText = rsaPanel == null ? null : rsaPanel.snapshotKeyText();
         Jwt originalJwt = this.jwt;
@@ -504,7 +504,7 @@ public class JwtPanel implements Disposable {
             Optional<SignatureError> signatureError;
             if (rsaPanel != null) {
                 DecodedJWT decodedJwt = originalJwt.getDecodedJwt();
-                signatureError = runRsaOperation("Validating RSA JWT", () -> {
+                signatureError = runRsaOperation("Verifying RSA JWT", () -> {
                     SignatureContext context = RsaKeyParser.parse(keyText.publicKey(), keyText.privateKey());
                     return this.signatureValidator.validate(decodedJwt, context);
                 });
@@ -515,7 +515,6 @@ public class JwtPanel implements Disposable {
                 signatureError = this.signatureValidator.validate(originalJwt.getDecodedJwt(),
                         this.secretPanel.getSignatureContext());
             }
-            applyClaimValidation(this.jwt);
             if (signatureError.isPresent()) {
                 this.secretPanel.notifySignatureErrors(signatureError.get());
             } else {
@@ -641,8 +640,8 @@ public class JwtPanel implements Disposable {
         return result.get();
     }
 
-    private void refreshValidateButton() {
-        this.validateButton.setEnabled(!Jwt.EMPTY.equals(this.jwt) && isValidatable());
+    private void refreshVerifySignatureButton() {
+        this.verifySignatureButton.setEnabled(!Jwt.EMPTY.equals(this.jwt) && isValidatable());
     }
 
     private void refreshJwt() {
@@ -697,7 +696,7 @@ public class JwtPanel implements Disposable {
             configureSecretPanel(jwt);
         }
 
-        refreshValidateButton();
+        refreshVerifySignatureButton();
     }
 
     private void updateClaimsTablePreferredSize() {
@@ -889,7 +888,7 @@ public class JwtPanel implements Disposable {
         } finally {
             configureSecretTextFieldListeners();
         }
-        refreshValidateButton();
+        refreshVerifySignatureButton();
     }
 
     private boolean isEditable() {
@@ -1095,3 +1094,4 @@ public class JwtPanel implements Disposable {
         this.secretPanels.clear();
     }
 }
+

@@ -52,7 +52,7 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             Component footer = ((BorderLayout) panel.getRootPanel().getLayout())
                     .getLayoutComponent(BorderLayout.SOUTH);
             assertTrue(footer instanceof JButton);
-            assertEquals("Validate", ((JButton) footer).getText());
+            assertEquals("Verify Signature", ((JButton) footer).getText());
 
             String fullValue = "header-value-".repeat(30);
             Jwt jwt = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
@@ -153,6 +153,33 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
             JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
             assertTrue(hasErrorIcon(claims, findRow(claims, "exp"), 1));
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testVerifySignatureDoesNotRefreshTimeClaimsBeforeScheduledCheck() {
+        Instant now = Instant.parse("2025-01-01T00:00:00Z");
+        Instant expiration = now.plusSeconds(2);
+        MutableClock clock = new MutableClock(now);
+        ManualExpirationScheduler scheduler = new ManualExpirationScheduler();
+        JwtPanel panel = new JwtPanel(getProject(), clock, scheduler);
+        try {
+            panel.setJwt(new Jwt(createJwtWithExpiration(NumericDate.fromInstant(expiration)).toString()));
+            panel.setSignatureContext(new HS256SignatureContext("secret"));
+
+            JPanel warning = findComponentNamed(panel.getRootPanel(), "jwt.expiration.warning", JPanel.class);
+            assertNotNull(warning);
+            assertFalse(warning.isVisible());
+
+            clock.setInstant(expiration);
+            JButton verifySignature = (JButton) ((BorderLayout) panel.getRootPanel().getLayout())
+                    .getLayoutComponent(BorderLayout.SOUTH);
+            verifySignature.doClick();
+
+            assertFalse(warning.isVisible());
+            scheduler.runScheduledTask();
+            assertTrue(warning.isVisible());
         } finally {
             Disposer.dispose(panel);
         }
@@ -569,11 +596,11 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertFalse(hasErrorIcon(claims, issuedAtRow, 1));
 
             panel.setSignatureContext(new HS256SignatureContext("secret"));
-            JButton validate = (JButton) ((BorderLayout) panel.getRootPanel().getLayout())
+            JButton verifySignature = (JButton) ((BorderLayout) panel.getRootPanel().getLayout())
                     .getLayoutComponent(BorderLayout.SOUTH);
-            assertTrue(validate.isEnabled());
-            validate.doClick();
-            assertTrue(hasErrorIcon(claims, issuedAtRow, 1));
+            assertTrue(verifySignature.isEnabled());
+            verifySignature.doClick();
+            assertFalse(hasErrorIcon(claims, issuedAtRow, 1));
 
             panel.updateClaim(DateClaim.fromNumericDate("iat", BigDecimal.valueOf(1_700_000_000L)), null);
             claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
