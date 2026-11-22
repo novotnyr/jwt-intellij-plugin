@@ -4,36 +4,21 @@ import com.github.novotnyr.idea.jwt.core.DateClaim;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
-import com.intellij.openapi.editor.colors.CodeInsightColors;
-import com.intellij.openapi.editor.colors.EditorColorsManager;
-import com.intellij.openapi.editor.markup.TextAttributes;
+import org.jetbrains.annotations.Nullable;
 import org.ocpsoft.prettytime.PrettyTime;
 
-import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellRenderer;
-import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class JwtClaimsTableModel extends AbstractTableModel implements TableCellRenderer {
+public class JwtClaimsTableModel extends AbstractTableModel {
     private final Jwt jwt;
-
-    private final DefaultTableCellRenderer errorTableCellRenderer = new DefaultTableCellRenderer();
-
-    private final DefaultTableCellRenderer defaultDelegateRenderer = new DefaultTableCellRenderer();
 
     private List<ClaimError> claimErrors = new ArrayList<>();
 
     public JwtClaimsTableModel(Jwt jwt) {
         this.jwt = jwt;
-
-        TextAttributes attributes = EditorColorsManager.getInstance()
-                .getGlobalScheme()
-                .getAttributes(CodeInsightColors.ERRORS_ATTRIBUTES);
-        this.errorTableCellRenderer.setForeground(attributes.getEffectColor());
     }
 
     @Override
@@ -95,21 +80,20 @@ public class JwtClaimsTableModel extends AbstractTableModel implements TableCell
         return this.jwt.getPayloadClaims().get(rowIndex);
     }
 
-    @Override
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    @Nullable
+    ClaimError getClaimErrorAt(int modelRow) {
         List<NamedClaim<?>> payloadClaims = this.jwt.getPayloadClaims();
-        for (int i = 0; i < payloadClaims.size(); i++) {
-            NamedClaim<?> claim = payloadClaims.get(i);
+        if (modelRow < 0 || modelRow >= payloadClaims.size()) {
+            return null;
+        }
 
-            if(row == i) {
-                for (ClaimError claimError : this.claimErrors) {
-                    if (claimError.getClaim().equals(claim.getName())) {
-                        return this.errorTableCellRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                    }
-                }
+        String claimName = payloadClaims.get(modelRow).getName();
+        for (ClaimError claimError : this.claimErrors) {
+            if (claimError.getClaim().equals(claimName)) {
+                return claimError;
             }
         }
-        return this.defaultDelegateRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        return null;
     }
 
     public void setClaimErrors(List<ClaimError> claimErrors) {

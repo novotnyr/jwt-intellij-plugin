@@ -8,15 +8,12 @@ import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
 import com.github.novotnyr.idea.jwt.ui.claimpanel.DateClaimPanel;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.github.novotnyr.idea.jwt.validation.JwtValidator;
-import com.intellij.openapi.editor.colors.CodeInsightColors;
-import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.testFramework.LightPlatformTestCase;
 
 import javax.swing.JButton;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.event.TableModelEvent;
-import java.awt.Color;
 import java.awt.Component;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -42,22 +39,21 @@ public class JwtTimestampUiTest extends LightPlatformTestCase {
         assertEquals(0, table.getSelectedRow());
     }
 
-    public void testTimestampErrorHighlightsOnlyExactClaimName() {
+    public void testTimestampErrorMatchesOnlyExactClaimName() {
         Jwt jwt = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
                 new HS256SignatureContext("secret"), false);
         jwt.setPayloadClaim(new StringClaim("iat", "yes"));
         jwt.setPayloadClaim(new StringClaim("IAT", "custom value"));
         JwtClaimsTableModel model = new JwtClaimsTableModel(jwt);
-        JTable table = new JTable(model);
-        Color errorColor = EditorColorsManager.getInstance().getGlobalScheme()
-                .getAttributes(CodeInsightColors.ERRORS_ATTRIBUTES).getEffectColor();
-        Color normalColor = Color.BLACK.equals(errorColor) ? Color.WHITE : Color.BLACK;
-        table.setForeground(normalColor);
-
         model.setClaimErrors(new JwtValidator().validateClaims(jwt).claimErrors());
 
-        assertEquals(errorColor, table.prepareRenderer(model, 0, 0).getForeground());
-        assertEquals(normalColor, table.prepareRenderer(model, 1, 0).getForeground());
+        ClaimError error = model.getClaimErrorAt(0);
+        assertNotNull(error);
+        assertEquals("iat", error.getClaim());
+        assertNull(model.getClaimErrorAt(1));
+        assertNull(model.getClaimErrorAt(-1));
+        assertNull(model.getClaimErrorAt(2));
+        assertEquals("yes", model.getValueAt(0, 1));
     }
 
     public void testTimestampEditorAcceptsFractionalSeconds() {

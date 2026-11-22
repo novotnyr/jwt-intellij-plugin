@@ -29,11 +29,16 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.ComponentValidator;
+import com.intellij.openapi.ui.ValidationInfo;
+import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.JBSplitter;
 import com.intellij.ui.ToolbarDecorator;
+import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.table.JBTable;
@@ -49,11 +54,18 @@ import javax.swing.SwingUtilities;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableColumnModel;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -94,6 +106,14 @@ public class JwtPanel implements Disposable {
     private JwtClaimsTableModel claimsTableModel;
 
     private final JBTable claimsTable = new ClaimValueTable();
+
+    private JBPopup claimErrorPopup;
+
+    private int claimErrorPopupModelRow = -1;
+
+    private String claimErrorPopupMessage;
+
+    private boolean claimErrorPopupTriggeredByMouse;
 
     private JPanel claimsTablePanel;
 
@@ -141,6 +161,7 @@ public class JwtPanel implements Disposable {
         this.claimsTable.setName(Constants.CLAIMS_TABLE_NAME);
 
         initializeClaimsTableModel(this.claimsTable);
+        configureClaimErrorTooltips();
         configureClaimsTablePopup();
         configureHeaderTablePopup();
         configureClipboardCopy(this.claimsTable);
@@ -195,6 +216,131 @@ public class JwtPanel implements Disposable {
         this.claimsTableModel = new JwtClaimsTableModel(Jwt.EMPTY);
         claimsTable.setModel(this.claimsTableModel);
         configureClaimValueColumns(claimsTable);
+        claimsTable.getColumnModel().getColumn(1).setCellRenderer(new ClaimErrorValueRenderer());
+    }
+
+    private void configureClaimErrorTooltips() {
+        this.claimsTable.addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent event) {
+                showClaimErrorTooltipForMousePoint(event.getPoint());
+            }
+        });
+        this.claimsTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseExited(MouseEvent event) {
+                if (JwtPanel.this.claimErrorPopupTriggeredByMouse) {
+                    dismissClaimErrorTooltip();
+                }
+            }
+        });
+        this.claimsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent event) {
+                if (!event.getValueIsAdjusting() && JwtPanel.this.claimsTable.isFocusOwner()) {
+                    showClaimErrorTooltipForFocusedRow();
+                }
+            }
+        });
+        this.claimsTable.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent event) {
+                showClaimErrorTooltipForFocusedRow();
+            }
+
+            @Override
+            public void focusLost(FocusEvent event) {
+                if (!JwtPanel.this.claimErrorPopupTriggeredByMouse) {
+                    dismissClaimErrorTooltip();
+                }
+            }
+        });
+        this.claimsTable.addHierarchyListener(event -> {
+            if ((event.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0
+                    && !JwtPanel.this.claimsTable.isShowing()) {
+                dismissClaimErrorTooltip();
+            }
+        });
+    }
+
+    @Nullable
+    ClaimError getClaimErrorAtViewCell(int viewRow, int viewColumn) {
+        if (viewRow < 0 || viewRow >= this.claimsTable.getRowCount()
+                || viewColumn < 0 || viewColumn >= this.claimsTable.getColumnCount()
+                || this.claimsTable.convertColumnIndexToModel(viewColumn) != 1) {
+            return null;
+        }
+        if (!(this.claimsTable.getModel() instanceof JwtClaimsTableModel model)) {
+            return null;
+        }
+        return model.getClaimErrorAt(this.claimsTable.convertRowIndexToModel(viewRow));
+    }
+
+    @Nullable
+    ClaimError getClaimErrorAtPoint(Point point) {
+        return getClaimErrorAtViewCell(this.claimsTable.rowAtPoint(point),
+                this.claimsTable.columnAtPoint(point));
+    }
+
+    @Nullable
+    ClaimError getClaimErrorAtFocusedRow() {
+        return getClaimErrorAtViewCell(this.claimsTable.getSelectedRow(),
+                this.claimsTable.convertColumnIndexToView(1));
+    }
+
+    private void showClaimErrorTooltipForMousePoint(Point point) {
+        int viewRow = this.claimsTable.rowAtPoint(point);
+        int viewColumn = this.claimsTable.columnAtPoint(point);
+        showClaimErrorTooltipAtCell(viewRow, viewColumn, getClaimErrorAtPoint(point), true);
+    }
+
+    private void showClaimErrorTooltipAtCell(int viewRow, int viewColumn, @Nullable ClaimError claimError,
+                                             boolean triggeredByMouse) {
+        if (claimError == null || !this.claimsTable.isShowing()) {
+            dismissClaimErrorTooltip();
+            return;
+        }
+
+        int modelRow = this.claimsTable.convertRowIndexToModel(viewRow);
+        String message = claimError.getMessage();
+        if (this.claimErrorPopup != null && this.claimErrorPopup.isVisible()
+                && this.claimErrorPopupModelRow == modelRow
+                && message.equals(this.claimErrorPopupMessage)) {
+            this.claimErrorPopupTriggeredByMouse = triggeredByMouse;
+            return;
+        }
+
+        dismissClaimErrorTooltip();
+        ValidationInfo validationInfo = new ValidationInfo(
+                StringUtil.escapeXmlEntities(message), this.claimsTable);
+        this.claimErrorPopup = ComponentValidator.createPopupBuilder(validationInfo, null)
+                .setRequestFocus(false)
+                .setFocusable(false)
+                .createPopup();
+        this.claimErrorPopupModelRow = modelRow;
+        this.claimErrorPopupMessage = message;
+        this.claimErrorPopupTriggeredByMouse = triggeredByMouse;
+
+        Rectangle cellBounds = this.claimsTable.getCellRect(viewRow, viewColumn, true);
+        this.claimErrorPopup.show(new RelativePoint(this.claimsTable,
+                new Point(cellBounds.x, cellBounds.y + cellBounds.height)));
+    }
+
+    private void showClaimErrorTooltipForFocusedRow() {
+        int viewRow = this.claimsTable.getSelectedRow();
+        int viewColumn = this.claimsTable.convertColumnIndexToView(1);
+        showClaimErrorTooltipAtCell(viewRow, viewColumn, getClaimErrorAtFocusedRow(), false);
+    }
+
+    private void dismissClaimErrorTooltip() {
+        JBPopup popup = this.claimErrorPopup;
+        this.claimErrorPopup = null;
+        this.claimErrorPopupModelRow = -1;
+        this.claimErrorPopupMessage = null;
+        this.claimErrorPopupTriggeredByMouse = false;
+        if (popup != null) {
+            popup.cancel();
+        }
     }
 
     private static void configureClaimValueColumns(JBTable table) {
@@ -466,6 +612,7 @@ public class JwtPanel implements Disposable {
             return;
         }
 
+        dismissClaimErrorTooltip();
         this.jwt = jwt;
         this.headerTableModel = new JwtHeaderTableModel(jwt);
         this.headerTable.setModel(this.headerTableModel);
@@ -477,8 +624,10 @@ public class JwtPanel implements Disposable {
         this.claimsTableModel.setClaimErrors(validateClaims(jwt));
         this.claimsTable.setModel(this.claimsTableModel);
         this.claimsTable.getEmptyText().setText(jwt.isEmpty() ? "No valid JWT to display" : "No payload claims");
-        this.claimsTable.setDefaultRenderer(Object.class, this.claimsTableModel);
-        this.claimsTableModel.addTableModelListener(e -> updateClaimsTablePreferredSize());
+        this.claimsTableModel.addTableModelListener(e -> {
+            dismissClaimErrorTooltip();
+            updateClaimsTablePreferredSize();
+        });
         updateClaimsTablePreferredSize();
 
         if (updateSecretPanel) {
@@ -497,7 +646,7 @@ public class JwtPanel implements Disposable {
             if (this.contentSplitter != null && this.contentSplitter.getHeight() > 0) {
                 int prefHeight = this.claimsTablePanel.getPreferredSize().height + JBUI.scale(32);
                 float proportion = (float) prefHeight / this.contentSplitter.getHeight();
-                this.contentSplitter.setProportion(Math.min(0.75f, Math.max(0.35f, proportion)));
+                this.contentSplitter.setProportion(Math.clamp(proportion, 0.35f, 0.75f));
             }
         });
     }
@@ -747,6 +896,7 @@ public class JwtPanel implements Disposable {
     @Override
     public void dispose() {
         this.disposed = true;
+        dismissClaimErrorTooltip();
         this.secretPanel.removeSignatureContextChangedListener();
         this.secretPanels.clear();
     }
