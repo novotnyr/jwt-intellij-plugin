@@ -93,7 +93,7 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
             assertTrue(isEnabled(copy));
             assertTrue(isEnabled(scratch));
             assertTrue(missingInputHint.isVisible());
-            assertEquals("Enter a shared secret in Key / Secret", missingInputMessage.getText());
+            assertEquals("Enter a shared secret in the HS256 tab", missingInputMessage.getText());
             assertEquals(missingInputMessage.getText(), missingInputMessage.getToolTipText());
 
             JTabbedPane tabs = UIUtil.findComponentOfType(explorer, JTabbedPane.class);
@@ -101,7 +101,7 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
             assertEquals(3, tabs.getTabCount());
             assertEquals("Payload", tabs.getTitleAt(0));
             assertEquals("Header", tabs.getTitleAt(1));
-            assertEquals("Key / Secret", tabs.getTitleAt(2));
+            assertEquals("HS256", tabs.getTitleAt(2));
             assertEquals(0, tabs.getSelectedIndex());
             for (int tabIndex = 0; tabIndex < tabs.getTabCount(); tabIndex++) {
                 tabs.setSelectedIndex(tabIndex);
@@ -118,6 +118,7 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
             assertFalse(isEnabled(scratch));
             assertFalse(missingInputHint.isVisible());
             assertEquals(2, tabs.getSelectedIndex());
+            assertEquals("HS256", tabs.getTitleAt(2));
             assertEquals("draft secret", secretField.getText());
 
             JBTable header = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(1), JBTable.class);
@@ -132,11 +133,13 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
             assertFalse(isEnabled(scratch));
             assertFalse(missingInputHint.isVisible());
             assertEquals(2, tabs.getSelectedIndex());
+            assertEquals("HS256", tabs.getTitleAt(2));
             assertEquals("draft secret", secretField.getText());
 
             AnAction reset = findAction(toolbar, "Reset");
             reset.actionPerformed(TestActionEvent.createTestEvent(reset));
             assertEquals(0, tabs.getSelectedIndex());
+            assertEquals("Signature", tabs.getTitleAt(2));
             assertFalse(missingInputHint.isVisible());
             assertFalse(SwingUtilities.isDescendingFrom(secretField, tabs.getComponentAt(2)));
         } finally {
