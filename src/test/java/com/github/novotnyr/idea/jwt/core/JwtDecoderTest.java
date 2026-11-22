@@ -82,6 +82,25 @@ public class JwtDecoderTest {
     }
 
     @Test
+    public void rejectsNullAndNonObjectHeaders() {
+        assertHeaderError("", "The JWT header must be a JSON object");
+        assertHeaderError(encode("null"), "The JWT header must be a JSON object");
+        assertHeaderError(encode("[]"), "The JWT header must be a JSON object");
+    }
+
+    @Test
+    public void rejectsMalformedAndTrailingHeaderContent() {
+        assertHeaderError(encode("{"), "Cannot decode the JWT header");
+        assertHeaderError(encode("{} {}"), "Cannot decode the JWT header");
+        assertHeaderError(encode("{} trailing"), "Cannot decode the JWT header");
+    }
+
+    @Test
+    public void rejectsInvalidBase64UrlHeader() {
+        assertHeaderError("%%", "Cannot decode the JWT header");
+    }
+
+    @Test
     public void decodesUnicodeInHeaderAndPayload() {
         String header = encode("{\"alg\":\"HS256\",\"kid\":\"kľúč\"}");
         String payload = encode("{\"sub\":\"Žofia 🌍\"}");
@@ -117,6 +136,12 @@ public class JwtDecoderTest {
 
     private static String token(String payload) {
         return encode(HEADER) + "." + encode(payload) + ".c2ln";
+    }
+
+    private void assertHeaderError(String header, String message) {
+        JWTDecodeException error = assertThrows(JWTDecodeException.class,
+                () -> this.decoder.decode(header + "." + encode("{}") + ".c2ln"));
+        assertEquals(message, error.getMessage());
     }
 
     private static String encode(String json) {

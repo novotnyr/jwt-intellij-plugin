@@ -2,6 +2,8 @@ package com.github.novotnyr.idea.jwt.core;
 
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.validation.JwtClaimsValidator;
@@ -19,6 +21,9 @@ import static com.github.novotnyr.idea.jwt.core.JwtJson.MAPPER;
 
 /** Decodes the original JWT claims and reports validation errors alongside them. */
 public final class JwtDecoder {
+    private static final ObjectReader JSON_READER = MAPPER.reader()
+            .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+
     private final JwtClaimsValidator claimsValidator;
 
     public JwtDecoder() {
@@ -67,7 +72,7 @@ public final class JwtDecoder {
         try {
             byte[] bytes = Base64.getUrlDecoder().decode(encoded);
             String json = StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes)).toString();
-            if (MAPPER.readTree(json) instanceof ObjectNode claims) {
+            if (JSON_READER.readTree(json) instanceof ObjectNode claims) {
                 return claims;
             }
             throw new JWTDecodeException("The JWT " + partName + " must be a JSON object");
