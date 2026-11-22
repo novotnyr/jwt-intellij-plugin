@@ -28,7 +28,7 @@ public class JwtPanelActionStateTest extends LightPlatformTestCase {
             AnActionButton add = ToolbarDecorator.findAddButton(panel.getRootPanel());
             AnActionButton edit = ToolbarDecorator.findEditButton(panel.getRootPanel());
             AnActionButton remove = ToolbarDecorator.findRemoveButton(panel.getRootPanel());
-            JButton verifySignature = findVerifySignatureButton(panel.getRootPanel());
+            JButton verifySignature = findVerifySignatureButton(panel.getVerificationToolbarComponent());
             JTable claims = findClaimsTable(panel.getRootPanel());
             assertNotNull(add);
             assertNotNull(edit);

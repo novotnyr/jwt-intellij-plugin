@@ -56,6 +56,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -115,6 +116,22 @@ public class JwtPanel implements Disposable {
 
     private final JLabel expirationWarningMessage = new JLabel();
 
+    private final JPanel feedbackPanel = new JPanel();
+
+    private final JPanel signatureResultPanel = new JPanel(new BorderLayout(JBUI.scale(8), 0));
+
+    private final JLabel signatureResultIcon = new JLabel();
+
+    private final JLabel signatureResultMessage = new JLabel();
+
+    private Color signatureResultDefaultForeground;
+
+    private final Color signatureResultWarningBackground = JBColor.namedColor("Notification.warningBackground",
+            new JBColor(0xFFF4D1, 0x4B422A));
+
+    private final Color signatureResultWarningForeground = JBColor.namedColor("Notification.warningForeground",
+            new JBColor(0x594300, 0xF0D98C));
+
     private JwtHeaderTableModel headerTableModel;
 
     private final JBTable headerTable = new ClaimValueTable();
@@ -144,6 +161,8 @@ public class JwtPanel implements Disposable {
     private SecretPanel secretPanel = this.unrecognizedSecretPanel;
 
     private final JButton verifySignatureButton = new JButton("Verify Signature");
+
+    private final JPanel verificationToolbarComponent = new JPanel(new BorderLayout(JBUI.scale(8), 0));
 
     private final Clock clock;
 
@@ -188,6 +207,7 @@ public class JwtPanel implements Disposable {
         Disposer.register(this, this.unrecognizedSecretPanel);
         PluginPreferences.getInstance(project).addKeyFilesChangeListener(this::onKeyFilesChanged, this);
         configureExpirationWarningPanel();
+        configureSignatureResultPanel();
         createUIComponents();
 
         this.claimsTable.setName(Constants.CLAIMS_TABLE_NAME);
@@ -201,8 +221,15 @@ public class JwtPanel implements Disposable {
         replaceSecretPanelContent(this.secretPanel);
         configureSecretTextFieldListeners();
 
+        this.verifySignatureButton.setName("jwt.verifySignature.button");
+        this.verifySignatureButton.putClientProperty("JButton.buttonType", "default");
+        this.verifySignatureButton.setMinimumSize(this.verifySignatureButton.getPreferredSize());
         this.verifySignatureButton.setEnabled(false);
         this.verifySignatureButton.addActionListener(this::onVerifySignatureButtonClick);
+        this.verificationToolbarComponent.setName("jwt.verification.controls");
+        this.verificationToolbarComponent.setOpaque(false);
+        this.verificationToolbarComponent.add(this.verifySignatureButton, BorderLayout.EAST);
+        refreshVerifySignatureButton();
 
         new DoubleClickListener() {
             @Override
@@ -219,7 +246,6 @@ public class JwtPanel implements Disposable {
         updateClaimsTablePreferredSize();
 
         this.rootPanel.add(createTabbedContentAndSecretPanels(), BorderLayout.CENTER);
-        this.rootPanel.add(this.verifySignatureButton, BorderLayout.SOUTH);
     }
 
     private JComponent createTabbedContentAndSecretPanels() {
@@ -236,7 +262,7 @@ public class JwtPanel implements Disposable {
         this.parsedTabs.addTab("Header", headerScrollPane);
 
         JPanel parsedContent = new JPanel(new BorderLayout());
-        parsedContent.add(this.expirationWarningPanel, BorderLayout.NORTH);
+        parsedContent.add(this.feedbackPanel, BorderLayout.NORTH);
         parsedContent.add(this.parsedTabs, BorderLayout.CENTER);
 
         this.contentSplitter = new JBSplitter(true);
@@ -258,6 +284,28 @@ public class JwtPanel implements Disposable {
                 new JBColor(0x594300, 0xF0D98C)));
         this.expirationWarningPanel.add(this.expirationWarningMessage, BorderLayout.CENTER);
         this.expirationWarningPanel.setVisible(false);
+    }
+
+    private void configureSignatureResultPanel() {
+        this.feedbackPanel.setName("jwt.feedback.stack");
+        this.feedbackPanel.setLayout(new BoxLayout(this.feedbackPanel, BoxLayout.Y_AXIS));
+        this.feedbackPanel.setOpaque(false);
+        this.feedbackPanel.add(this.expirationWarningPanel);
+
+        this.signatureResultPanel.setName("jwt.signature.result");
+        this.signatureResultPanel.setOpaque(true);
+        this.signatureResultPanel.setBackground(this.signatureResultWarningBackground);
+        this.signatureResultPanel.setBorder(JBUI.Borders.empty(8, 12));
+        this.signatureResultIcon.setName("jwt.signature.icon");
+        this.signatureResultIcon.setIcon(AllIcons.General.BalloonWarning);
+        this.signatureResultPanel.add(this.signatureResultIcon, BorderLayout.WEST);
+        this.signatureResultMessage.setName("jwt.signature.message");
+        this.signatureResultDefaultForeground = this.signatureResultMessage.getForeground();
+        this.signatureResultMessage.setForeground(this.signatureResultWarningForeground);
+        this.signatureResultPanel.add(this.signatureResultMessage, BorderLayout.CENTER);
+        this.signatureResultPanel.setVisible(false);
+        this.feedbackPanel.add(this.signatureResultPanel);
+        this.feedbackPanel.setVisible(false);
     }
 
     public JPanel getRootPanel() {
@@ -452,7 +500,7 @@ public class JwtPanel implements Disposable {
     }
 
     private void configureSecretTextFieldListeners() {
-        this.secretPanel.setSignatureContextChangedListener(this::refreshVerifySignatureButton);
+        this.secretPanel.setSignatureContextChangedListener(this::onSignatureInputChanged);
     }
 
     private void editClaimAtRow(int row) {
@@ -516,13 +564,13 @@ public class JwtPanel implements Disposable {
                         this.secretPanel.getSignatureContext());
             }
             if (signatureError.isPresent()) {
-                this.secretPanel.notifySignatureErrors(signatureError.get());
+                showVerificationResult("Signature invalid: " + signatureError.get().message(), true);
             } else {
-                this.secretPanel.notifySignatureValid();
+                showVerificationResult("Signature verified", false);
             }
         } catch (SignatureContextException e) {
             if (rsaPanel == null || isCurrentRsaInput(rsaPanel, keyText, originalJwt, encodedJwt)) {
-                this.secretPanel.notifySecurityContextException(e);
+                showVerificationResult("Signature verification failed: " + e.getMessage(), true);
             }
         }
     }
@@ -641,7 +689,54 @@ public class JwtPanel implements Disposable {
     }
 
     private void refreshVerifySignatureButton() {
-        this.verifySignatureButton.setEnabled(!Jwt.EMPTY.equals(this.jwt) && isValidatable());
+        String disabledReason = getVerifySignatureDisabledReason();
+        this.verifySignatureButton.setEnabled(disabledReason == null);
+        this.verifySignatureButton.setToolTipText(disabledReason == null
+                ? "Verify the JWT signature"
+                : disabledReason + " to verify the signature");
+        this.verifySignatureButton.getAccessibleContext().setAccessibleDescription(disabledReason == null
+                ? "Verify the JWT signature"
+                : disabledReason + " to verify the signature");
+    }
+
+    private String getVerifySignatureDisabledReason() {
+        if (this.jwt.isEmpty()) {
+            return "Paste a JWT";
+        }
+        String algorithm = this.jwt.getAlgorithm();
+        if (!SignatureAlgorithm.isSupported(algorithm)) {
+            return "Unsupported algorithm " + algorithm;
+        }
+        if (this.secretPanel instanceof RS256Panel rsaPanel) {
+            return rsaPanel.snapshotKeyText().publicKey().isBlank() ? "Enter the RSA public key" : null;
+        }
+        return isValidatable() ? null : "Enter the shared secret";
+    }
+
+    private void showVerificationResult(String result, boolean warning) {
+        this.signatureResultMessage.setText(result);
+        this.signatureResultMessage.setToolTipText(result);
+        this.signatureResultIcon.setIcon(warning ? AllIcons.General.BalloonWarning : AllIcons.General.InspectionsOK);
+        this.signatureResultMessage.setForeground(warning
+                ? this.signatureResultWarningForeground
+                : this.signatureResultDefaultForeground);
+        this.signatureResultPanel.setBackground(this.signatureResultWarningBackground);
+        this.signatureResultPanel.setOpaque(warning);
+        this.signatureResultPanel.setVisible(true);
+        refreshFeedbackPanel();
+    }
+
+    private void clearSignatureResult() {
+        this.signatureResultMessage.setText("");
+        this.signatureResultMessage.setToolTipText(null);
+        this.signatureResultIcon.setIcon(null);
+        this.signatureResultPanel.setVisible(false);
+        refreshFeedbackPanel();
+    }
+
+    private void onSignatureInputChanged() {
+        clearSignatureResult();
+        refreshVerifySignatureButton();
     }
 
     private void refreshJwt() {
@@ -675,6 +770,7 @@ public class JwtPanel implements Disposable {
         }
 
         dismissClaimErrorTooltip();
+        clearSignatureResult();
         this.jwt = jwt;
         this.headerTableModel = new JwtHeaderTableModel(jwt);
         this.headerTable.setModel(this.headerTableModel);
@@ -833,7 +929,7 @@ public class JwtPanel implements Disposable {
     private void updateExpirationWarning(@Nullable String message) {
         this.expirationWarningMessage.setText(message == null ? "" : message);
         this.expirationWarningPanel.setVisible(message != null);
-        refreshExpirationWarningPanel();
+        refreshFeedbackPanel();
     }
 
     private static @Nullable BigDecimal earliestFutureDeadline(BigDecimal now, @Nullable BigDecimal expiration,
@@ -872,8 +968,9 @@ public class JwtPanel implements Disposable {
         }
     }
 
-    private void refreshExpirationWarningPanel() {
-        JPanel parent = (JPanel) this.expirationWarningPanel.getParent();
+    private void refreshFeedbackPanel() {
+        this.feedbackPanel.setVisible(this.expirationWarningPanel.isVisible() || this.signatureResultPanel.isVisible());
+        JPanel parent = (JPanel) this.feedbackPanel.getParent();
         if (parent != null) {
             parent.revalidate();
             parent.repaint();
@@ -888,7 +985,7 @@ public class JwtPanel implements Disposable {
         } finally {
             configureSecretTextFieldListeners();
         }
-        refreshVerifySignatureButton();
+        onSignatureInputChanged();
     }
 
     private boolean isEditable() {
@@ -901,6 +998,10 @@ public class JwtPanel implements Disposable {
 
     public SecretPanel getSecretPanel() {
         return this.secretPanel;
+    }
+
+    JComponent getVerificationToolbarComponent() {
+        return this.verificationToolbarComponent;
     }
 
     private boolean isAddClaimActionEnabled() {

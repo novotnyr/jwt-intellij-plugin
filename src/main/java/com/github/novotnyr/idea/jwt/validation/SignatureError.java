@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 public record SignatureError(String message) {
     public SignatureError() {
-        this("Signature failed");
+        this("Signature verification failed");
     }
 
     public static SignatureError forEmptySecret() {
