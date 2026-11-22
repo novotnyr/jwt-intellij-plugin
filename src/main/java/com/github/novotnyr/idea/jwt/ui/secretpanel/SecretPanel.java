@@ -1,13 +1,8 @@
 package com.github.novotnyr.idea.jwt.ui.secretpanel;
 
 import com.github.novotnyr.idea.jwt.SignatureContext;
-import com.github.novotnyr.idea.jwt.SignatureContextException;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.ui.MessageType;
-import com.intellij.openapi.ui.popup.Balloon;
-import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.TextAccessor;
-import com.intellij.ui.awt.RelativePoint;
 import org.jspecify.annotations.NonNull;
 
 import javax.swing.JComponent;
@@ -17,25 +12,6 @@ public abstract class SecretPanel implements Disposable {
     private SignatureContextChangedListener signatureContextChangedListener;
 
     public abstract JComponent getRoot();
-
-    public void notifyEmptySignature() {
-        JBPopupFactory.getInstance()
-                .createHtmlTextBalloonBuilder("Cannot edit claims when a secret or keypair is not provided", MessageType.WARNING, null)
-                .setFadeoutTime(7500)
-                .createBalloon()
-                .show(RelativePoint.getNorthWestOf(getBaloonableComponent()),
-                        Balloon.Position.atRight);
-    }
-
-
-    public void notifySecurityContextException(SignatureContextException e) {
-        JBPopupFactory.getInstance()
-                .createHtmlTextBalloonBuilder("There is an issue with secret, private key or public key: " + e.getMessage(), MessageType.ERROR, null)
-                .setFadeoutTime(7500)
-                .createBalloon()
-                .show(RelativePoint.getNorthWestOf(getBaloonableComponent()),
-                        Balloon.Position.atRight);
-    }
 
     public JComponent getBaloonableComponent() {
         return getRoot();

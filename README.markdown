@@ -8,11 +8,11 @@ Inspect, verify, and edit JSON Web Tokens in a dedicated IntelliJ IDEA tool wind
 
 ### Inspect a token
 
-Paste a JWT into the tool window. The **Payload** tab shows decoded claims, and the **Header** tab shows every supplied header parameter. You can browse claims without supplying a secret or key. The encoded token highlights its payload segment, and malformed tokens show an error beside the input.
+Paste a JWT into the tool window. The **Payload** tab shows decoded claims, the **Header** tab shows every supplied header parameter, and **Key / Secret** contains the signing-input editor for the token's algorithm. You can browse claims without supplying a secret or key. The encoded token highlights its payload segment, and malformed tokens show an error beside the input.
 
 ### Verify signatures and time claims
 
-The plugin checks the optional `exp` and `nbf` time limits as soon as a token is parsed, without requiring a signing key. An expired token shows a warning above the tabs with its expiration time in the selected format, and the `exp` value is marked in the payload table. To check a signature, enter a shared secret for HS256 or HS384, or an RSA public key for RS256, then select **Verify Signature**. Signature results appear above the **Payload** and **Header** tabs, alongside any expiration warning. This checks only the signature; the plugin checks that `exp`, `nbf`, and `iat` contain numeric timestamps when present as part of its automatic time-claim validation.
+The plugin checks the optional `exp` and `nbf` time limits as soon as a token is parsed, without requiring a signing key. An expired token shows a warning above the tabs with its expiration time in the selected format, and the `exp` value is marked in the payload table. To check a signature, enter a shared secret for HS256 or HS384, or an RSA public key for RS256 in **Key / Secret**, then select **Verify Signature**. Signature results appear above the tabs, alongside any expiration warning. This checks only the signature; the plugin checks that `exp`, `nbf`, and `iat` contain numeric timestamps when present as part of its automatic time-claim validation.
 
 ### Create and edit JWTs
 
@@ -52,10 +52,12 @@ For a local ZIP, download it from [GitHub Releases](https://github.com/novotnyr/
 ## Get started
 
 1. Open **View → Tool Windows → JWT** and paste a token into the text area.
-2. Enter the matching secret or RS256 public key, then select **Verify Signature** in the top toolbar to check its signature. The button stays visible beside the toolbar actions; when disabled, its tooltip and accessible description explain what is needed. The signature result appears above the tabs, while time claims are checked automatically.
+2. Select **Key / Secret** and enter the matching secret or RS256 public key, then select **Verify Signature** in the top toolbar to check its signature. The button stays visible beside the toolbar actions; when disabled, its tooltip and accessible description explain what is needed. The signature result appears above the tabs, while time claims are checked automatically.
 3. To edit and re-sign a token, provide its signing secret or RS256 key pair and use the controls above the payload table. Use **New JWT** to create a token from scratch.
 
 ## Screenshots
+
+The screenshots show the earlier layout, before signing inputs moved into **Key / Secret**.
 
 **HS256:** The tool window shows decoded claims and a shared secret field. The expired `exp` claim is highlighted in red.
 

@@ -7,6 +7,8 @@ import com.github.novotnyr.idea.jwt.core.NumericDate;
 import com.github.novotnyr.idea.jwt.core.StringClaim;
 import com.github.novotnyr.idea.jwt.hs256.HS256Panel;
 import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
+import com.github.novotnyr.idea.jwt.hs384.HS384Panel;
+import com.github.novotnyr.idea.jwt.hs384.HS384SignatureContext;
 import com.github.novotnyr.idea.jwt.rs256.RS256Panel;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.intellij.ide.CopyPasteManagerEx;
@@ -43,15 +45,16 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 public class JwtPanelTabsTest extends LightPlatformTestCase {
-    public void testPayloadAndHeaderTabsShareSigningControls() {
+    public void testPayloadHeaderAndKeySecretTabsShareSigningControls() {
         JwtPanel panel = new JwtPanel(getProject());
         panel.getRootPanel().addNotify();
         try {
             JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
             assertNotNull(tabs);
-            assertEquals(2, tabs.getTabCount());
+            assertEquals(3, tabs.getTabCount());
             assertEquals("Payload", tabs.getTitleAt(0));
             assertEquals("Header", tabs.getTitleAt(1));
+            assertEquals("Key / Secret", tabs.getTitleAt(2));
             assertEquals(0, tabs.getSelectedIndex());
             Component footer = ((BorderLayout) panel.getRootPanel().getLayout())
                     .getLayoutComponent(BorderLayout.SOUTH);
@@ -60,6 +63,12 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             JPanel signatureResult = findComponentNamed(panel.getRootPanel(), "jwt.signature.result", JPanel.class);
             assertNotNull(feedbackStack);
             assertNotNull(signatureResult);
+            JPanel parsedContent = (JPanel) tabs.getParent();
+            BorderLayout parsedLayout = (BorderLayout) parsedContent.getLayout();
+            assertSame(feedbackStack, parsedLayout.getLayoutComponent(BorderLayout.NORTH));
+            assertSame(tabs, parsedLayout.getLayoutComponent(BorderLayout.CENTER));
+            assertSame(parsedContent, ((BorderLayout) panel.getRootPanel().getLayout())
+                    .getLayoutComponent(BorderLayout.CENTER));
             assertFalse(feedbackStack.isVisible());
             assertFalse(signatureResult.isVisible());
 
@@ -89,8 +98,12 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             secret.setSecret("secret");
             tabs.setSelectedIndex(1);
             assertTrue(SwingUtilities.isDescendingFrom(secret.getRoot(), panel.getRootPanel()));
-            assertFalse(SwingUtilities.isDescendingFrom(secret.getRoot(), tabs));
+            assertTrue(SwingUtilities.isDescendingFrom(secret.getRoot(), tabs));
+            assertFalse(secret.getRoot().isShowing());
+            tabs.setSelectedIndex(2);
             assertTrue(secret.getRoot().isShowing());
+            tabs.setSelectedIndex(0);
+            assertFalse(secret.getRoot().isShowing());
 
             panel.setJwt(new Jwt(jwt.toString()));
             assertEquals(0, tabs.getSelectedIndex());
@@ -113,25 +126,37 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
                     "jwt.signature.message", JLabel.class);
             JLabel signatureIcon = findComponentNamed(panel.getRootPanel(),
                     "jwt.signature.icon", JLabel.class);
+            JLabel missingInputHint = findComponentNamed(panel.getRootPanel(),
+                    "jwt.verification.input.hint", JLabel.class);
             assertNotNull(verifySignature);
             assertNotNull(signatureResult);
             assertNotNull(signatureMessage);
             assertNotNull(signatureIcon);
+            assertNotNull(missingInputHint);
             assertFalse(verifySignature.isEnabled());
             assertFalse(signatureResult.isVisible());
+            assertFalse(missingInputHint.isVisible());
             assertEquals("Paste a JWT to verify the signature", verifySignature.getToolTipText());
             assertEquals(verifySignature.getToolTipText(),
                     verifySignature.getAccessibleContext().getAccessibleDescription());
 
             panel.setJwt(new Jwt(signed.toString()));
             assertFalse(verifySignature.isEnabled());
+            assertTrue(missingInputHint.isVisible());
+            assertEquals("Enter a shared secret in Key / Secret", missingInputHint.getText());
             assertEquals("Enter the shared secret to verify the signature", verifySignature.getToolTipText());
             assertEquals(verifySignature.getToolTipText(),
                     verifySignature.getAccessibleContext().getAccessibleDescription());
+            JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
+            for (int tabIndex = 0; tabIndex < tabs.getTabCount(); tabIndex++) {
+                tabs.setSelectedIndex(tabIndex);
+                assertTrue("Missing-input guidance should remain visible on every tab", missingInputHint.isVisible());
+            }
 
             HS256Panel secret = (HS256Panel) panel.getSecretPanel();
             secret.setSecret("wrong secret");
             assertTrue(verifySignature.isEnabled());
+            assertFalse(missingInputHint.isVisible());
             verifySignature.doClick();
             assertTrue(signatureResult.isVisible());
             assertTrue(signatureMessage.getText().startsWith("Signature invalid:"));
@@ -163,6 +188,7 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertTrue(signatureResult.isVisible());
             panel.reset();
             assertFalse(signatureResult.isVisible());
+            assertFalse(missingInputHint.isVisible());
         } finally {
             Disposer.dispose(panel);
         }
@@ -208,6 +234,10 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertNotNull(verifySignature);
             assertFalse(verifySignature.isEnabled());
             assertEquals("Unsupported algorithm unknown to verify the signature", verifySignature.getToolTipText());
+            JLabel missingInputHint = findComponentNamed(panel.getRootPanel(),
+                    "jwt.verification.input.hint", JLabel.class);
+            assertNotNull(missingInputHint);
+            assertFalse(missingInputHint.isVisible());
             assertEquals(verifySignature.getToolTipText(),
                     verifySignature.getAccessibleContext().getAccessibleDescription());
         } finally {
@@ -225,8 +255,47 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertNotNull(verifySignature);
             assertFalse(verifySignature.isEnabled());
             assertEquals("Enter the RSA public key to verify the signature", verifySignature.getToolTipText());
+            JLabel missingInputHint = findComponentNamed(panel.getRootPanel(),
+                    "jwt.verification.input.hint", JLabel.class);
+            assertNotNull(missingInputHint);
+            assertTrue(missingInputHint.isVisible());
+            assertEquals("Enter the RSA public key in Key / Secret", missingInputHint.getText());
             assertEquals(verifySignature.getToolTipText(),
                     verifySignature.getAccessibleContext().getAccessibleDescription());
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testHs384MissingSecretHintClearsForInputAndUnsupportedToken() {
+        Jwt signed = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS384,
+                new HS384SignatureContext("secret"), false);
+        JwtPanel panel = new JwtPanel(getProject());
+        try {
+            panel.setJwt(new Jwt(signed.toString()));
+
+            JLabel missingInputHint = findComponentNamed(panel.getRootPanel(),
+                    "jwt.verification.input.hint", JLabel.class);
+            JButton verifySignature = findComponentNamed(panel.getVerificationToolbarComponent(),
+                    "jwt.verifySignature.button", JButton.class);
+            assertNotNull(missingInputHint);
+            assertNotNull(verifySignature);
+            assertTrue(missingInputHint.isVisible());
+            assertEquals("Enter a shared secret in Key / Secret", missingInputHint.getText());
+            assertFalse(verifySignature.isEnabled());
+
+            ((HS384Panel) panel.getSecretPanel()).setSecret("secret");
+            assertFalse(missingInputHint.isVisible());
+            assertTrue(verifySignature.isEnabled());
+
+            panel.setJwt(new Jwt("eyJhbGciOiJ1bmtub3duIn0.eyJzdWIiOiJhbGljZSJ9.c2ln"));
+            assertFalse(missingInputHint.isVisible());
+            assertFalse(verifySignature.isEnabled());
+
+            panel.clearParsedJwtKeepingSigningInput();
+            assertFalse(missingInputHint.isVisible());
+            panel.reset();
+            assertFalse(missingInputHint.isVisible());
         } finally {
             Disposer.dispose(panel);
         }
@@ -251,6 +320,10 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertNotNull(signatureResult);
             assertNotNull(signatureMessage);
             assertTrue(verifySignature.isEnabled());
+            JLabel missingInputHint = findComponentNamed(panel.getRootPanel(),
+                    "jwt.verification.input.hint", JLabel.class);
+            assertNotNull(missingInputHint);
+            assertFalse(missingInputHint.isVisible());
 
             verifySignature.doClick();
 
@@ -279,8 +352,12 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertTrue(warning.isVisible());
             JPanel feedbackStack = findComponentNamed(panel.getRootPanel(), "jwt.feedback.stack", JPanel.class);
             JPanel signatureResult = findComponentNamed(panel.getRootPanel(), "jwt.signature.result", JPanel.class);
+            JLabel missingInputHint = findComponentNamed(panel.getRootPanel(),
+                    "jwt.verification.input.hint", JLabel.class);
             assertTrue(feedbackStack.isVisible());
             assertFalse(signatureResult.isVisible());
+            assertTrue(missingInputHint.isVisible());
+            assertEquals("Enter a shared secret in Key / Secret", missingInputHint.getText());
             assertSame(feedbackStack, warning.getParent());
             assertSame(feedbackStack, signatureResult.getParent());
             Container parsedContent = feedbackStack.getParent();
@@ -289,12 +366,19 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
                     ((BorderLayout) parsedContent.getLayout()).getLayoutComponent(BorderLayout.NORTH));
             assertEquals(0, feedbackStack.getComponentZOrder(warning));
             assertEquals(1, feedbackStack.getComponentZOrder(signatureResult));
+            assertEquals(2, feedbackStack.getComponentZOrder(missingInputHint));
             JLabel message = findComponentNamed(warning, "jwt.expiration.message", JLabel.class);
             assertNotNull(message);
             assertEquals("Token expired at " + expiration, message.getText());
 
+            JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
+            tabs.setSelectedIndex(1);
+            assertTrue(warning.isVisible());
+            assertTrue(missingInputHint.isVisible());
+
             HS256Panel secretPanel = (HS256Panel) panel.getSecretPanel();
             secretPanel.setSecret("wrong secret");
+            assertFalse(missingInputHint.isVisible());
             JButton verifySignature = findComponentNamed(panel.getVerificationToolbarComponent(),
                     "jwt.verifySignature.button", JButton.class);
             JLabel signatureMessage = findComponentNamed(panel.getRootPanel(),
@@ -308,16 +392,15 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertSame(AllIcons.General.BalloonWarning, signatureIcon.getIcon());
             assertTrue(warning.isVisible());
 
-            JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
             JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
             int expirationRow = findRow(claims, "exp");
             assertTrue(expirationRow >= 0);
             assertTrue(hasErrorIcon(claims, expirationRow, 1));
 
-            tabs.setSelectedIndex(1);
             assertTrue(warning.isVisible());
             assertTrue(signatureResult.isVisible());
             secretPanel.setSecret("secret");
+            assertFalse(missingInputHint.isVisible());
             assertFalse(signatureResult.isVisible());
             assertTrue(warning.isVisible());
             verifySignature.doClick();

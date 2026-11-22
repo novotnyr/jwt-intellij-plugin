@@ -29,23 +29,28 @@ import static com.github.novotnyr.idea.jwt.ClaimDialog.Mode.NEW;
 public class ClaimDialog extends DialogWrapper {
     private NamedClaim<?> claim;
 
+    private final Mode mode;
+
     private final ClaimPanel claimPanel;
 
-    protected ClaimDialog(NamedClaim<?> claim, Mode mode) {
+    protected ClaimDialog(NamedClaim<?> claim, Mode mode, @Nullable String viewOnlyReason) {
         super(false);
         this.claim = claim;
-        this.claimPanel = new ClaimPanel(claim, mode);
+        this.mode = mode;
+        this.claimPanel = new ClaimPanel(claim, mode, viewOnlyReason);
 
         init();
     }
 
     @Override
     protected void doOKAction() {
-        String claimName = this.claimPanel.getClaimName();
-        Object claimValue = this.claimPanel.getClaimValue();
+        if (this.mode != Mode.VIEW) {
+            String claimName = this.claimPanel.getClaimName();
+            Object claimValue = this.claimPanel.getClaimValue();
 
-        // create copy
-        this.claim = ClaimUtils.copyClaim(this.claim, claimName, claimValue);
+            // create copy
+            this.claim = ClaimUtils.copyClaim(this.claim, claimName, claimValue);
+        }
 
         super.doOKAction();
     }
@@ -71,6 +76,8 @@ public class ClaimDialog extends DialogWrapper {
 
         protected Mode mode;
 
+        private final @Nullable String viewOnlyReason;
+
         private final JLabel claimTextLabel = new JLabel("Claim:");
 
         protected JTextField claimNameTextField = new JTextField();
@@ -79,11 +86,12 @@ public class ClaimDialog extends DialogWrapper {
 
         protected AbstractClaimPanel<?, ?> nestedClaimPanel;
 
-        public ClaimPanel(NamedClaim<?> claim, Mode mode) {
+        public ClaimPanel(NamedClaim<?> claim, Mode mode, @Nullable String viewOnlyReason) {
             super(new GridBagLayout());
 
             this.claim = claim;
             this.mode = mode;
+            this.viewOnlyReason = viewOnlyReason;
 
             GridBagConstraints cColumn1 = new GridBagConstraints();
             cColumn1.fill = GridBagConstraints.NONE;
@@ -120,6 +128,19 @@ public class ClaimDialog extends DialogWrapper {
             this.nestedClaimPanel.setReadOnly(this.mode == Mode.VIEW);
 
             this.claimNameTextField.setText(claim.getName());
+            if (this.mode == Mode.VIEW && this.viewOnlyReason != null) {
+                JLabel viewOnlyNote = new JLabel(this.viewOnlyReason);
+                viewOnlyNote.setName("jwt.claim.readOnly.note");
+                GridBagConstraints noteConstraints = new GridBagConstraints();
+                noteConstraints.fill = GridBagConstraints.HORIZONTAL;
+                noteConstraints.anchor = GridBagConstraints.LINE_START;
+                noteConstraints.weightx = 1;
+                noteConstraints.gridx = 0;
+                noteConstraints.gridy = 2;
+                noteConstraints.gridwidth = 2;
+                noteConstraints.insets = JBUI.insets(5);
+                add(viewOnlyNote, noteConstraints);
+            }
         }
 
         private @Nullable AbstractClaimPanel<?, ?> createNestedPanel() {

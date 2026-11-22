@@ -19,7 +19,9 @@ import com.intellij.util.ui.UIUtil;
 import org.jspecify.annotations.NonNull;
 
 import javax.swing.JComponent;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import java.awt.Component;
 import java.awt.Container;
 import java.nio.charset.StandardCharsets;
@@ -120,6 +122,66 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
             panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.RS256));
             assertNotSame(rs256, panel.getSecretPanel());
         } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testTabSwitchesKeepCachedEditorsInTheKeySecretTab() {
+        ManualExecutor executor = new ManualExecutor();
+        JwtPanel panel = new JwtPanel(getProject(), executor);
+        panel.getRootPanel().addNotify();
+        try {
+            JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
+            assertNotNull(tabs);
+            assertEquals(3, tabs.getTabCount());
+            assertEquals("Key / Secret", tabs.getTitleAt(2));
+
+            panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.HS256));
+            HS256Panel hs256 = (HS256Panel) panel.getSecretPanel();
+            assertTrue(SwingUtilities.isDescendingFrom(hs256.getRoot(), tabs.getComponentAt(2)));
+            assertFalse(hs256.getRoot().isShowing());
+            tabs.setSelectedIndex(2);
+            assertTrue(hs256.getRoot().isShowing());
+            hs256.setSecret("cached draft");
+            tabs.setSelectedIndex(0);
+            assertFalse(hs256.getRoot().isShowing());
+            tabs.setSelectedIndex(2);
+            assertSame(hs256, panel.getSecretPanel());
+            assertEquals("cached draft", ((HS256SignatureContext) hs256.getSignatureContext()).secret());
+
+            panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.HS384));
+            HS384Panel hs384 = (HS384Panel) panel.getSecretPanel();
+            assertFalse(SwingUtilities.isDescendingFrom(hs256.getRoot(), tabs.getComponentAt(2)));
+            assertTrue(SwingUtilities.isDescendingFrom(hs384.getRoot(), tabs.getComponentAt(2)));
+            tabs.setSelectedIndex(2);
+            assertTrue(hs384.getRoot().isShowing());
+
+            panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.RS256));
+            RS256Panel rs256 = (RS256Panel) panel.getSecretPanel();
+            List<EditorTextField> rsaFields = findComponents(rs256.getRoot(), EditorTextField.class);
+            rsaFields.get(0).setText("public key draft");
+            rsaFields.get(1).setText("private key draft");
+            assertEquals(0, tabs.getSelectedIndex());
+            tabs.setSelectedIndex(2);
+            assertTrue(SwingUtilities.isDescendingFrom(rs256.getRoot(), tabs.getComponentAt(2)));
+            assertTrue(rs256.getRoot().isShowing());
+
+            panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.HS256));
+            assertEquals(0, tabs.getSelectedIndex());
+            assertSame(hs256, panel.getSecretPanel());
+            assertTrue(SwingUtilities.isDescendingFrom(hs256.getRoot(), tabs.getComponentAt(2)));
+            assertEquals("cached draft", ((HS256SignatureContext) hs256.getSignatureContext()).secret());
+            assertFalse(SwingUtilities.isDescendingFrom(rs256.getRoot(), tabs.getComponentAt(2)));
+
+            panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.RS256));
+            assertEquals(0, tabs.getSelectedIndex());
+            tabs.setSelectedIndex(2);
+            assertSame(rs256, panel.getSecretPanel());
+            assertTrue(SwingUtilities.isDescendingFrom(rs256.getRoot(), tabs.getComponentAt(2)));
+            assertEquals("public key draft", rsaFields.get(0).getText());
+            assertEquals("private key draft", rsaFields.get(1).getText());
+        } finally {
+            panel.getRootPanel().removeNotify();
             Disposer.dispose(panel);
         }
     }
