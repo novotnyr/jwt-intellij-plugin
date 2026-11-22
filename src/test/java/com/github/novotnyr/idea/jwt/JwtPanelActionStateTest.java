@@ -28,12 +28,12 @@ public class JwtPanelActionStateTest extends LightPlatformTestCase {
             AnActionButton add = ToolbarDecorator.findAddButton(panel.getRootPanel());
             AnActionButton edit = ToolbarDecorator.findEditButton(panel.getRootPanel());
             AnActionButton remove = ToolbarDecorator.findRemoveButton(panel.getRootPanel());
-            JButton validate = findValidateButton(panel.getRootPanel());
+            JButton verifySignature = findVerifySignatureButton(panel.getRootPanel());
             JTable claims = findClaimsTable(panel.getRootPanel());
             assertNotNull(add);
             assertNotNull(edit);
             assertNotNull(remove);
-            assertNotNull(validate);
+            assertNotNull(verifySignature);
             assertNotNull(claims);
             assertTrue(claims.isShowing());
             assertEquals(ActionUpdateThread.EDT, add.getActionUpdateThread());
@@ -42,7 +42,7 @@ public class JwtPanelActionStateTest extends LightPlatformTestCase {
             assertFalse(isEnabled(add));
             assertFalse(isEnabled(edit));
             assertFalse(isEnabled(remove));
-            assertFalse(validate.isEnabled());
+            assertFalse(verifySignature.isEnabled());
 
             Jwt signed = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
                     new HS256SignatureContext("secret"), false);
@@ -50,13 +50,13 @@ public class JwtPanelActionStateTest extends LightPlatformTestCase {
             panel.setJwt(new Jwt(signed.toString()));
             HS256Panel secretPanel = (HS256Panel) panel.getSecretPanel();
             assertFalse(isEnabled(add));
-            assertFalse(validate.isEnabled());
+            assertFalse(verifySignature.isEnabled());
 
             secretPanel.setSecret("secret");
             assertTrue(isEnabled(add));
             assertFalse(isEnabled(edit));
             assertFalse(isEnabled(remove));
-            assertTrue(validate.isEnabled());
+            assertTrue(verifySignature.isEnabled());
 
             claims.setRowSelectionInterval(0, 0);
             UIUtil.dispatchAllInvocationEvents();
@@ -67,13 +67,13 @@ public class JwtPanelActionStateTest extends LightPlatformTestCase {
             assertFalse(isEnabled(add));
             assertFalse(isEnabled(edit));
             assertFalse(isEnabled(remove));
-            assertFalse(validate.isEnabled());
+            assertFalse(verifySignature.isEnabled());
 
             secretPanel.setSecret("secret");
             assertTrue(isEnabled(add));
             assertTrue(isEnabled(edit));
             assertTrue(isEnabled(remove));
-            assertTrue(validate.isEnabled());
+            assertTrue(verifySignature.isEnabled());
 
             claims.clearSelection();
             UIUtil.dispatchAllInvocationEvents();
@@ -85,13 +85,13 @@ public class JwtPanelActionStateTest extends LightPlatformTestCase {
                     new HS384SignatureContext("other secret"), false);
             panel.setJwt(new Jwt(hs384.toString()));
             assertFalse(isEnabled(add));
-            assertFalse(validate.isEnabled());
+            assertFalse(verifySignature.isEnabled());
 
             panel.reset();
             assertFalse(isEnabled(add));
             assertFalse(isEnabled(edit));
             assertFalse(isEnabled(remove));
-            assertFalse(validate.isEnabled());
+            assertFalse(verifySignature.isEnabled());
         } finally {
             panel.getRootPanel().removeNotify();
             Disposer.dispose(panel);
@@ -104,13 +104,13 @@ public class JwtPanelActionStateTest extends LightPlatformTestCase {
         return event.getPresentation().isEnabled();
     }
 
-    private static JButton findValidateButton(Component root) {
-        if (root instanceof JButton button && "Validate".equals(button.getText())) {
+    private static JButton findVerifySignatureButton(Component root) {
+        if (root instanceof JButton button && "Verify Signature".equals(button.getText())) {
             return button;
         }
         if (root instanceof Container container) {
             for (Component child : container.getComponents()) {
-                JButton result = findValidateButton(child);
+                JButton result = findVerifySignatureButton(child);
                 if (result != null) {
                     return result;
                 }
