@@ -146,7 +146,7 @@ public class JwtPanel implements Disposable {
 
     private final Clock clock;
 
-    private final ExpirationRefreshScheduler expirationRefreshScheduler;
+    private final ClaimRefreshScheduler claimRefreshScheduler;
 
     private final JwtSignatureValidator signatureValidator = new JwtSignatureValidator();
 
@@ -167,23 +167,23 @@ public class JwtPanel implements Disposable {
     private long rsaDefaultsGeneration;
 
     public JwtPanel(Project project) {
-        this(project, AppExecutorUtil.getAppExecutorService(), Clock.systemUTC(), new SwingExpirationRefreshScheduler());
+        this(project, AppExecutorUtil.getAppExecutorService(), Clock.systemUTC(), new SwingClaimRefreshScheduler());
     }
 
     JwtPanel(Project project, Executor rsaExecutor) {
-        this(project, rsaExecutor, Clock.systemUTC(), new SwingExpirationRefreshScheduler());
+        this(project, rsaExecutor, Clock.systemUTC(), new SwingClaimRefreshScheduler());
     }
 
-    JwtPanel(Project project, Clock clock, ExpirationRefreshScheduler expirationRefreshScheduler) {
-        this(project, AppExecutorUtil.getAppExecutorService(), clock, expirationRefreshScheduler);
+    JwtPanel(Project project, Clock clock, ClaimRefreshScheduler claimRefreshScheduler) {
+        this(project, AppExecutorUtil.getAppExecutorService(), clock, claimRefreshScheduler);
     }
 
     private JwtPanel(Project project, Executor rsaExecutor, Clock clock,
-                     ExpirationRefreshScheduler expirationRefreshScheduler) {
+                     ClaimRefreshScheduler claimRefreshScheduler) {
         this.project = project;
         this.rsaExecutor = rsaExecutor;
         this.clock = clock;
-        this.expirationRefreshScheduler = expirationRefreshScheduler;
+        this.claimRefreshScheduler = claimRefreshScheduler;
         Disposer.register(this, this.unrecognizedSecretPanel);
         PluginPreferences.getInstance(project).addKeyFilesChangeListener(this::onKeyFilesChanged, this);
         configureExpirationWarningPanel();
@@ -784,40 +784,46 @@ public class JwtPanel implements Disposable {
         Instant now = this.clock.instant();
         Clock snapshotClock = Clock.fixed(now, this.clock.getZone());
         this.claimsTableModel.setClaimErrors(new JwtClaimsValidator(snapshotClock).validate(decodedJwt));
-        updateExpirationWarning(decodedJwt, NumericDate.fromInstant(now));
+        updateClaimTimeState(decodedJwt, NumericDate.fromInstant(now));
     }
 
     private void clearExpirationWarning() {
-        this.expirationRefreshScheduler.cancel();
+        this.claimRefreshScheduler.cancel();
         this.expirationWarningMessage.setText("");
         this.expirationWarningPanel.setVisible(false);
         refreshExpirationWarningPanel();
     }
 
-    private void updateExpirationWarning(DecodedJWT decodedJwt, BigDecimal now) {
-        this.expirationRefreshScheduler.cancel();
-
+    private void updateClaimTimeState(DecodedJWT decodedJwt, BigDecimal now) {
+        this.claimRefreshScheduler.cancel();
         BigDecimal expiration = NumericDate.fromJson(
                 decodedJwt.getClaim(RegisteredClaims.EXPIRES_AT).as(JsonNode.class));
-        if (expiration == null) {
-            this.expirationWarningMessage.setText("");
-            this.expirationWarningPanel.setVisible(false);
-            refreshExpirationWarningPanel();
-            return;
-        }
+        BigDecimal notBefore = NumericDate.fromJson(
+                decodedJwt.getClaim(RegisteredClaims.NOT_BEFORE).as(JsonNode.class));
+        updateExpirationWarning(expiration, now);
 
-        if (now.compareTo(expiration) >= 0) {
-            this.expirationWarningMessage.setText(JwtClaimsValidator.expirationMessage(expiration));
-            this.expirationWarningPanel.setVisible(true);
-            refreshExpirationWarningPanel();
-            return;
+        BigDecimal deadline = earliestFutureDeadline(now, expiration, notBefore);
+        if (deadline != null) {
+            long delay = boundedRefreshDelayMillis(now, deadline);
+            this.claimRefreshScheduler.schedule(delay, this::refreshClaimValidation);
         }
+    }
 
-        this.expirationWarningMessage.setText("");
-        this.expirationWarningPanel.setVisible(false);
+    private void updateExpirationWarning(@Nullable BigDecimal expiration, BigDecimal now) {
+        boolean expired = expiration != null && now.compareTo(expiration) >= 0;
+        this.expirationWarningMessage.setText(expired ? JwtClaimsValidator.expirationMessage(expiration) : "");
+        this.expirationWarningPanel.setVisible(expired);
         refreshExpirationWarningPanel();
-        long delay = boundedRefreshDelayMillis(now, expiration);
-        this.expirationRefreshScheduler.schedule(delay, this::refreshExpirationWarning);
+    }
+
+    private static @Nullable BigDecimal earliestFutureDeadline(BigDecimal now, @Nullable BigDecimal expiration,
+                                                               @Nullable BigDecimal notBefore) {
+        BigDecimal deadline = expiration != null && now.compareTo(expiration) < 0 ? expiration : null;
+        if (notBefore != null && now.compareTo(notBefore) < 0
+                && (deadline == null || notBefore.compareTo(deadline) < 0)) {
+            deadline = notBefore;
+        }
+        return deadline;
     }
 
     private static long boundedRefreshDelayMillis(BigDecimal now, BigDecimal deadline) {
@@ -840,7 +846,7 @@ public class JwtPanel implements Disposable {
         return lowerBound;
     }
 
-    private void refreshExpirationWarning() {
+    private void refreshClaimValidation() {
         if (!this.disposed && !Jwt.EMPTY.equals(this.jwt)) {
             applyClaimValidation(this.jwt);
         }
@@ -1017,13 +1023,13 @@ public class JwtPanel implements Disposable {
         }
     }
 
-    interface ExpirationRefreshScheduler {
+    interface ClaimRefreshScheduler {
         void schedule(long delayMillis, Runnable task);
 
         void cancel();
     }
 
-    private static final class SwingExpirationRefreshScheduler implements ExpirationRefreshScheduler {
+    private static final class SwingClaimRefreshScheduler implements ClaimRefreshScheduler {
         private Timer timer;
 
         private long generation;
@@ -1062,7 +1068,7 @@ public class JwtPanel implements Disposable {
     @Override
     public void dispose() {
         this.disposed = true;
-        this.expirationRefreshScheduler.cancel();
+        this.claimRefreshScheduler.cancel();
         dismissClaimErrorTooltip();
         this.secretPanel.removeSignatureContextChangedListener();
         this.secretPanels.clear();
