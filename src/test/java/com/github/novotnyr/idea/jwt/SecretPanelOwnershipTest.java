@@ -134,9 +134,10 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
             JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
             assertNotNull(tabs);
             assertEquals(3, tabs.getTabCount());
-            assertEquals("Key / Secret", tabs.getTitleAt(2));
+            assertEquals("Signature", tabs.getTitleAt(2));
 
             panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.HS256));
+            assertEquals("HS256", tabs.getTitleAt(2));
             HS256Panel hs256 = (HS256Panel) panel.getSecretPanel();
             assertTrue(SwingUtilities.isDescendingFrom(hs256.getRoot(), tabs.getComponentAt(2)));
             assertFalse(hs256.getRoot().isShowing());
@@ -150,6 +151,7 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
             assertEquals("cached draft", ((HS256SignatureContext) hs256.getSignatureContext()).secret());
 
             panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.HS384));
+            assertEquals("HS384", tabs.getTitleAt(2));
             HS384Panel hs384 = (HS384Panel) panel.getSecretPanel();
             assertFalse(SwingUtilities.isDescendingFrom(hs256.getRoot(), tabs.getComponentAt(2)));
             assertTrue(SwingUtilities.isDescendingFrom(hs384.getRoot(), tabs.getComponentAt(2)));
@@ -157,6 +159,7 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
             assertTrue(hs384.getRoot().isShowing());
 
             panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.RS256));
+            assertEquals("RS256", tabs.getTitleAt(2));
             RS256Panel rs256 = (RS256Panel) panel.getSecretPanel();
             List<EditorTextField> rsaFields = findComponents(rs256.getRoot(), EditorTextField.class);
             rsaFields.get(0).setText("public key draft");
@@ -168,6 +171,7 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
 
             panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.HS256));
             assertEquals(0, tabs.getSelectedIndex());
+            assertEquals("HS256", tabs.getTitleAt(2));
             assertSame(hs256, panel.getSecretPanel());
             assertTrue(SwingUtilities.isDescendingFrom(hs256.getRoot(), tabs.getComponentAt(2)));
             assertEquals("cached draft", ((HS256SignatureContext) hs256.getSignatureContext()).secret());
@@ -175,11 +179,15 @@ public class SecretPanelOwnershipTest extends LightPlatformTestCase {
 
             panel.setJwt(jwtForAlgorithm(SignatureAlgorithm.RS256));
             assertEquals(0, tabs.getSelectedIndex());
+            assertEquals("RS256", tabs.getTitleAt(2));
             tabs.setSelectedIndex(2);
             assertSame(rs256, panel.getSecretPanel());
             assertTrue(SwingUtilities.isDescendingFrom(rs256.getRoot(), tabs.getComponentAt(2)));
             assertEquals("public key draft", rsaFields.get(0).getText());
             assertEquals("private key draft", rsaFields.get(1).getText());
+
+            panel.setJwt(new Jwt("eyJhbGciOiJ1bmtub3duIn0.eyJzdWIiOiJhbGljZSJ9.c2ln"));
+            assertEquals("Signature", tabs.getTitleAt(2));
         } finally {
             panel.getRootPanel().removeNotify();
             Disposer.dispose(panel);

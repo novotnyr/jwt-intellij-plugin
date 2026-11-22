@@ -105,6 +105,8 @@ import static com.github.novotnyr.idea.jwt.ui.secretpanel.JwtStatus.MUTABLE;
 
 public class JwtPanel implements Disposable {
     private static final Logger LOG = Logger.getInstance(JwtPanel.class);
+    private static final int SECRET_TAB_INDEX = 2;
+    private static final String DEFAULT_SECRET_TAB_TITLE = "Signature";
 
     private final Project project;
 
@@ -271,7 +273,7 @@ public class JwtPanel implements Disposable {
 
         this.parsedTabs.addTab("Payload", this.claimsTablePanel);
         this.parsedTabs.addTab("Header", headerScrollPane);
-        this.parsedTabs.addTab("Key / Secret", this.secretPanelContainer);
+        this.parsedTabs.addTab(DEFAULT_SECRET_TAB_TITLE, this.secretPanelContainer);
 
         JPanel parsedContent = new JPanel(new BorderLayout());
         parsedContent.add(this.feedbackPanel, BorderLayout.NORTH);
@@ -635,13 +637,27 @@ public class JwtPanel implements Disposable {
     }
 
     String getClaimViewOnlyReason() {
+        String secretTabTitle = getSecretTabTitle(this.secretPanel);
         if (this.secretPanel instanceof HS256Panel || this.secretPanel instanceof HS384Panel) {
-            return "Read-only: Enter a shared secret in Key / Secret to edit claims.";
+            return "Read-only: Enter a shared secret in the " + secretTabTitle + " tab to edit claims.";
         }
         if (this.secretPanel instanceof RS256Panel) {
-            return "Read-only: Enter the RSA public and private keys in Key / Secret to edit claims.";
+            return "Read-only: Enter the RSA public and private keys in the " + secretTabTitle + " tab to edit claims.";
         }
         return "Read-only: The token's algorithm is not supported.";
+    }
+
+    private static String getSecretTabTitle(SecretPanel panel) {
+        if (panel instanceof HS256Panel) {
+            return SignatureAlgorithm.HS256;
+        }
+        if (panel instanceof HS384Panel) {
+            return SignatureAlgorithm.HS384;
+        }
+        if (panel instanceof RS256Panel) {
+            return SignatureAlgorithm.RS256;
+        }
+        return DEFAULT_SECRET_TAB_TITLE;
     }
 
     void updateClaim(@Nullable NamedClaim<?> updatedClaim, @Nullable String removedClaimName) {
@@ -725,8 +741,8 @@ public class JwtPanel implements Disposable {
         this.verifySignatureButton.setToolTipText(buttonDescription);
         this.verifySignatureButton.getAccessibleContext().setAccessibleDescription(buttonDescription);
         String missingInputHint = switch (disabledReason == null ? "" : disabledReason) {
-            case "Enter the shared secret" -> "Enter a shared secret in Key / Secret";
-            case "Enter the RSA public key" -> "Enter the RSA public key in Key / Secret";
+            case "Enter the shared secret" -> "Enter a shared secret in the " + getSecretTabTitle(this.secretPanel) + " tab";
+            case "Enter the RSA public key" -> "Enter the RSA public key in the " + getSecretTabTitle(this.secretPanel) + " tab";
             default -> null;
         };
         this.missingVerificationInputMessage.setText(missingInputHint == null ? "" : missingInputHint);
@@ -848,6 +864,7 @@ public class JwtPanel implements Disposable {
 
     private void configureSecretPanel(Jwt jwt) {
         SecretPanel newSecretPanel = getOrCreateSecretPanel(jwt.getAlgorithm());
+        this.parsedTabs.setTitleAt(SECRET_TAB_INDEX, getSecretTabTitle(newSecretPanel));
         if (newSecretPanel == this.secretPanel) {
             return;
         }
