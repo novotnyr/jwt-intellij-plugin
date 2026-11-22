@@ -21,8 +21,11 @@ import com.intellij.util.ui.UIUtil;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -45,6 +48,13 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
                     verifySignature.getWidth() >= verifySignature.getPreferredSize().width);
             assertEquals(verificationControls.getWidth(), verifySignature.getX() + verifySignature.getWidth());
             assertEquals(Boolean.TRUE, verifySignature.getClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY));
+
+            JTabbedPane tabs = UIUtil.findComponentOfType(explorer, JTabbedPane.class);
+            assertNotNull(tabs);
+            for (int tabIndex = 0; tabIndex < tabs.getTabCount(); tabIndex++) {
+                tabs.setSelectedIndex(tabIndex);
+                assertTrue("Verify Signature should remain visible on every tab", verifySignature.isVisible());
+            }
 
             toolbar.setSize(280, toolbar.getPreferredSize().height);
             layoutRecursively(toolbar);
@@ -72,18 +82,40 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
 
             EncodedJwtPanel encoded = UIUtil.findComponentOfType(explorer, EncodedJwtPanel.class);
             assertNotNull(encoded);
-            encoded.setJwt(tokenWithClaim());
-            assertTrue(isEnabled(copy));
-            assertTrue(isEnabled(scratch));
-
+            JLabel missingInputHint = findComponentNamed(explorer, "jwt.verification.input.hint", JLabel.class);
+            assertNotNull(missingInputHint);
             JBTextArea input = UIUtil.findComponentOfType(encoded, JBTextArea.class);
             assertNotNull(input);
-            input.setText("invalid.jwt");
-            assertFalse(isEnabled(copy));
-            assertFalse(isEnabled(scratch));
+            input.setText(tokenWithClaim().toString());
+            assertTrue(isEnabled(copy));
+            assertTrue(isEnabled(scratch));
+            assertTrue(missingInputHint.isVisible());
+            assertEquals("Enter a shared secret in Key / Secret", missingInputHint.getText());
 
             JTabbedPane tabs = UIUtil.findComponentOfType(explorer, JTabbedPane.class);
             assertNotNull(tabs);
+            assertEquals(3, tabs.getTabCount());
+            assertEquals("Payload", tabs.getTitleAt(0));
+            assertEquals("Header", tabs.getTitleAt(1));
+            assertEquals("Key / Secret", tabs.getTitleAt(2));
+            assertEquals(0, tabs.getSelectedIndex());
+            for (int tabIndex = 0; tabIndex < tabs.getTabCount(); tabIndex++) {
+                tabs.setSelectedIndex(tabIndex);
+                assertTrue("Missing-input guidance should remain visible on every tab", missingInputHint.isVisible());
+            }
+            JTextField secretField = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(2), JTextField.class);
+            assertNotNull(secretField);
+            tabs.setSelectedIndex(2);
+            secretField.setText("draft secret");
+            assertFalse(missingInputHint.isVisible());
+
+            input.setText("invalid.jwt");
+            assertFalse(isEnabled(copy));
+            assertFalse(isEnabled(scratch));
+            assertFalse(missingInputHint.isVisible());
+            assertEquals(2, tabs.getSelectedIndex());
+            assertEquals("draft secret", secretField.getText());
+
             JBTable header = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(1), JBTable.class);
             JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
             assertNotNull(header);
@@ -94,6 +126,15 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
             encoded.reset();
             assertFalse(isEnabled(copy));
             assertFalse(isEnabled(scratch));
+            assertFalse(missingInputHint.isVisible());
+            assertEquals(2, tabs.getSelectedIndex());
+            assertEquals("draft secret", secretField.getText());
+
+            AnAction reset = findAction(toolbar, "Reset");
+            reset.actionPerformed(TestActionEvent.createTestEvent(reset));
+            assertEquals(0, tabs.getSelectedIndex());
+            assertFalse(missingInputHint.isVisible());
+            assertFalse(SwingUtilities.isDescendingFrom(secretField, tabs.getComponentAt(2)));
         } finally {
             Disposer.dispose(explorer);
         }

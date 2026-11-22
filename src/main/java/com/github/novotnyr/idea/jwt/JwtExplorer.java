@@ -80,7 +80,7 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
                         .createHtmlTextBalloonBuilder(e.getMessage(), MessageType.ERROR, null)
                         .setFadeoutTime(7500)
                         .createBalloon()
-                        .show(RelativePoint.getNorthWestOf(JwtExplorer.this.jwtPanel.getSecretPanel().getBaloonableComponent()),
+                        .show(RelativePoint.getNorthWestOf(JwtExplorer.this.encodedJwtPanel),
                                 Balloon.Position.atRight);
             }
         });

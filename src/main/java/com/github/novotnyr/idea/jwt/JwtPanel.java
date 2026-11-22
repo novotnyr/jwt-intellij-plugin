@@ -9,6 +9,8 @@ import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
 import com.github.novotnyr.idea.jwt.core.NumericDate;
 import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry;
+import com.github.novotnyr.idea.jwt.hs256.HS256Panel;
+import com.github.novotnyr.idea.jwt.hs384.HS384Panel;
 import com.github.novotnyr.idea.jwt.rs256.RS256Panel;
 import com.github.novotnyr.idea.jwt.rs256.RS256SignatureContext;
 import com.github.novotnyr.idea.jwt.rs256.RsaKeyParser;
@@ -36,15 +38,17 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComponentValidator;
+import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.ValidationInfo;
+import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopup;
+import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.JBColor;
-import com.intellij.ui.JBSplitter;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBScrollPane;
@@ -126,6 +130,8 @@ public class JwtPanel implements Disposable {
 
     private final JLabel signatureResultMessage = new JLabel();
 
+    private final JLabel missingVerificationInputMessage = new JLabel();
+
     private final Color signatureResultWarningBackground = JBColor.namedColor("Notification.warningBackground",
             new JBColor(0xFFF4D1, 0x4B422A));
 
@@ -149,8 +155,6 @@ public class JwtPanel implements Disposable {
     private boolean claimErrorPopupTriggeredByMouse;
 
     private JPanel claimsTablePanel;
-
-    private JBSplitter contentSplitter;
 
     private final JPanel secretPanelContainer = new JPanel(new BorderLayout());
 
@@ -261,15 +265,12 @@ public class JwtPanel implements Disposable {
 
         this.parsedTabs.addTab("Payload", this.claimsTablePanel);
         this.parsedTabs.addTab("Header", headerScrollPane);
+        this.parsedTabs.addTab("Key / Secret", this.secretPanelContainer);
 
         JPanel parsedContent = new JPanel(new BorderLayout());
         parsedContent.add(this.feedbackPanel, BorderLayout.NORTH);
         parsedContent.add(this.parsedTabs, BorderLayout.CENTER);
-
-        this.contentSplitter = new JBSplitter(true);
-        this.contentSplitter.setFirstComponent(parsedContent);
-        this.contentSplitter.setSecondComponent(this.secretPanelContainer);
-        return this.contentSplitter;
+        return parsedContent;
     }
 
     private void configureExpirationWarningPanel() {
@@ -305,6 +306,10 @@ public class JwtPanel implements Disposable {
         this.signatureResultPanel.add(this.signatureResultMessage, BorderLayout.CENTER);
         this.signatureResultPanel.setVisible(false);
         this.feedbackPanel.add(this.signatureResultPanel);
+        this.missingVerificationInputMessage.setName("jwt.verification.input.hint");
+        this.missingVerificationInputMessage.setBorder(JBUI.Borders.empty(4, 12, 8, 12));
+        this.missingVerificationInputMessage.setVisible(false);
+        this.feedbackPanel.add(this.missingVerificationInputMessage);
         this.feedbackPanel.setVisible(false);
     }
 
@@ -576,10 +581,6 @@ public class JwtPanel implements Disposable {
     }
 
     private boolean onClaimsTableDoubleClick(MouseEvent mouseEvent) {
-        if(!isEditable()) {
-            this.secretPanel.notifyEmptySignature();
-        }
-
         int selectedRow = this.claimsTable.rowAtPoint(mouseEvent.getPoint());
         if(selectedRow < 0) {
             return true;
@@ -614,11 +615,22 @@ public class JwtPanel implements Disposable {
 
 
     private void showClaimDialog(NamedClaim<?> claim, ClaimDialog.Mode mode) {
-        ClaimDialog claimDialog = new ClaimDialog(claim, mode);
-        if(claimDialog.showAndGet()) {
+        String viewOnlyReason = mode == VIEW ? getClaimViewOnlyReason() : null;
+        ClaimDialog claimDialog = new ClaimDialog(claim, mode, viewOnlyReason);
+        if (claimDialog.showAndGet() && mode != VIEW) {
             NamedClaim<?> updatedClaim = claimDialog.getClaim();
             updateClaim(updatedClaim, null);
         }
+    }
+
+    String getClaimViewOnlyReason() {
+        if (this.secretPanel instanceof HS256Panel || this.secretPanel instanceof HS384Panel) {
+            return "Read-only: Enter a shared secret in Key / Secret to edit claims.";
+        }
+        if (this.secretPanel instanceof RS256Panel) {
+            return "Read-only: Enter the RSA public and private keys in Key / Secret to edit claims.";
+        }
+        return "Read-only: The token's algorithm is not supported.";
     }
 
     void updateClaim(@Nullable NamedClaim<?> updatedClaim, @Nullable String removedClaimName) {
@@ -645,7 +657,12 @@ public class JwtPanel implements Disposable {
                 refreshJwt();
             } catch (SignatureContextException e) {
                 if (isCurrentRsaInput(rsaPanel, keyText, originalJwt, encodedJwt)) {
-                    rsaPanel.notifySecurityContextException(e);
+                    JBPopupFactory.getInstance()
+                            .createHtmlTextBalloonBuilder("JWT signing failed: " + e.getMessage(),
+                                    MessageType.ERROR, null)
+                            .setFadeoutTime(7500)
+                            .createBalloon()
+                            .show(RelativePoint.getNorthWestOf(this.parsedTabs), Balloon.Position.atRight);
                 }
             }
             return;
@@ -691,12 +708,19 @@ public class JwtPanel implements Disposable {
     private void refreshVerifySignatureButton() {
         String disabledReason = getVerifySignatureDisabledReason();
         this.verifySignatureButton.setEnabled(disabledReason == null);
-        this.verifySignatureButton.setToolTipText(disabledReason == null
+        String buttonDescription = disabledReason == null
                 ? "Verify the JWT signature"
-                : disabledReason + " to verify the signature");
-        this.verifySignatureButton.getAccessibleContext().setAccessibleDescription(disabledReason == null
-                ? "Verify the JWT signature"
-                : disabledReason + " to verify the signature");
+                : disabledReason + " to verify the signature";
+        this.verifySignatureButton.setToolTipText(buttonDescription);
+        this.verifySignatureButton.getAccessibleContext().setAccessibleDescription(buttonDescription);
+        String missingInputHint = switch (disabledReason == null ? "" : disabledReason) {
+            case "Enter the shared secret" -> "Enter a shared secret in Key / Secret";
+            case "Enter the RSA public key" -> "Enter the RSA public key in Key / Secret";
+            default -> null;
+        };
+        this.missingVerificationInputMessage.setText(missingInputHint == null ? "" : missingInputHint);
+        this.missingVerificationInputMessage.setVisible(missingInputHint != null);
+        refreshFeedbackPanel();
     }
 
     private String getVerifySignatureDisabledReason() {
@@ -800,13 +824,6 @@ public class JwtPanel implements Disposable {
         int rows = rowCount == 0 ? 3 : rowCount;
         this.claimsTable.setPreferredScrollableViewportSize(new Dimension(0, rows * this.claimsTable.getRowHeight()));
         this.claimsTable.getParent().revalidate();
-        SwingUtilities.invokeLater(() -> {
-            if (this.contentSplitter != null && this.contentSplitter.getHeight() > 0) {
-                int prefHeight = this.claimsTablePanel.getPreferredSize().height + JBUI.scale(32);
-                float proportion = (float) prefHeight / this.contentSplitter.getHeight();
-                this.contentSplitter.setProportion(Math.clamp(proportion, 0.35f, 0.75f));
-            }
-        });
     }
 
     private void replaceSecretPanelContent(SecretPanel secretPanel) {
@@ -969,7 +986,8 @@ public class JwtPanel implements Disposable {
     }
 
     private void refreshFeedbackPanel() {
-        this.feedbackPanel.setVisible(this.expirationWarningPanel.isVisible() || this.signatureResultPanel.isVisible());
+        this.feedbackPanel.setVisible(this.expirationWarningPanel.isVisible() || this.signatureResultPanel.isVisible()
+                || this.missingVerificationInputMessage.isVisible());
         JPanel parent = (JPanel) this.feedbackPanel.getParent();
         if (parent != null) {
             parent.revalidate();
