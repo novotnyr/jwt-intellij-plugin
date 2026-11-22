@@ -160,7 +160,7 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
 
     public void testVisibleExpirationWarningFollowsTheTimestampFormat() {
         TimeZone originalZone = TimeZone.getDefault();
-        Locale originalLocale = Locale.getDefault();
+        Locale originalLocale = Locale.getDefault(Locale.Category.FORMAT);
         Configuration.TimestampFormat originalFormat = Configuration.INSTANCE.getTimestampFormat();
         Instant expiration = Instant.parse("2025-07-01T00:00:00.125Z");
         BigDecimal expirationSeconds = NumericDate.fromInstant(expiration);
@@ -168,7 +168,7 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
         JwtPanel panel = new JwtPanel(getProject(), clock, new ManualExpirationScheduler());
         try {
             TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"));
-            Locale.setDefault(Locale.ENGLISH);
+            Locale.setDefault(Locale.Category.FORMAT, Locale.ENGLISH);
             Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.ISO);
             panel.setJwt(new Jwt(createJwtWithExpiration(expirationSeconds).toString()));
 
@@ -191,6 +191,20 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertEquals("Token expired at 2025-06-30T20:00:00.125-04:00", message.getText());
             assertEquals("2025-06-30T20:00:00.125-04:00", claims.getValueAt(expirationRow, 1));
 
+            Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.MEDIUM);
+            String medium = TimestampFormatter.format(expirationSeconds, Configuration.TimestampFormat.MEDIUM,
+                    clock.instant());
+            assertEquals("Token expired at " + medium, message.getText());
+            assertEquals(medium, claims.getValueAt(expirationRow, 1));
+            assertEquals(message.getText(), panel.getClaimErrorAtViewCell(expirationRow, 1).getMessage());
+            assertEquals(expirationRow, claims.getSelectedRow());
+
+            Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.ISO);
+            assertEquals("Token expired at " + expiration, message.getText());
+            assertEquals(expiration.toString(), claims.getValueAt(expirationRow, 1));
+            assertEquals(message.getText(), panel.getClaimErrorAtViewCell(expirationRow, 1).getMessage());
+            assertEquals(expirationRow, claims.getSelectedRow());
+
             Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.RELATIVE);
             assertEquals("Token expired 2 hours ago", message.getText());
             assertEquals(message.getText(), panel.getClaimErrorAtViewCell(expirationRow, 1).getMessage());
@@ -199,7 +213,7 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
         } finally {
             Disposer.dispose(panel);
             Configuration.INSTANCE.setTimestampFormat(originalFormat);
-            Locale.setDefault(originalLocale);
+            Locale.setDefault(Locale.Category.FORMAT, originalLocale);
             TimeZone.setDefault(originalZone);
         }
     }

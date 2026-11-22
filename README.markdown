@@ -20,7 +20,20 @@ Use **New JWT** to create an HS256, HS384, or RS256 token, with an optional `iat
 
 ### Work with timestamps
 
-Use the tool window's gear menu to switch between **Unix timestamp**, **ISO (UTC)**, **ISO (Local)**, and **Relative**. **ISO (Local)** uses Java's default time zone and shows the offset at the timestamp. The timestamp editor previews both UTC and local time when they differ, includes **Now**, **+15 min**, and **-15 min** controls, and preserves fractional timestamp values while editing.
+Choose **Timestamp format** in the JWT tool window's gear menu:
+
+- **Unix timestamp** — Seconds since the Unix epoch.
+- **ISO (UTC)** — ISO date and time in UTC (the default).
+- **ISO (Local)** — ISO date and time in Java's default time zone, showing the offset in effect at the timestamp.
+- **Medium Format** — Localized date and time using Java's default formatting locale and time zone.
+  For example, with `sk-SK` and `Europe/Bratislava`, `2026-11-22T17:50:00Z` displays as `22. 11. 2026, 18:50:00`.
+- **Relative** — Time relative to now, such as `2 hours ago`.
+
+When editing a timestamp:
+
+- Preview UTC and local time. 
+- Use **Now**, **+15 min**, or **-15 min** to adjust the value.
+- Fractional seconds are preserved while editing.
 
 ### Copy or open the payload
 

@@ -35,6 +35,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
         actionGroup.add(timestampFormatAction("Unix timestamp", Configuration.TimestampFormat.RAW));
         actionGroup.add(timestampFormatAction("ISO (UTC)", Configuration.TimestampFormat.ISO));
         actionGroup.add(timestampFormatAction("ISO (Local)", Configuration.TimestampFormat.ISO_LOCAL));
+        actionGroup.add(timestampFormatAction("Medium Format", Configuration.TimestampFormat.MEDIUM));
         actionGroup.add(timestampFormatAction("Relative", Configuration.TimestampFormat.RELATIVE));
 
         DefaultActionGroup timestampFormatActionGroup = new DefaultActionGroup();
