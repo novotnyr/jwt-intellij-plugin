@@ -7,11 +7,13 @@ import com.github.novotnyr.idea.jwt.core.NumericDate;
 import com.github.novotnyr.idea.jwt.core.StringClaim;
 import com.github.novotnyr.idea.jwt.hs256.HS256Panel;
 import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
+import com.github.novotnyr.idea.jwt.rs256.RS256Panel;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.intellij.ide.CopyPasteManagerEx;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.testFramework.LightPlatformTestCase;
+import com.intellij.ui.EditorTextField;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.UIUtil;
 
@@ -51,8 +53,13 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertEquals(0, tabs.getSelectedIndex());
             Component footer = ((BorderLayout) panel.getRootPanel().getLayout())
                     .getLayoutComponent(BorderLayout.SOUTH);
-            assertTrue(footer instanceof JButton);
-            assertEquals("Verify Signature", ((JButton) footer).getText());
+            assertNull(footer);
+            JPanel feedbackStack = findComponentNamed(panel.getRootPanel(), "jwt.feedback.stack", JPanel.class);
+            JPanel signatureResult = findComponentNamed(panel.getRootPanel(), "jwt.signature.result", JPanel.class);
+            assertNotNull(feedbackStack);
+            assertNotNull(signatureResult);
+            assertFalse(feedbackStack.isVisible());
+            assertFalse(signatureResult.isVisible());
 
             String fullValue = "header-value-".repeat(30);
             Jwt jwt = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
@@ -78,12 +85,10 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
 
             HS256Panel secret = (HS256Panel) panel.getSecretPanel();
             secret.setSecret("secret");
-            assertTrue(((JButton) footer).isEnabled());
             tabs.setSelectedIndex(1);
             assertTrue(SwingUtilities.isDescendingFrom(secret.getRoot(), panel.getRootPanel()));
             assertFalse(SwingUtilities.isDescendingFrom(secret.getRoot(), tabs));
             assertTrue(secret.getRoot().isShowing());
-            assertTrue(footer.isShowing());
 
             panel.setJwt(new Jwt(jwt.toString()));
             assertEquals(0, tabs.getSelectedIndex());
@@ -93,7 +98,140 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
         }
     }
 
-    public void testExpiredTokenShowsWarningWithoutValidatingSignature() {
+    public void testVerifySignatureFeedbackTracksInputs() {
+        Jwt signed = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
+                new HS256SignatureContext("secret"), false);
+        JwtPanel panel = new JwtPanel(getProject());
+        try {
+            JButton verifySignature = findComponentNamed(panel.getVerificationToolbarComponent(),
+                    "jwt.verifySignature.button", JButton.class);
+            JPanel signatureResult = findComponentNamed(panel.getRootPanel(),
+                    "jwt.signature.result", JPanel.class);
+            JLabel signatureMessage = findComponentNamed(panel.getRootPanel(),
+                    "jwt.signature.message", JLabel.class);
+            JLabel signatureIcon = findComponentNamed(panel.getRootPanel(),
+                    "jwt.signature.icon", JLabel.class);
+            assertNotNull(verifySignature);
+            assertNotNull(signatureResult);
+            assertNotNull(signatureMessage);
+            assertNotNull(signatureIcon);
+            assertFalse(verifySignature.isEnabled());
+            assertFalse(signatureResult.isVisible());
+            assertEquals("Paste a JWT to verify the signature", verifySignature.getToolTipText());
+            assertEquals(verifySignature.getToolTipText(),
+                    verifySignature.getAccessibleContext().getAccessibleDescription());
+
+            panel.setJwt(new Jwt(signed.toString()));
+            assertFalse(verifySignature.isEnabled());
+            assertEquals("Enter the shared secret to verify the signature", verifySignature.getToolTipText());
+            assertEquals(verifySignature.getToolTipText(),
+                    verifySignature.getAccessibleContext().getAccessibleDescription());
+
+            HS256Panel secret = (HS256Panel) panel.getSecretPanel();
+            secret.setSecret("wrong secret");
+            assertTrue(verifySignature.isEnabled());
+            verifySignature.doClick();
+            assertTrue(signatureResult.isVisible());
+            assertTrue(signatureMessage.getText().startsWith("Signature invalid:"));
+            assertEquals(signatureMessage.getText(), signatureMessage.getToolTipText());
+            assertSame(AllIcons.General.BalloonWarning, signatureIcon.getIcon());
+            assertTrue(signatureResult.isOpaque());
+
+            secret.setSecret("secret");
+            assertFalse(signatureResult.isVisible());
+            assertEquals("", signatureMessage.getText());
+            verifySignature.doClick();
+            assertTrue(signatureResult.isVisible());
+            assertEquals("Signature verified", signatureMessage.getText());
+            assertSame(AllIcons.General.InspectionsOK, signatureIcon.getIcon());
+            assertFalse(signatureResult.isOpaque());
+
+            panel.setSignatureContext(new HS256SignatureContext("updated secret"));
+            assertFalse(signatureResult.isVisible());
+            panel.setSignatureContext(new HS256SignatureContext("secret"));
+            verifySignature.doClick();
+            assertTrue(signatureResult.isVisible());
+
+            panel.setJwt(new Jwt(signed.toString()));
+            assertFalse(signatureResult.isVisible());
+            secret.setSecret("another secret");
+            assertFalse(signatureResult.isVisible());
+            secret.setSecret("secret");
+            verifySignature.doClick();
+            assertTrue(signatureResult.isVisible());
+            panel.reset();
+            assertFalse(signatureResult.isVisible());
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testUnsupportedAlgorithmShowsDisabledReason() {
+        JwtPanel panel = new JwtPanel(getProject());
+        try {
+            panel.setJwt(new Jwt("eyJhbGciOiJ1bmtub3duIn0.eyJzdWIiOiJhbGljZSJ9.c2ln"));
+
+            JButton verifySignature = findComponentNamed(panel.getVerificationToolbarComponent(),
+                    "jwt.verifySignature.button", JButton.class);
+            assertNotNull(verifySignature);
+            assertFalse(verifySignature.isEnabled());
+            assertEquals("Unsupported algorithm unknown to verify the signature", verifySignature.getToolTipText());
+            assertEquals(verifySignature.getToolTipText(),
+                    verifySignature.getAccessibleContext().getAccessibleDescription());
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testRsaVerificationShowsPublicKeyRequirement() {
+        JwtPanel panel = new JwtPanel(getProject());
+        try {
+            panel.setJwt(new Jwt("eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhbGljZSJ9.c2ln"));
+
+            JButton verifySignature = findComponentNamed(panel.getVerificationToolbarComponent(),
+                    "jwt.verifySignature.button", JButton.class);
+            assertNotNull(verifySignature);
+            assertFalse(verifySignature.isEnabled());
+            assertEquals("Enter the RSA public key to verify the signature", verifySignature.getToolTipText());
+            assertEquals(verifySignature.getToolTipText(),
+                    verifySignature.getAccessibleContext().getAccessibleDescription());
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testMalformedRsaKeyShowsSignatureWarning() {
+        JwtPanel panel = new JwtPanel(getProject());
+        try {
+            panel.setJwt(new Jwt("eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhbGljZSJ9.c2ln"));
+            RS256Panel rsaPanel = (RS256Panel) panel.getSecretPanel();
+            ((EditorTextField) rsaPanel.getPublicKeyInput()).setText("malformed public key");
+
+            JButton verifySignature = findComponentNamed(panel.getVerificationToolbarComponent(),
+                    "jwt.verifySignature.button", JButton.class);
+            JPanel signatureResult = findComponentNamed(panel.getRootPanel(),
+                    "jwt.signature.result", JPanel.class);
+            JLabel signatureMessage = findComponentNamed(panel.getRootPanel(),
+                    "jwt.signature.message", JLabel.class);
+            JLabel signatureIcon = findComponentNamed(panel.getRootPanel(),
+                    "jwt.signature.icon", JLabel.class);
+            assertNotNull(verifySignature);
+            assertNotNull(signatureResult);
+            assertNotNull(signatureMessage);
+            assertTrue(verifySignature.isEnabled());
+
+            verifySignature.doClick();
+
+            assertTrue(signatureResult.isVisible());
+            assertTrue(signatureMessage.getText().startsWith("Signature verification failed:"));
+            assertSame(AllIcons.General.BalloonWarning, signatureIcon.getIcon());
+            assertTrue(signatureResult.isOpaque());
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
+    public void testExpiredTokenAndSignatureFeedbackAreIndependent() {
         Instant expiration = Instant.now().minusSeconds(10);
         Jwt jwt = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
                 new HS256SignatureContext("secret"), false);
@@ -107,9 +245,36 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             JPanel warning = findComponentNamed(panel.getRootPanel(), "jwt.expiration.warning", JPanel.class);
             assertNotNull("The expired token should show a warning before signature validation", warning);
             assertTrue(warning.isVisible());
+            JPanel feedbackStack = findComponentNamed(panel.getRootPanel(), "jwt.feedback.stack", JPanel.class);
+            JPanel signatureResult = findComponentNamed(panel.getRootPanel(), "jwt.signature.result", JPanel.class);
+            assertTrue(feedbackStack.isVisible());
+            assertFalse(signatureResult.isVisible());
+            assertSame(feedbackStack, warning.getParent());
+            assertSame(feedbackStack, signatureResult.getParent());
+            Container parsedContent = feedbackStack.getParent();
+            assertTrue(parsedContent.getLayout() instanceof BorderLayout);
+            assertSame(feedbackStack,
+                    ((BorderLayout) parsedContent.getLayout()).getLayoutComponent(BorderLayout.NORTH));
+            assertEquals(0, feedbackStack.getComponentZOrder(warning));
+            assertEquals(1, feedbackStack.getComponentZOrder(signatureResult));
             JLabel message = findComponentNamed(warning, "jwt.expiration.message", JLabel.class);
             assertNotNull(message);
             assertEquals("Token expired at " + expiration, message.getText());
+
+            HS256Panel secretPanel = (HS256Panel) panel.getSecretPanel();
+            secretPanel.setSecret("wrong secret");
+            JButton verifySignature = findComponentNamed(panel.getVerificationToolbarComponent(),
+                    "jwt.verifySignature.button", JButton.class);
+            JLabel signatureMessage = findComponentNamed(panel.getRootPanel(),
+                    "jwt.signature.message", JLabel.class);
+            JLabel signatureIcon = findComponentNamed(panel.getRootPanel(),
+                    "jwt.signature.icon", JLabel.class);
+            assertTrue(verifySignature.isEnabled());
+            verifySignature.doClick();
+            assertTrue(signatureResult.isVisible());
+            assertTrue(signatureMessage.getText().startsWith("Signature invalid:"));
+            assertSame(AllIcons.General.BalloonWarning, signatureIcon.getIcon());
+            assertTrue(warning.isVisible());
 
             JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
             JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
@@ -119,11 +284,16 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
 
             tabs.setSelectedIndex(1);
             assertTrue(warning.isVisible());
-            panel.setSignatureContext(new HS256SignatureContext("secret"));
-            JButton validate = (JButton) ((BorderLayout) panel.getRootPanel().getLayout())
-                    .getLayoutComponent(BorderLayout.SOUTH);
-            validate.doClick();
+            assertTrue(signatureResult.isVisible());
+            secretPanel.setSecret("secret");
+            assertFalse(signatureResult.isVisible());
             assertTrue(warning.isVisible());
+            verifySignature.doClick();
+            assertTrue(warning.isVisible());
+            assertTrue(signatureResult.isVisible());
+            assertEquals("Signature verified", signatureMessage.getText());
+            assertSame(AllIcons.General.InspectionsOK, signatureIcon.getIcon());
+            assertFalse(signatureResult.isOpaque());
             assertTrue(hasErrorIcon(claims, expirationRow, 1));
         } finally {
             Disposer.dispose(panel);
@@ -173,13 +343,21 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertFalse(warning.isVisible());
 
             clock.setInstant(expiration);
-            JButton verifySignature = (JButton) ((BorderLayout) panel.getRootPanel().getLayout())
-                    .getLayoutComponent(BorderLayout.SOUTH);
+            JButton verifySignature = findComponentNamed(panel.getVerificationToolbarComponent(),
+                    "jwt.verifySignature.button", JButton.class);
+            JPanel signatureResult = findComponentNamed(panel.getRootPanel(),
+                    "jwt.signature.result", JPanel.class);
+            JLabel signatureMessage = findComponentNamed(panel.getRootPanel(),
+                    "jwt.signature.message", JLabel.class);
             verifySignature.doClick();
 
             assertFalse(warning.isVisible());
+            assertTrue(signatureResult.isVisible());
+            assertEquals("Signature verified", signatureMessage.getText());
             scheduler.runScheduledTask();
             assertTrue(warning.isVisible());
+            assertTrue(signatureResult.isVisible());
+            assertEquals("Signature verified", signatureMessage.getText());
         } finally {
             Disposer.dispose(panel);
         }
@@ -518,9 +696,9 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             panel.setJwt(new Jwt(jwt.toString()));
             HS256Panel secret = (HS256Panel) panel.getSecretPanel();
             secret.setSecret("secret");
-            JButton validate = (JButton) ((BorderLayout) panel.getRootPanel().getLayout())
-                    .getLayoutComponent(BorderLayout.SOUTH);
-            assertTrue(validate.isEnabled());
+            JButton verifySignature = findComponentNamed(panel.getVerificationToolbarComponent(),
+                    "jwt.verifySignature.button", JButton.class);
+            assertTrue(verifySignature.isEnabled());
 
             JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
             assertNotNull(tabs);
@@ -535,7 +713,7 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertEquals(0, claims.getRowCount());
             assertSame(secret, panel.getSecretPanel());
             assertEquals("secret", ((HS256SignatureContext) secret.getSignatureContext()).secret());
-            assertFalse(validate.isEnabled());
+            assertFalse(verifySignature.isEnabled());
 
             panel.reset();
             assertEquals(0, tabs.getSelectedIndex());
@@ -596,8 +774,8 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertFalse(hasErrorIcon(claims, issuedAtRow, 1));
 
             panel.setSignatureContext(new HS256SignatureContext("secret"));
-            JButton verifySignature = (JButton) ((BorderLayout) panel.getRootPanel().getLayout())
-                    .getLayoutComponent(BorderLayout.SOUTH);
+            JButton verifySignature = findComponentNamed(panel.getVerificationToolbarComponent(),
+                    "jwt.verifySignature.button", JButton.class);
             assertTrue(verifySignature.isEnabled());
             verifySignature.doClick();
             assertFalse(hasErrorIcon(claims, issuedAtRow, 1));

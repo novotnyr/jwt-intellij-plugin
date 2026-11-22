@@ -22,9 +22,11 @@ import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.JBSplitter;
 import com.intellij.ui.awt.RelativePoint;
-import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
+
+import javax.swing.JPanel;
+import java.awt.BorderLayout;
 
 public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
 
@@ -150,7 +152,12 @@ public class JwtExplorer extends SimpleToolWindowPanel implements Disposable {
         ActionToolbar actionToolBar = ActionManager.getInstance().createActionToolbar("jwtToolbar", group, true);
         actionToolBar.setTargetComponent(this.encodedJwtPanel);
 
-        setToolbar(JBUI.Panels.simplePanel(actionToolBar.getComponent()));
+        JPanel toolbarPanel = new JPanel(new BorderLayout());
+        toolbarPanel.setName("jwt.toolbar");
+        toolbarPanel.setOpaque(false);
+        toolbarPanel.add(actionToolBar.getComponent(), BorderLayout.CENTER);
+        toolbarPanel.add(this.jwtPanel.getVerificationToolbarComponent(), BorderLayout.EAST);
+        setToolbar(toolbarPanel);
     }
 
 

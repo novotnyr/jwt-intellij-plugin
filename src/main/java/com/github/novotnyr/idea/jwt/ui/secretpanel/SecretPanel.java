@@ -2,7 +2,6 @@ package com.github.novotnyr.idea.jwt.ui.secretpanel;
 
 import com.github.novotnyr.idea.jwt.SignatureContext;
 import com.github.novotnyr.idea.jwt.SignatureContextException;
-import com.github.novotnyr.idea.jwt.validation.SignatureError;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.popup.Balloon;
@@ -18,24 +17,6 @@ public abstract class SecretPanel implements Disposable {
     private SignatureContextChangedListener signatureContextChangedListener;
 
     public abstract JComponent getRoot();
-
-    public void notifySignatureErrors(SignatureError signatureError) {
-        JBPopupFactory.getInstance()
-                .createHtmlTextBalloonBuilder(signatureError.message(), MessageType.ERROR, null)
-                .setFadeoutTime(7500)
-                .createBalloon()
-                .show(RelativePoint.getNorthWestOf(getBaloonableComponent()),
-                        Balloon.Position.atRight);
-    }
-
-    public void notifySignatureValid() {
-        JBPopupFactory.getInstance()
-                .createHtmlTextBalloonBuilder("Signature is valid", MessageType.INFO, null)
-                .setFadeoutTime(7500)
-                .createBalloon()
-                .show(RelativePoint.getNorthWestOf(getBaloonableComponent()),
-                        Balloon.Position.atRight);
-    }
 
     public void notifyEmptySignature() {
         JBPopupFactory.getInstance()

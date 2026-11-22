@@ -18,10 +18,45 @@ import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.UIUtil;
 
+import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
 
 public class JwtActionUpdateStateTest extends LightPlatformTestCase {
+    public void testVerifySignatureStaysVisibleAtTrailingEdgeOfToolbar() {
+        JwtExplorer explorer = new JwtExplorer(getProject());
+        explorer.addNotify();
+        try {
+            JPanel toolbar = findComponentNamed(explorer, "jwt.toolbar", JPanel.class);
+            JPanel verificationControls = findComponentNamed(explorer, "jwt.verification.controls", JPanel.class);
+            JButton verifySignature = findComponentNamed(explorer, "jwt.verifySignature.button", JButton.class);
+            assertNotNull(toolbar);
+            assertNotNull(verificationControls);
+            assertNotNull(verifySignature);
+            assertNull(findComponentNamed(toolbar, "jwt.signature.status", JComponent.class));
+            toolbar.setSize(360, toolbar.getPreferredSize().height);
+            layoutRecursively(toolbar);
+            assertTrue("Verify Signature should remain a full-width primary action",
+                    verifySignature.getWidth() >= verifySignature.getPreferredSize().width);
+            assertEquals(verificationControls.getWidth(), verifySignature.getX() + verifySignature.getWidth());
+            assertEquals("default", verifySignature.getClientProperty("JButton.buttonType"));
+
+            toolbar.setSize(280, toolbar.getPreferredSize().height);
+            layoutRecursively(toolbar);
+
+            assertTrue("The verification action must not be clipped when the toolbar is narrow",
+                    verifySignature.getWidth() >= verifySignature.getPreferredSize().width);
+            assertEquals(verificationControls.getWidth(), verifySignature.getX() + verifySignature.getWidth());
+        } finally {
+            explorer.removeNotify();
+            Disposer.dispose(explorer);
+        }
+    }
+
     public void testExplorerActionsFollowCurrentToken() {
         JwtExplorer explorer = new JwtExplorer(getProject());
         try {
@@ -162,6 +197,30 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
         assertTrue(isSelected(selected));
         for (AnAction other : others) {
             assertFalse(isSelected(other));
+        }
+    }
+
+    private static <T extends JComponent> T findComponentNamed(Component root, String name, Class<T> type) {
+        if (type.isInstance(root) && name.equals(root.getName())) {
+            return type.cast(root);
+        }
+        if (root instanceof Container container) {
+            for (Component child : container.getComponents()) {
+                T result = findComponentNamed(child, name, type);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static void layoutRecursively(Container container) {
+        container.doLayout();
+        for (Component child : container.getComponents()) {
+            if (child instanceof Container childContainer) {
+                layoutRecursively(childContainer);
+            }
         }
     }
 }
