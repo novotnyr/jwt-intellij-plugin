@@ -334,8 +334,16 @@ public class JwtPanel implements Disposable {
 
     @Nullable
     ClaimError getClaimErrorAtFocusedRow() {
-        return getClaimErrorAtViewCell(this.claimsTable.getSelectedRow(),
-                this.claimsTable.convertColumnIndexToView(1));
+        return getClaimErrorAtViewCell(getFocusedViewRow(), this.claimsTable.convertColumnIndexToView(1));
+    }
+
+    private int getFocusedViewRow() {
+        int leadSelectionIndex = this.claimsTable.getSelectionModel().getLeadSelectionIndex();
+        if (leadSelectionIndex < 0 || leadSelectionIndex >= this.claimsTable.getRowCount()
+                || !this.claimsTable.isRowSelected(leadSelectionIndex)) {
+            return -1;
+        }
+        return leadSelectionIndex;
     }
 
     private void showClaimErrorTooltipForMousePoint(Point point) {
@@ -377,9 +385,10 @@ public class JwtPanel implements Disposable {
     }
 
     private void showClaimErrorTooltipForFocusedRow() {
-        int viewRow = this.claimsTable.getSelectedRow();
+        int viewRow = getFocusedViewRow();
         int viewColumn = this.claimsTable.convertColumnIndexToView(1);
-        showClaimErrorTooltipAtCell(viewRow, viewColumn, getClaimErrorAtFocusedRow(), false);
+        ClaimError claimError = getClaimErrorAtViewCell(viewRow, viewColumn);
+        showClaimErrorTooltipAtCell(viewRow, viewColumn, claimError, false);
     }
 
     private void dismissClaimErrorTooltip() {
