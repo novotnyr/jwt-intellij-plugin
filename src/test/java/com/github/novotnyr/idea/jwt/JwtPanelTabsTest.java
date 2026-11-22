@@ -577,6 +577,48 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
         }
     }
 
+    public void testKeyboardClaimErrorFollowsLeadRowAndValueColumn() {
+        JwtPanel panel = new JwtPanel(getProject());
+        try {
+            panel.setJwt(new Jwt(createJwtWithIssuedAt("yes").toString()));
+
+            JTabbedPane tabs = UIUtil.findComponentOfType(panel.getRootPanel(), JTabbedPane.class);
+            JBTable claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
+            int issuedAtRow = findRow(claims, "iat");
+            int subjectRow = findRow(claims, "subject");
+            int firstRow = Math.min(issuedAtRow, subjectRow);
+            int lastRow = Math.max(issuedAtRow, subjectRow);
+            JwtClaimsTableModel model = (JwtClaimsTableModel) claims.getModel();
+            ClaimError firstError = new ClaimError(model.getClaimAt(claims.convertRowIndexToModel(firstRow)).getName(),
+                    "First selected row error");
+            ClaimError leadError = new ClaimError(model.getClaimAt(claims.convertRowIndexToModel(lastRow)).getName(),
+                    "Lead row error");
+            model.setClaimErrors(java.util.List.of(firstError, leadError));
+
+            int valueColumn = claims.convertColumnIndexToView(1);
+            claims.moveColumn(valueColumn, 0);
+            claims.setRowSelectionInterval(firstRow, lastRow);
+            assertEquals(firstRow, claims.getSelectedRow());
+            assertEquals(lastRow, claims.getSelectionModel().getLeadSelectionIndex());
+            assertSame(leadError, panel.getClaimErrorAtViewCell(lastRow, claims.convertColumnIndexToView(1)));
+            assertSame(leadError, panel.getClaimErrorAtFocusedRow());
+
+            claims.setRowSelectionInterval(lastRow, firstRow);
+            assertEquals(firstRow, claims.getSelectedRow());
+            assertEquals(firstRow, claims.getSelectionModel().getLeadSelectionIndex());
+            assertSame(firstError, panel.getClaimErrorAtFocusedRow());
+
+            model.setClaimErrors(java.util.List.of(firstError));
+            claims.setRowSelectionInterval(firstRow, lastRow);
+            assertNull(panel.getClaimErrorAtFocusedRow());
+
+            claims.clearSelection();
+            assertNull(panel.getClaimErrorAtFocusedRow());
+        } finally {
+            Disposer.dispose(panel);
+        }
+    }
+
     public void testClaimColumnsStartNarrowAndKeepUserResizing() {
         JwtPanel panel = new JwtPanel(getProject());
         try {
