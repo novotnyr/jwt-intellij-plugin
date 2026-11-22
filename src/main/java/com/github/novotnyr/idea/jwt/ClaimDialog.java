@@ -16,7 +16,6 @@ import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.EditorNotificationPanel;
 import com.intellij.util.ui.JBUI;
-import com.intellij.util.ui.UIUtil;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.JComponent;
@@ -118,7 +117,7 @@ public class ClaimDialog extends DialogWrapper {
 
             if (mode == Mode.VIEW && viewOnlyReason != null) {
                 EditorNotificationPanel viewOnlyBanner = new EditorNotificationPanel(
-                        UIUtil.getPanelBackground(), EditorNotificationPanel.Status.Warning);
+                        JBUI.CurrentTheme.Banner.WARNING_BACKGROUND, EditorNotificationPanel.Status.Warning);
                 viewOnlyBanner.setText(viewOnlyReason);
                 viewOnlyBanner.setName("jwt.claim.readOnly.banner");
 
