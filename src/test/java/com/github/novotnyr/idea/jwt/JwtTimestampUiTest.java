@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
 
 public class JwtTimestampUiTest extends LightPlatformTestCase {
@@ -170,6 +171,55 @@ public class JwtTimestampUiTest extends LightPlatformTestCase {
             assertEquals(outOfRange.toString(), new JwtClaimsTableModel(largeTimestampJwt).getValueAt(0, 1));
         } finally {
             Configuration.INSTANCE.setTimestampFormat(originalFormat);
+        }
+    }
+
+    public void testMediumTimestampUsesDefaultFormattingLocaleAndTimeZone() {
+        Locale originalLocale = Locale.getDefault(Locale.Category.FORMAT);
+        TimeZone originalZone = TimeZone.getDefault();
+        try {
+            Locale.setDefault(Locale.Category.FORMAT, Locale.forLanguageTag("sk-SK"));
+            TimeZone.setDefault(TimeZone.getTimeZone("Europe/Bratislava"));
+            BigDecimal timestamp = NumericDate.fromInstant(Instant.parse("2026-11-22T17:50:00Z"));
+
+            String slovak = TimestampFormatter.format(timestamp, Configuration.TimestampFormat.MEDIUM,
+                    Instant.EPOCH);
+            assertEquals("22. 11. 2026, 18:50:00", slovak);
+
+            Locale.setDefault(Locale.Category.FORMAT, Locale.US);
+            String english = TimestampFormatter.format(timestamp, Configuration.TimestampFormat.MEDIUM,
+                    Instant.EPOCH);
+            assertFalse(slovak.equals(english));
+        } finally {
+            Locale.setDefault(Locale.Category.FORMAT, originalLocale);
+            TimeZone.setDefault(originalZone);
+        }
+    }
+
+    public void testMediumTimestampRetainsRawFallbackWhenOutOfRange() {
+        Locale originalLocale = Locale.getDefault(Locale.Category.FORMAT);
+        TimeZone originalZone = TimeZone.getDefault();
+        Configuration.TimestampFormat originalFormat = Configuration.INSTANCE.getTimestampFormat();
+        try {
+            Locale.setDefault(Locale.Category.FORMAT, Locale.forLanguageTag("sk-SK"));
+            TimeZone.setDefault(TimeZone.getTimeZone("Europe/Bratislava"));
+            Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.MEDIUM);
+
+            BigDecimal outsideInstantRange = new BigDecimal("999999999999999999999999");
+            assertNull(TimestampFormatter.format(outsideInstantRange,
+                    Configuration.TimestampFormat.MEDIUM, Instant.EPOCH));
+            assertNull(TimestampFormatter.format(NumericDate.fromInstant(Instant.MIN),
+                    Configuration.TimestampFormat.MEDIUM, Instant.EPOCH));
+
+            Jwt jwt = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256,
+                    new HS256SignatureContext("secret"), false);
+            jwt.setPayloadClaim(DateClaim.fromNumericDate("exp", outsideInstantRange));
+            JwtClaimsTableModel model = new JwtClaimsTableModel(jwt);
+            assertEquals(outsideInstantRange.toString(), model.getValueAt(findRow(model, "exp"), 1));
+        } finally {
+            Configuration.INSTANCE.setTimestampFormat(originalFormat);
+            Locale.setDefault(Locale.Category.FORMAT, originalLocale);
+            TimeZone.setDefault(originalZone);
         }
     }
 

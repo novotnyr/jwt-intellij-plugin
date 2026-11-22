@@ -15,7 +15,7 @@ public enum Configuration {
             = List.of(EXPIRES_AT, NOT_BEFORE, ISSUED_AT);
 
     public enum TimestampFormat {
-        RAW, ISO, ISO_LOCAL, RELATIVE
+        RAW, ISO, ISO_LOCAL, RELATIVE, MEDIUM
     }
 
     // Read and write on the Swing event dispatch thread (EDT).

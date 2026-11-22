@@ -96,24 +96,32 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
             AnAction iso = findAction(formats, "ISO (UTC)");
             AnAction localIso = findAction(formats, "ISO (Local)");
             AnAction relative = findAction(formats, "Relative");
-            assertEquals(4, formats.getChildren(null).length);
+            AnAction medium = findAction(formats, "Medium Format");
+            assertEquals(5, formats.getChildren(null).length);
+            assertEquals("Medium Format",
+                    formats.getChildren(null)[3].getTemplatePresentation().getText());
             for (AnAction action : formats.getChildren(null)) {
                 assertEquals(ActionUpdateThread.EDT, action.getActionUpdateThread());
             }
 
             Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.RAW);
-            assertSelected(raw, iso, localIso, relative);
+            assertSelected(raw, iso, localIso, relative, medium);
 
             iso.actionPerformed(TestActionEvent.createTestEvent(iso));
-            assertSelected(iso, raw, localIso, relative);
+            assertSelected(iso, raw, localIso, relative, medium);
 
             localIso.actionPerformed(TestActionEvent.createTestEvent(localIso));
-            assertSelected(localIso, raw, iso, relative);
+            assertSelected(localIso, raw, iso, relative, medium);
             localIso.actionPerformed(TestActionEvent.createTestEvent(localIso));
-            assertSelected(localIso, raw, iso, relative);
+            assertSelected(localIso, raw, iso, relative, medium);
 
             relative.actionPerformed(TestActionEvent.createTestEvent(relative));
-            assertSelected(relative, raw, iso, localIso);
+            assertSelected(relative, raw, iso, localIso, medium);
+
+            medium.actionPerformed(TestActionEvent.createTestEvent(medium));
+            assertSelected(medium, raw, iso, localIso, relative);
+            medium.actionPerformed(TestActionEvent.createTestEvent(medium));
+            assertSelected(medium, raw, iso, localIso, relative);
         } finally {
             Configuration.INSTANCE.setTimestampFormat(original);
         }
