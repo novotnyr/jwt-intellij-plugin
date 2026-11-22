@@ -3,11 +3,13 @@ package com.github.novotnyr.idea.jwt;
 import com.github.novotnyr.idea.jwt.core.DateClaim;
 import com.github.novotnyr.idea.jwt.core.Jwt;
 import com.github.novotnyr.idea.jwt.core.NamedClaim;
+import com.github.novotnyr.idea.jwt.core.NumericDate;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import org.jetbrains.annotations.Nullable;
 import org.ocpsoft.prettytime.PrettyTime;
 
 import javax.swing.table.AbstractTableModel;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -60,10 +62,11 @@ public class JwtClaimsTableModel extends AbstractTableModel {
     private Object render(NamedClaim<?> claim) {
         if(claim instanceof DateClaim) {
             DateClaim dateClaim = (DateClaim) claim;
-            Date date = dateClaim.getDate();
-            if (date != null && Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.ISO) {
-                return date;
+            if (Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.ISO) {
+                Instant instant = NumericDate.toInstant(dateClaim.getValue());
+                return instant == null ? dateClaim.getValueString() : instant.toString();
             }
+            Date date = dateClaim.getDate();
             if (date != null && Configuration.INSTANCE.getTimestampFormat() == Configuration.TimestampFormat.RELATIVE) {
                 PrettyTime prettyTime = new PrettyTime();
                 return prettyTime.format(date);

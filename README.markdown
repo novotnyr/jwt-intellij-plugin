@@ -20,7 +20,7 @@ Use **New JWT** to create an HS256, HS384, or RS256 token, with an optional `iat
 
 ### Work with timestamps
 
-Use the tool window's gear menu to switch between the **Unix timestamp**, **ISO**, and **Relative** display options. The timestamp editor includes **Now**, **+15 min**, and **-15 min** controls and preserves fractional timestamp values while editing.
+Use the tool window's gear menu to switch between the **Unix timestamp**, **ISO**, and **Relative** display options. **ISO** shows the full date and time in UTC. The timestamp editor includes **Now**, **+15 min**, and **-15 min** controls and preserves fractional timestamp values while editing.
 
 ### Copy or open the payload
 

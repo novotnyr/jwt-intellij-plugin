@@ -143,6 +143,8 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
     }
 
     public void testClaimErrorIconIsLimitedToInvalidPayloadValueAndRefreshes() {
+        Configuration.TimestampFormat originalFormat = Configuration.INSTANCE.getTimestampFormat();
+        Configuration.INSTANCE.setTimestampFormat(Configuration.TimestampFormat.ISO);
         JwtPanel panel = new JwtPanel(getProject());
         try {
             Jwt invalidJwt = createJwtWithIssuedAt("yes");
@@ -180,6 +182,7 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
             issuedAtRow = findRow(claims, "iat");
             assertFalse(hasErrorIcon(claims, issuedAtRow, 1));
+            assertEquals("2023-11-14T22:13:20Z", claims.getValueAt(issuedAtRow, 1));
 
             panel.setJwt(new Jwt(invalidJwt.toString()));
             claims = UIUtil.findComponentOfType((JComponent) tabs.getComponentAt(0), JBTable.class);
@@ -195,6 +198,7 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertEquals("header-value", header.getValueAt(findRow(header, "custom"), 1));
         } finally {
             Disposer.dispose(panel);
+            Configuration.INSTANCE.setTimestampFormat(originalFormat);
         }
     }
 

@@ -13,7 +13,6 @@ import javax.swing.event.DocumentEvent;
 import java.awt.event.ActionEvent;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.Date;
 
 public class DateClaimPanel extends AbstractClaimPanel<DateClaim, BigDecimal> {
 
@@ -80,7 +79,7 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, BigDecimal> {
         try {
             this.validationInfo = null;
             BigDecimal timestamp = new BigDecimal(this.claimValueTextField.getText());
-            Date preview = NumericDate.toDate(timestamp);
+            Instant preview = NumericDate.toInstant(timestamp);
             this.datePreviewLabel.setText(preview == null ? "Timestamp outside display range" : preview.toString());
         } catch (NumberFormatException e) {
             this.datePreviewLabel.setText("Not a valid timestamp");
