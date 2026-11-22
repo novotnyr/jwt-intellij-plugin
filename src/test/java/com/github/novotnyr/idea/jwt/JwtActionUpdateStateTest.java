@@ -82,15 +82,19 @@ public class JwtActionUpdateStateTest extends LightPlatformTestCase {
 
             EncodedJwtPanel encoded = UIUtil.findComponentOfType(explorer, EncodedJwtPanel.class);
             assertNotNull(encoded);
-            JLabel missingInputHint = findComponentNamed(explorer, "jwt.verification.input.hint", JLabel.class);
+            JPanel missingInputHint = findComponentNamed(explorer, "jwt.verification.input.hint", JPanel.class);
+            JLabel missingInputMessage = findComponentNamed(explorer,
+                    "jwt.verification.input.message", JLabel.class);
             assertNotNull(missingInputHint);
+            assertNotNull(missingInputMessage);
             JBTextArea input = UIUtil.findComponentOfType(encoded, JBTextArea.class);
             assertNotNull(input);
             input.setText(tokenWithClaim().toString());
             assertTrue(isEnabled(copy));
             assertTrue(isEnabled(scratch));
             assertTrue(missingInputHint.isVisible());
-            assertEquals("Enter a shared secret in Key / Secret", missingInputHint.getText());
+            assertEquals("Enter a shared secret in Key / Secret", missingInputMessage.getText());
+            assertEquals(missingInputMessage.getText(), missingInputMessage.getToolTipText());
 
             JTabbedPane tabs = UIUtil.findComponentOfType(explorer, JTabbedPane.class);
             assertNotNull(tabs);

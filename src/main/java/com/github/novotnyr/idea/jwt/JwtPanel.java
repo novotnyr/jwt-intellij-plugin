@@ -130,6 +130,10 @@ public class JwtPanel implements Disposable {
 
     private final JLabel signatureResultMessage = new JLabel();
 
+    private final JPanel missingVerificationInputPanel = new JPanel(new BorderLayout(JBUI.scale(8), 0));
+
+    private final JLabel missingVerificationInputIcon = new JLabel();
+
     private final JLabel missingVerificationInputMessage = new JLabel();
 
     private final Color signatureResultWarningBackground = JBColor.namedColor("Notification.warningBackground",
@@ -274,16 +278,13 @@ public class JwtPanel implements Disposable {
     }
 
     private void configureExpirationWarningPanel() {
-        Color warningBackground = JBColor.namedColor("Notification.warningBackground",
-                new JBColor(0xFFF4D1, 0x4B422A));
         this.expirationWarningPanel.setName("jwt.expiration.warning");
         this.expirationWarningPanel.setOpaque(true);
-        this.expirationWarningPanel.setBackground(warningBackground);
+        this.expirationWarningPanel.setBackground(this.signatureResultWarningBackground);
         this.expirationWarningPanel.setBorder(JBUI.Borders.empty(8, 12));
         this.expirationWarningPanel.add(new JLabel(AllIcons.General.BalloonWarning), BorderLayout.WEST);
         this.expirationWarningMessage.setName("jwt.expiration.message");
-        this.expirationWarningMessage.setForeground(JBColor.namedColor("Notification.warningForeground",
-                new JBColor(0x594300, 0xF0D98C)));
+        this.expirationWarningMessage.setForeground(this.signatureResultWarningForeground);
         this.expirationWarningPanel.add(this.expirationWarningMessage, BorderLayout.CENTER);
         this.expirationWarningPanel.setVisible(false);
     }
@@ -306,10 +307,18 @@ public class JwtPanel implements Disposable {
         this.signatureResultPanel.add(this.signatureResultMessage, BorderLayout.CENTER);
         this.signatureResultPanel.setVisible(false);
         this.feedbackPanel.add(this.signatureResultPanel);
-        this.missingVerificationInputMessage.setName("jwt.verification.input.hint");
-        this.missingVerificationInputMessage.setBorder(JBUI.Borders.empty(4, 12, 8, 12));
-        this.missingVerificationInputMessage.setVisible(false);
-        this.feedbackPanel.add(this.missingVerificationInputMessage);
+        this.missingVerificationInputPanel.setName("jwt.verification.input.hint");
+        this.missingVerificationInputPanel.setOpaque(true);
+        this.missingVerificationInputPanel.setBackground(this.signatureResultWarningBackground);
+        this.missingVerificationInputPanel.setBorder(JBUI.Borders.empty(8, 12));
+        this.missingVerificationInputIcon.setName("jwt.verification.input.icon");
+        this.missingVerificationInputIcon.setIcon(AllIcons.General.BalloonWarning);
+        this.missingVerificationInputPanel.add(this.missingVerificationInputIcon, BorderLayout.WEST);
+        this.missingVerificationInputMessage.setName("jwt.verification.input.message");
+        this.missingVerificationInputMessage.setForeground(this.signatureResultWarningForeground);
+        this.missingVerificationInputPanel.add(this.missingVerificationInputMessage, BorderLayout.CENTER);
+        this.missingVerificationInputPanel.setVisible(false);
+        this.feedbackPanel.add(this.missingVerificationInputPanel);
         this.feedbackPanel.setVisible(false);
     }
 
@@ -719,7 +728,9 @@ public class JwtPanel implements Disposable {
             default -> null;
         };
         this.missingVerificationInputMessage.setText(missingInputHint == null ? "" : missingInputHint);
-        this.missingVerificationInputMessage.setVisible(missingInputHint != null);
+        this.missingVerificationInputMessage.setToolTipText(missingInputHint);
+        this.missingVerificationInputPanel.setToolTipText(missingInputHint);
+        this.missingVerificationInputPanel.setVisible(missingInputHint != null);
         refreshFeedbackPanel();
     }
 
@@ -987,7 +998,7 @@ public class JwtPanel implements Disposable {
 
     private void refreshFeedbackPanel() {
         this.feedbackPanel.setVisible(this.expirationWarningPanel.isVisible() || this.signatureResultPanel.isVisible()
-                || this.missingVerificationInputMessage.isVisible());
+                || this.missingVerificationInputPanel.isVisible());
         JPanel parent = (JPanel) this.feedbackPanel.getParent();
         if (parent != null) {
             parent.revalidate();
