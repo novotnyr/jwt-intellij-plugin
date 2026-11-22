@@ -126,8 +126,6 @@ public class JwtPanel implements Disposable {
 
     private final JLabel signatureResultMessage = new JLabel();
 
-    private Color signatureResultDefaultForeground;
-
     private final Color signatureResultWarningBackground = JBColor.namedColor("Notification.warningBackground",
             new JBColor(0xFFF4D1, 0x4B422A));
 
@@ -303,7 +301,6 @@ public class JwtPanel implements Disposable {
         this.signatureResultIcon.setIcon(AllIcons.General.BalloonWarning);
         this.signatureResultPanel.add(this.signatureResultIcon, BorderLayout.WEST);
         this.signatureResultMessage.setName("jwt.signature.message");
-        this.signatureResultDefaultForeground = this.signatureResultMessage.getForeground();
         this.signatureResultMessage.setForeground(this.signatureResultWarningForeground);
         this.signatureResultPanel.add(this.signatureResultMessage, BorderLayout.CENTER);
         this.signatureResultPanel.setVisible(false);
@@ -722,7 +719,7 @@ public class JwtPanel implements Disposable {
         this.signatureResultIcon.setIcon(warning ? AllIcons.General.BalloonWarning : AllIcons.General.InspectionsOK);
         this.signatureResultMessage.setForeground(warning
                 ? this.signatureResultWarningForeground
-                : this.signatureResultDefaultForeground);
+                : JBColor.foreground());
         this.signatureResultPanel.setBackground(this.signatureResultWarningBackground);
         this.signatureResultPanel.setOpaque(warning);
         this.signatureResultPanel.setVisible(true);

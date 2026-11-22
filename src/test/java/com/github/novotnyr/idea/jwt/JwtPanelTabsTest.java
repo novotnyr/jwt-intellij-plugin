@@ -24,7 +24,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Point;
@@ -163,6 +165,36 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertFalse(signatureResult.isVisible());
         } finally {
             Disposer.dispose(panel);
+        }
+    }
+
+    public void testSuccessfulSignatureFeedbackFollowsThemeForeground() {
+        Color lightForeground = new Color(0x202020);
+        Color darkForeground = new Color(0xE0E0E0);
+        Object previousForeground = UIManager.put("Label.foreground", lightForeground);
+        try {
+            JwtPanel panel = new JwtPanel(getProject());
+            Disposer.register(getTestRootDisposable(), panel);
+            HS256SignatureContext context = new HS256SignatureContext("secret");
+            Jwt signed = JwtFactory.getInstance().newJwt(SignatureAlgorithm.HS256, context, false);
+            panel.setJwt(new Jwt(signed.toString()));
+            panel.setSignatureContext(context);
+
+            JButton verifySignature = findComponentNamed(panel.getVerificationToolbarComponent(),
+                    "jwt.verifySignature.button", JButton.class);
+            JLabel signatureMessage = findComponentNamed(panel.getRootPanel(), "jwt.signature.message", JLabel.class);
+            assertNotNull(verifySignature);
+            assertNotNull(signatureMessage);
+
+            UIManager.put("Label.foreground", darkForeground);
+            verifySignature.doClick();
+            assertEquals("Signature verified", signatureMessage.getText());
+            assertEquals(darkForeground.getRGB(), signatureMessage.getForeground().getRGB());
+
+            UIManager.put("Label.foreground", lightForeground);
+            assertEquals(lightForeground.getRGB(), signatureMessage.getForeground().getRGB());
+        } finally {
+            UIManager.put("Label.foreground", previousForeground);
         }
     }
 
