@@ -1,18 +1,18 @@
 package com.github.novotnyr.idea.jwt.action;
 
 import com.github.novotnyr.idea.jwt.datatype.DataTypeRegistry;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
+import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.ui.popup.JBPopup;
-import com.intellij.openapi.ui.popup.PopupChooserBuilder;
+import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.AnActionButtonRunnable;
 import com.intellij.ui.AnActionButtonUpdater;
-import com.intellij.ui.components.JBList;
 import org.jspecify.annotations.NonNull;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.function.BooleanSupplier;
 
 public class AddClaimActionButtonController implements AnActionButtonRunnable, AnActionButtonUpdater {
@@ -30,28 +30,24 @@ public class AddClaimActionButtonController implements AnActionButtonRunnable, A
         if (!this.canAddClaim.getAsBoolean()) {
             return;
         }
-        Collection<DataTypeRegistry.DataType> dataTypes = this.dataTypeRegistry.getDataTypes();
-        final JBList<String> list = new JBList<>(render(dataTypes));
-
-        JBPopup popup = new PopupChooserBuilder<>(list)
-                .setItemChosenCallback(s -> onItemChosen(list))
-                .createPopup();
-
-        popup.show(button.getPreferredPopupPoint());
+        createPopup().show(button.getPreferredPopupPoint());
     }
 
-    private List<String> render(Collection<DataTypeRegistry.DataType> dataTypes) {
-        List<String> result = new ArrayList<>();
-        for (DataTypeRegistry.DataType dataType : dataTypes) {
-            result.add("New " + dataType.toString().toLowerCase() + " claim");
+    DefaultActionGroup createActionGroup() {
+        DefaultActionGroup actionGroup = new DefaultActionGroup();
+        for (DataTypeRegistry.DataType dataType : this.dataTypeRegistry.getDataTypes()) {
+            actionGroup.add(new NewClaimAction(dataType));
         }
-        return result;
+        return actionGroup;
     }
 
-    private void onItemChosen(JBList<String> list) {
-        int selectedIndex = list.getSelectedIndex();
-        DataTypeRegistry.DataType dataType = this.dataTypeRegistry.getDataTypes().get(selectedIndex);
-        onClaimTypeSelected(dataType);
+    JBPopup createPopup() {
+        return JBPopupFactory.getInstance().createActionGroupPopup(
+                null,
+                createActionGroup(),
+                DataContext.EMPTY_CONTEXT,
+                JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
+                true);
     }
 
     public void onClaimTypeSelected(DataTypeRegistry.DataType dataType) {
@@ -61,5 +57,24 @@ public class AddClaimActionButtonController implements AnActionButtonRunnable, A
     @Override
     public boolean isEnabled(@NonNull AnActionEvent event) {
         return this.canAddClaim.getAsBoolean();
+    }
+
+    private class NewClaimAction extends AnAction {
+        private final DataTypeRegistry.DataType dataType;
+
+        private NewClaimAction(DataTypeRegistry.DataType dataType) {
+            super("New " + dataType.toString().toLowerCase() + " claim");
+            this.dataType = dataType;
+        }
+
+        @Override
+        public void actionPerformed(@NonNull AnActionEvent event) {
+            onClaimTypeSelected(this.dataType);
+        }
+
+        @Override
+        public @NonNull ActionUpdateThread getActionUpdateThread() {
+            return ActionUpdateThread.EDT;
+        }
     }
 }
