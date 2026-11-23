@@ -15,7 +15,6 @@ import com.github.novotnyr.idea.jwt.hs256.HS256SignatureContext;
 import org.junit.Test;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Date;
@@ -59,8 +58,8 @@ public class JwtTimestampRoundTripTest {
                 new StringClaim("sub", "alice"),
                 new BooleanClaim("active", true),
                 new NumericClaim("count", 42L),
-                new RawClaim("fraction", nodes.numberNode(new BigDecimal("42.75"))),
-                new RawClaim("large", nodes.numberNode(new BigInteger("9223372036854775808"))),
+                new NumericClaim("fraction", new BigDecimal("42.75")),
+                new NumericClaim("large", new BigDecimal("9223372036854775808")),
                 new StringClaim("unset", null),
                 new RawClaim("options", nodes.objectNode().put("enabled", true)),
                 new RawClaim("roles", nodes.arrayNode().add("reader"))

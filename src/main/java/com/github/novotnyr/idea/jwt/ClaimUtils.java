@@ -31,9 +31,7 @@ public class ClaimUtils {
 
         return switch (value.getNodeType()) {
             case BOOLEAN -> new BooleanClaim(claimName, value.booleanValue());
-            case NUMBER -> value.canConvertToLong() && value.canConvertToExactIntegral()
-                    ? new NumericClaim(claimName, value.longValue())
-                    : new RawClaim(claimName, value);
+            case NUMBER -> new NumericClaim(claimName, value.decimalValue());
             case ARRAY, OBJECT -> new RawClaim(claimName, value.deepCopy());
             default -> new StringClaim(claimName, value.textValue());
         };
@@ -73,7 +71,7 @@ public class ClaimUtils {
             return new BooleanClaim(name, (Boolean) value);
         }
         if(templateClaim instanceof NumericClaim) {
-            return new NumericClaim(name, (Long) value);
+            return new NumericClaim(name, (BigDecimal) value);
         }
         if(templateClaim instanceof StringClaim) {
             return new StringClaim(name, (String) value);

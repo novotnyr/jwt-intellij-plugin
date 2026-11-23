@@ -4,8 +4,9 @@ import com.github.novotnyr.idea.jwt.core.NumericClaim;
 import com.intellij.openapi.ui.ValidationInfo;
 
 import java.awt.GridLayout;
+import java.math.BigDecimal;
 
-public class NumericClaimPanel extends AbstractClaimPanel<NumericClaim, Long> {
+public class NumericClaimPanel extends AbstractClaimPanel<NumericClaim, BigDecimal> {
     public NumericClaimPanel(NumericClaim value) {
         super(value);
     }
@@ -18,8 +19,8 @@ public class NumericClaimPanel extends AbstractClaimPanel<NumericClaim, Long> {
     }
 
     @Override
-    public Long getClaimValue() {
-        return Long.valueOf(this.claimValueTextField.getText());
+    public BigDecimal getClaimValue() {
+        return parseValue();
     }
 
     @Override
@@ -28,10 +29,14 @@ public class NumericClaimPanel extends AbstractClaimPanel<NumericClaim, Long> {
             return new ValidationInfo("Value cannot be empty", this.claimValueTextField);
         }
         try {
-            Long.parseLong(this.claimValueTextField.getText());
-        } catch (Exception e) {
+            parseValue();
+        } catch (NumberFormatException e) {
             return new ValidationInfo("Value is not a number", this.claimValueTextField);
         }
         return null;
+    }
+
+    private BigDecimal parseValue() {
+        return new BigDecimal(this.claimValueTextField.getText().replace(',', '.'));
     }
 }
