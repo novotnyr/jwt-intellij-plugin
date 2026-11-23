@@ -88,11 +88,12 @@ public class JwtTimestampUiTest extends LightPlatformTestCase {
         assertNull(panel.getValidationInfo());
 
         valueField.setText("999999999999999999999999");
-        assertEquals("UTC: Timestamp outside display range", datePreview.getText());
+        assertEquals("Date preview unavailable", datePreview.getText());
         assertTrue(add15Minutes.isEnabled());
 
         valueField.setText("not a number");
-        assertEquals("UTC: Not a valid timestamp", datePreview.getText());
+        assertFalse(datePreview.isVisible());
+        assertEquals(List.of(), visiblePreviews(panel));
         assertFalse(add15Minutes.isEnabled());
         assertNotNull(panel.getValidationInfo());
 
@@ -199,9 +200,11 @@ public class JwtTimestampUiTest extends LightPlatformTestCase {
                     visiblePreviews(panel));
 
             valueField.setText("not a number");
-            assertEquals(List.of("UTC: Not a valid timestamp"), visiblePreviews(panel));
+            assertEquals(List.of(), visiblePreviews(panel));
+            assertNotNull(panel.getValidationInfo());
             valueField.setText(NumericDate.fromInstant(Instant.MIN).toString());
             assertEquals(List.of("UTC: " + Instant.MIN), visiblePreviews(panel));
+            assertNull(panel.getValidationInfo());
             valueField.setText(NumericDate.fromInstant(Instant.MAX).toString());
             assertEquals(List.of("UTC: " + Instant.MAX), visiblePreviews(panel));
         } finally {

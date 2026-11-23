@@ -109,6 +109,7 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, BigDecimal> {
     }
 
     private void onClaimValueTextFieldChanged() {
+        this.datePreviewLabel.setVisible(false);
         this.localDatePreviewLabel.setVisible(false);
         try {
             this.validationInfo = null;
@@ -117,18 +118,19 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, BigDecimal> {
             this.subtract15MinutesButton.setEnabled(!this.readOnly);
             Instant preview = NumericDate.toInstant(timestamp);
             if (preview == null) {
-                this.datePreviewLabel.setText(addMillisecondsHint("UTC: Timestamp outside display range", timestamp));
+                this.datePreviewLabel.setText(addMillisecondsHint("Date preview unavailable", timestamp));
+                this.datePreviewLabel.setVisible(true);
                 return;
             }
             String utcPreview = preview.toString();
             this.datePreviewLabel.setText(addMillisecondsHint("UTC: " + utcPreview, timestamp));
+            this.datePreviewLabel.setVisible(true);
             String localPreview = TimestampFormatter.formatLocalIso(preview);
             if (localPreview != null && !utcPreview.equals(localPreview)) {
                 this.localDatePreviewLabel.setText("Local: " + localPreview);
                 this.localDatePreviewLabel.setVisible(true);
             }
         } catch (NumberFormatException e) {
-            this.datePreviewLabel.setText("UTC: Not a valid timestamp");
             this.validationInfo = new ValidationInfo("Not a valid timestamp", this.claimValueTextField);
             this.add15MinutesButton.setEnabled(false);
             this.subtract15MinutesButton.setEnabled(false);
