@@ -80,6 +80,13 @@ public class ClaimDialog extends DialogWrapper {
         return this.claim;
     }
 
+    private static class ReadOnlyWarningBanner extends EditorNotificationPanel {
+        private ReadOnlyWarningBanner() {
+            super(JBUI.CurrentTheme.Banner.WARNING_BACKGROUND, Status.Warning);
+            this.myLabel.setForeground(JBUI.CurrentTheme.Banner.FOREGROUND);
+        }
+    }
+
     private static class ClaimPanel extends JPanel {
         protected NamedClaim<?> claim;
 
@@ -116,8 +123,7 @@ public class ClaimDialog extends DialogWrapper {
             cColumns2.insets = JBUI.insets(5);
 
             if (mode == Mode.VIEW && viewOnlyReason != null) {
-                EditorNotificationPanel viewOnlyBanner = new EditorNotificationPanel(
-                        JBUI.CurrentTheme.Banner.WARNING_BACKGROUND, EditorNotificationPanel.Status.Warning);
+                EditorNotificationPanel viewOnlyBanner = new ReadOnlyWarningBanner();
                 viewOnlyBanner.setText(viewOnlyReason);
                 viewOnlyBanner.setName("jwt.claim.readOnly.banner");
 
