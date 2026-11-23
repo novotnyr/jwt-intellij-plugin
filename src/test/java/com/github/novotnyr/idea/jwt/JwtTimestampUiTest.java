@@ -107,6 +107,25 @@ public class JwtTimestampUiTest extends LightPlatformTestCase {
         assertFalse(add15Minutes.isEnabled());
     }
 
+    public void testMillisecondTimestampShowsNonBlockingHintWithoutChangingInput() {
+        DateClaimPanel panel = new DateClaimPanel(DateClaim.fromNumericDate("exp", new BigDecimal("1735689601")));
+        JTextField valueField = findComponent(panel, JTextField.class);
+        JButton add15Minutes = findButton(panel, "+15 min");
+        JLabel datePreview = findComponent(panel, JLabel.class);
+
+        valueField.setText("1735689601000");
+
+        assertEquals("1735689601000", valueField.getText());
+        assertNull(panel.getValidationInfo());
+        assertTrue(add15Minutes.isEnabled());
+        assertTrue(datePreview.getText().contains("JWT timestamps use seconds. Did you paste milliseconds?"));
+
+        valueField.setText("1735689601");
+
+        assertEquals("UTC: 2025-01-01T00:00:01Z", datePreview.getText());
+        assertFalse(datePreview.getText().contains("milliseconds"));
+    }
+
     public void testTimestampFieldAndShortcutsKeepCompactLayout() {
         DateClaimPanel panel = new DateClaimPanel(DateClaim.fromNumericDate("exp", BigDecimal.ZERO));
         JTextField valueField = findComponent(panel, JTextField.class);

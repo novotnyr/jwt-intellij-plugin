@@ -22,6 +22,10 @@ import java.time.Instant;
 
 public class DateClaimPanel extends AbstractClaimPanel<DateClaim, BigDecimal> {
 
+    private static final BigDecimal MIN_MILLISECOND_TIMESTAMP = BigDecimal.valueOf(100_000_000_000L);
+
+    private static final BigDecimal MAX_MILLISECOND_TIMESTAMP = BigDecimal.valueOf(100_000_000_000_000L);
+
     private JBLabel datePreviewLabel;
 
     private JBLabel localDatePreviewLabel;
@@ -113,11 +117,11 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, BigDecimal> {
             this.subtract15MinutesButton.setEnabled(!this.readOnly);
             Instant preview = NumericDate.toInstant(timestamp);
             if (preview == null) {
-                this.datePreviewLabel.setText("UTC: Timestamp outside display range");
+                this.datePreviewLabel.setText(addMillisecondsHint("UTC: Timestamp outside display range", timestamp));
                 return;
             }
             String utcPreview = preview.toString();
-            this.datePreviewLabel.setText("UTC: " + utcPreview);
+            this.datePreviewLabel.setText(addMillisecondsHint("UTC: " + utcPreview, timestamp));
             String localPreview = TimestampFormatter.formatLocalIso(preview);
             if (localPreview != null && !utcPreview.equals(localPreview)) {
                 this.localDatePreviewLabel.setText("Local: " + localPreview);
@@ -129,6 +133,15 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, BigDecimal> {
             this.add15MinutesButton.setEnabled(false);
             this.subtract15MinutesButton.setEnabled(false);
         }
+    }
+
+    private static String addMillisecondsHint(String preview, BigDecimal timestamp) {
+        BigDecimal magnitude = timestamp.abs();
+        if (magnitude.compareTo(MIN_MILLISECOND_TIMESTAMP) >= 0
+                && magnitude.compareTo(MAX_MILLISECOND_TIMESTAMP) <= 0) {
+            return preview + " · JWT timestamps use seconds. Did you paste milliseconds?";
+        }
+        return preview;
     }
 
     @Override
