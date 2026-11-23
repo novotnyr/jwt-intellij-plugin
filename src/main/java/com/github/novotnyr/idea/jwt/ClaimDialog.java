@@ -47,6 +47,11 @@ public class ClaimDialog extends DialogWrapper {
         this.claim = claim;
         this.mode = mode;
         this.claimPanel = new ClaimPanel(claim, mode, viewOnlyReason);
+        setTitle(switch (mode) {
+            case NEW -> "Add JWT Claim";
+            case EDIT -> "Edit JWT Claim";
+            case VIEW -> "View JWT Claim";
+        });
 
         init();
     }
@@ -144,7 +149,7 @@ public class ClaimDialog extends DialogWrapper {
             add(this.claimTextLabel, cColumn1);
             add(this.claimNameTextField, cColumns2);
 
-            this.claimNameTextField.setEnabled(mode == NEW);
+            this.claimNameTextField.setEditable(mode == NEW);
 
             initBottom(claim, cColumn1, cColumns2);
         }
@@ -155,9 +160,20 @@ public class ClaimDialog extends DialogWrapper {
             cColumns2.fill = GridBagConstraints.BOTH;
             cColumns2.weighty = 1;
 
-            add(this.claimValueTextLabel, cColumn1);
-            add(this.nestedClaimPanel = createNestedPanel(), cColumns2);
+            this.nestedClaimPanel = createNestedPanel();
             this.nestedClaimPanel.setReadOnly(this.mode == Mode.VIEW);
+
+            if (this.nestedClaimPanel instanceof DateClaimPanel) {
+                this.claimValueTextLabel.setText("Unix timestamp:");
+                this.claimValueTextLabel.setLabelFor(this.nestedClaimPanel);
+                cColumn1.anchor = GridBagConstraints.BASELINE_LEADING;
+                cColumns2.anchor = GridBagConstraints.BASELINE_LEADING;
+                cColumns2.fill = GridBagConstraints.HORIZONTAL;
+                cColumns2.weighty = 0;
+            }
+
+            add(this.claimValueTextLabel, cColumn1);
+            add(this.nestedClaimPanel, cColumns2);
 
             this.claimNameTextField.setText(claim.getName());
         }

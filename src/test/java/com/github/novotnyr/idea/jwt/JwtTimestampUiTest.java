@@ -10,13 +10,19 @@ import com.github.novotnyr.idea.jwt.ui.claimpanel.DateClaimPanel;
 import com.github.novotnyr.idea.jwt.validation.ClaimError;
 import com.github.novotnyr.idea.jwt.validation.JwtValidator;
 import com.intellij.testFramework.LightPlatformTestCase;
+import com.intellij.ui.components.JBLabel;
+import com.intellij.util.ui.UIUtil;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.event.TableModelEvent;
 import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Point;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -73,20 +79,89 @@ public class JwtTimestampUiTest extends LightPlatformTestCase {
         assertNotNull(add15Minutes);
         assertEquals("1735689601.125", valueField.getText());
         assertNull(panel.getValidationInfo());
-        assertEquals("2025-01-01T00:00:01.125Z", datePreview.getText());
+        assertEquals("UTC: 2025-01-01T00:00:01.125Z", datePreview.getText());
         assertEquals(0, claim.getValue().compareTo(panel.getClaimValue()));
 
         add15Minutes.doClick();
         assertEquals(0, new BigDecimal("1735690501.125").compareTo(panel.getClaimValue()));
-        assertEquals("2025-01-01T00:15:01.125Z", datePreview.getText());
+        assertEquals("UTC: 2025-01-01T00:15:01.125Z", datePreview.getText());
         assertNull(panel.getValidationInfo());
 
         valueField.setText("999999999999999999999999");
-        assertEquals("Timestamp outside display range", datePreview.getText());
+        assertEquals("UTC: Timestamp outside display range", datePreview.getText());
+        assertTrue(add15Minutes.isEnabled());
 
         valueField.setText("not a number");
-        assertEquals("Not a valid timestamp", datePreview.getText());
+        assertEquals("UTC: Not a valid timestamp", datePreview.getText());
+        assertFalse(add15Minutes.isEnabled());
         assertNotNull(panel.getValidationInfo());
+
+        JButton now = findButton(panel, "Now");
+        assertTrue(now.isEnabled());
+        now.doClick();
+        assertNull(panel.getValidationInfo());
+        assertTrue(new BigDecimal(valueField.getText()).compareTo(BigDecimal.ZERO) > 0);
+
+        panel.setReadOnly(true);
+        assertFalse(now.isEnabled());
+        assertFalse(add15Minutes.isEnabled());
+    }
+
+    public void testTimestampFieldAndShortcutsKeepCompactLayout() {
+        DateClaimPanel panel = new DateClaimPanel(DateClaim.fromNumericDate("exp", BigDecimal.ZERO));
+        JTextField valueField = findComponent(panel, JTextField.class);
+        JButton now = findButton(panel, "Now");
+        JButton add15Minutes = findButton(panel, "+15 min");
+        JButton subtract15Minutes = findButton(panel, "-15 min");
+
+        assertNotNull(valueField);
+        assertSame(add15Minutes.getParent(), subtract15Minutes.getParent());
+        assertSame(now.getParent(), add15Minutes.getParent());
+        Dimension preferredSize = valueField.getPreferredSize();
+        panel.setSize(400, 300);
+        panel.doLayout();
+        assertEquals(preferredSize.height, valueField.getHeight());
+    }
+
+    public void testTimestampPreviewsUseInlineHelpTextStyle() {
+        DateClaimPanel panel = new DateClaimPanel(DateClaim.fromNumericDate("exp", BigDecimal.ZERO));
+        List<JLabel> previews = Arrays.stream(panel.getComponents())
+                .filter(JLabel.class::isInstance)
+                .map(JLabel.class::cast)
+                .toList();
+
+        assertEquals(2, previews.size());
+        for (JLabel preview : previews) {
+            assertTrue(preview instanceof JBLabel);
+            JBLabel inlineHelpText = (JBLabel) preview;
+            assertEquals(UIUtil.ComponentStyle.SMALL, inlineHelpText.getComponentStyle());
+            assertEquals(UIUtil.FontColor.BRIGHTER, inlineHelpText.getFontColor());
+        }
+    }
+
+    public void testTimestampLabelStaysAlignedWithFieldWhenDialogResizes() {
+        ClaimDialog dialog = new ClaimDialog(DateClaim.fromNumericDate("iat", BigDecimal.ZERO),
+                ClaimDialog.Mode.EDIT, null);
+        Container content = (Container) dialog.createCenterPanel();
+        Dimension preferredSize = content.getPreferredSize();
+        content.setSize(preferredSize.width + 300, preferredSize.height + 200);
+        layoutRecursively(content);
+
+        JLabel timestampLabel = findLabelWithText(content, "Unix timestamp:");
+        DateClaimPanel datePanel = findComponentRecursively(content, DateClaimPanel.class);
+        assertNotNull(timestampLabel);
+        assertNotNull(datePanel);
+        JTextField valueField = findComponent(datePanel, JTextField.class);
+        assertNotNull(valueField);
+        assertSame(datePanel, timestampLabel.getLabelFor());
+
+        int labelBaseline = timestampLabel.getBaseline(timestampLabel.getWidth(), timestampLabel.getHeight());
+        int fieldBaseline = valueField.getBaseline(valueField.getWidth(), valueField.getHeight());
+        assertTrue(labelBaseline >= 0);
+        assertTrue(fieldBaseline >= 0);
+        Point labelPoint = SwingUtilities.convertPoint(timestampLabel, 0, labelBaseline, content);
+        Point fieldPoint = SwingUtilities.convertPoint(valueField, 0, fieldBaseline, content);
+        assertEquals(labelPoint.y, fieldPoint.y);
     }
 
     public void testTimestampEditorShowsUtcAndUpdatesLocalPreview() {
@@ -96,20 +171,20 @@ public class JwtTimestampUiTest extends LightPlatformTestCase {
             DateClaimPanel panel = new DateClaimPanel(DateClaim.fromNumericDate("exp", new BigDecimal("1735689601.125")));
             JTextField valueField = findComponent(panel, JTextField.class);
             JButton add15Minutes = findButton(panel, "+15 min");
-            assertEquals(List.of("2025-01-01T00:00:01.125Z", "Local: 2024-12-31T19:00:01.125-05:00"),
+            assertEquals(List.of("UTC: 2025-01-01T00:00:01.125Z", "Local: 2024-12-31T19:00:01.125-05:00"),
                     visiblePreviews(panel));
 
             valueField.setText("1751328001.125");
             add15Minutes.doClick();
-            assertEquals(List.of("2025-07-01T00:15:01.125Z", "Local: 2025-06-30T20:15:01.125-04:00"),
+            assertEquals(List.of("UTC: 2025-07-01T00:15:01.125Z", "Local: 2025-06-30T20:15:01.125-04:00"),
                     visiblePreviews(panel));
 
             valueField.setText("not a number");
-            assertEquals(List.of("Not a valid timestamp"), visiblePreviews(panel));
+            assertEquals(List.of("UTC: Not a valid timestamp"), visiblePreviews(panel));
             valueField.setText(NumericDate.fromInstant(Instant.MIN).toString());
-            assertEquals(List.of(Instant.MIN.toString()), visiblePreviews(panel));
+            assertEquals(List.of("UTC: " + Instant.MIN), visiblePreviews(panel));
             valueField.setText(NumericDate.fromInstant(Instant.MAX).toString());
-            assertEquals(List.of(Instant.MAX.toString()), visiblePreviews(panel));
+            assertEquals(List.of("UTC: " + Instant.MAX), visiblePreviews(panel));
         } finally {
             TimeZone.setDefault(originalZone);
         }
@@ -120,7 +195,7 @@ public class JwtTimestampUiTest extends LightPlatformTestCase {
         try {
             TimeZone.setDefault(TimeZone.getTimeZone("Etc/UTC"));
             DateClaimPanel panel = new DateClaimPanel(DateClaim.fromNumericDate("exp", new BigDecimal("1735689601.1")));
-            assertEquals(List.of("2025-01-01T00:00:01.100Z"), visiblePreviews(panel));
+            assertEquals(List.of("UTC: 2025-01-01T00:00:01.100Z"), visiblePreviews(panel));
         } finally {
             TimeZone.setDefault(originalZone);
         }
@@ -249,6 +324,45 @@ public class JwtTimestampUiTest extends LightPlatformTestCase {
                 .toList();
     }
 
+    private static void layoutRecursively(Container container) {
+        container.doLayout();
+        for (Component component : container.getComponents()) {
+            if (component instanceof Container child) {
+                layoutRecursively(child);
+            }
+        }
+    }
+
+    private static JLabel findLabelWithText(Component root, String text) {
+        if (root instanceof JLabel label && text.equals(label.getText())) {
+            return label;
+        }
+        if (root instanceof Container container) {
+            for (Component child : container.getComponents()) {
+                JLabel result = findLabelWithText(child, text);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static <T extends Component> T findComponentRecursively(Component root, Class<T> type) {
+        if (type.isInstance(root)) {
+            return type.cast(root);
+        }
+        if (root instanceof Container container) {
+            for (Component child : container.getComponents()) {
+                T result = findComponentRecursively(child, type);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null;
+    }
+
     private static <T extends Component> T findComponent(DateClaimPanel panel, Class<T> type) {
         for (Component component : panel.getComponents()) {
             if (type.isInstance(component)) {
@@ -259,9 +373,19 @@ public class JwtTimestampUiTest extends LightPlatformTestCase {
     }
 
     private static JButton findButton(DateClaimPanel panel, String text) {
-        for (Component component : panel.getComponents()) {
-            if (component instanceof JButton button && text.equals(button.getText())) {
-                return button;
+        return findButtonRecursively(panel, text);
+    }
+
+    private static JButton findButtonRecursively(Component root, String text) {
+        if (root instanceof JButton button && text.equals(button.getText())) {
+            return button;
+        }
+        if (root instanceof Container container) {
+            for (Component child : container.getComponents()) {
+                JButton result = findButtonRecursively(child, text);
+                if (result != null) {
+                    return result;
+                }
             }
         }
         return null;

@@ -20,6 +20,7 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import java.awt.Component;
 import java.awt.Container;
 
@@ -148,6 +149,29 @@ public class JwtPanelActionStateTest extends LightPlatformTestCase {
         }
     }
 
+    public void testClaimDialogTitlesAndExistingClaimNameEditability() {
+        StringClaim claim = new StringClaim("subject", "alice");
+        ClaimDialog newDialog = new ClaimDialog(claim, ClaimDialog.Mode.NEW, null);
+        ClaimDialog editDialog = new ClaimDialog(claim, ClaimDialog.Mode.EDIT, null);
+        ClaimDialog viewDialog = new ClaimDialog(claim, ClaimDialog.Mode.VIEW, null);
+
+        assertEquals("Add JWT Claim", newDialog.getTitle());
+        assertEquals("Edit JWT Claim", editDialog.getTitle());
+        assertEquals("View JWT Claim", viewDialog.getTitle());
+
+        JTextField newName = findClaimNameTextField((Component) newDialog.createCenterPanel());
+        JTextField editName = findClaimNameTextField((Component) editDialog.createCenterPanel());
+        JTextField viewName = findClaimNameTextField((Component) viewDialog.createCenterPanel());
+        assertTrue(newName.isEnabled());
+        assertTrue(newName.isEditable());
+        assertTrue(editName.isEnabled());
+        assertFalse(editName.isEditable());
+        assertTrue(viewName.isEnabled());
+        assertFalse(viewName.isEditable());
+        assertEquals("subject", editName.getText());
+        assertEquals("subject", viewName.getText());
+    }
+
     private static boolean isEnabled(AnActionButton button) {
         AnActionEvent event = TestActionEvent.createTestEvent(button);
         button.update(event);
@@ -206,6 +230,21 @@ public class JwtPanelActionStateTest extends LightPlatformTestCase {
         if (root instanceof Container container) {
             for (Component child : container.getComponents()) {
                 JLabel result = findLabelWithText(child, text);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static JTextField findClaimNameTextField(Component root) {
+        if (root instanceof JTextField textField) {
+            return textField;
+        }
+        if (root instanceof Container container) {
+            for (Component child : container.getComponents()) {
+                JTextField result = findClaimNameTextField(child);
                 if (result != null) {
                     return result;
                 }
