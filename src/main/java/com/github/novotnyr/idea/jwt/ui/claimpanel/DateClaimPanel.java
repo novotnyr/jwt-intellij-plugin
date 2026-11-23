@@ -12,6 +12,7 @@ import org.jspecify.annotations.NonNull;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -85,6 +86,10 @@ public class DateClaimPanel extends AbstractClaimPanel<DateClaim, BigDecimal> {
     @Override
     public int getBaseline(int width, int height) {
         return this.claimValueTextField.getBaseline(width, this.claimValueTextField.getPreferredSize().height);
+    }
+
+    public JTextField getTimestampTextField() {
+        return this.claimValueTextField;
     }
 
     private void nowButtonClicked(ActionEvent e) {

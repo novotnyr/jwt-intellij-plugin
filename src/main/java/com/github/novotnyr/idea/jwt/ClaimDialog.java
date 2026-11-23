@@ -77,6 +77,15 @@ public class ClaimDialog extends DialogWrapper {
 
     @Nullable
     @Override
+    public JComponent getPreferredFocusedComponent() {
+        if (this.mode == Mode.EDIT && this.claimPanel.nestedClaimPanel instanceof DateClaimPanel dateClaimPanel) {
+            return dateClaimPanel.getTimestampTextField();
+        }
+        return super.getPreferredFocusedComponent();
+    }
+
+    @Nullable
+    @Override
     protected ValidationInfo doValidate() {
         return this.claimPanel.getValidationInfo();
     }
@@ -163,9 +172,9 @@ public class ClaimDialog extends DialogWrapper {
             this.nestedClaimPanel = createNestedPanel();
             this.nestedClaimPanel.setReadOnly(this.mode == Mode.VIEW);
 
-            if (this.nestedClaimPanel instanceof DateClaimPanel) {
+            if (this.nestedClaimPanel instanceof DateClaimPanel dateClaimPanel) {
                 this.claimValueTextLabel.setText("Unix timestamp:");
-                this.claimValueTextLabel.setLabelFor(this.nestedClaimPanel);
+                this.claimValueTextLabel.setLabelFor(dateClaimPanel.getTimestampTextField());
                 cColumn1.anchor = GridBagConstraints.BASELINE_LEADING;
                 cColumns2.anchor = GridBagConstraints.BASELINE_LEADING;
                 cColumns2.fill = GridBagConstraints.HORIZONTAL;

@@ -171,9 +171,10 @@ public class JwtTimestampUiTest extends LightPlatformTestCase {
         DateClaimPanel datePanel = findComponentRecursively(content, DateClaimPanel.class);
         assertNotNull(timestampLabel);
         assertNotNull(datePanel);
-        JTextField valueField = findComponent(datePanel, JTextField.class);
+        JTextField valueField = datePanel.getTimestampTextField();
         assertNotNull(valueField);
-        assertSame(datePanel, timestampLabel.getLabelFor());
+        assertSame(valueField, timestampLabel.getLabelFor());
+        assertSame(valueField, dialog.getPreferredFocusedComponent());
 
         int labelBaseline = timestampLabel.getBaseline(timestampLabel.getWidth(), timestampLabel.getHeight());
         int fieldBaseline = valueField.getBaseline(valueField.getWidth(), valueField.getHeight());
@@ -182,6 +183,23 @@ public class JwtTimestampUiTest extends LightPlatformTestCase {
         Point labelPoint = SwingUtilities.convertPoint(timestampLabel, 0, labelBaseline, content);
         Point fieldPoint = SwingUtilities.convertPoint(valueField, 0, fieldBaseline, content);
         assertEquals(labelPoint.y, fieldPoint.y);
+    }
+
+    public void testTimestampFieldIsNotPreferredFocusInNewOrViewMode() {
+        DateClaim claim = DateClaim.fromNumericDate("iat", BigDecimal.ZERO);
+        ClaimDialog newDialog = new ClaimDialog(claim, ClaimDialog.Mode.NEW, null);
+        ClaimDialog viewDialog = new ClaimDialog(claim, ClaimDialog.Mode.VIEW, null);
+        DateClaimPanel newDatePanel = findComponentRecursively(newDialog.createCenterPanel(), DateClaimPanel.class);
+        DateClaimPanel viewDatePanel = findComponentRecursively(viewDialog.createCenterPanel(), DateClaimPanel.class);
+        assertNotNull(newDatePanel);
+        assertNotNull(viewDatePanel);
+
+        JTextField newValueField = newDatePanel.getTimestampTextField();
+        JTextField viewValueField = viewDatePanel.getTimestampTextField();
+        assertNotNull(newValueField);
+        assertNotNull(viewValueField);
+        assertNotSame(newValueField, newDialog.getPreferredFocusedComponent());
+        assertNotSame(viewValueField, viewDialog.getPreferredFocusedComponent());
     }
 
     public void testTimestampEditorShowsUtcAndUpdatesLocalPreview() {
