@@ -234,9 +234,10 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
     public void testWarningFeedbackMatchesClaimBannerAndTracksThemeColors() {
         Color initialWarningBackground = new Color(0xFFE0A0);
         Color updatedWarningBackground = new Color(0xC08040);
+        Color initialForeground = new Color(0x202020);
         Color updatedForeground = new Color(0xE0E0E0);
         Object previousWarningBackground = UIManager.put("Banner.warningBackground", initialWarningBackground);
-        Object previousForeground = UIManager.put("Banner.foreground", updatedForeground);
+        Object previousForeground = UIManager.put("Banner.foreground", initialForeground);
         JwtPanel panel = new JwtPanel(getProject());
         ClaimDialog dialog = new ClaimDialog(new StringClaim("subject", "alice"), ClaimDialog.Mode.VIEW,
                 "Read-only: Enter a shared secret in the HS256 tab to edit claims.");
@@ -265,6 +266,10 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertNotNull(missingInputMessage);
             assertNotNull(claimBanner);
             assertNotNull(claimBannerMessage);
+            assertEquals(initialForeground.getRGB(), claimBannerMessage.getForeground().getRGB());
+            assertEquals(initialForeground.getRGB(), expirationMessage.getForeground().getRGB());
+            assertEquals(initialForeground.getRGB(), signatureMessage.getForeground().getRGB());
+            assertEquals(initialForeground.getRGB(), missingInputMessage.getForeground().getRGB());
             assertWarningColorsMatchBanner(claimBanner, claimBannerMessage, expirationWarning, expirationMessage);
             assertWarningColorsMatchBanner(claimBanner, claimBannerMessage, signatureResult, signatureMessage);
             assertWarningColorsMatchBanner(claimBanner, claimBannerMessage, missingInputHint, missingInputMessage);
@@ -275,6 +280,10 @@ public class JwtPanelTabsTest extends LightPlatformTestCase {
             assertEquals(updatedWarningBackground.getRGB(), expirationWarning.getBackground().getRGB());
             assertEquals(updatedWarningBackground.getRGB(), signatureResult.getBackground().getRGB());
             assertEquals(updatedWarningBackground.getRGB(), missingInputHint.getBackground().getRGB());
+            assertEquals(updatedForeground.getRGB(), claimBannerMessage.getForeground().getRGB());
+            assertEquals(updatedForeground.getRGB(), expirationMessage.getForeground().getRGB());
+            assertEquals(updatedForeground.getRGB(), signatureMessage.getForeground().getRGB());
+            assertEquals(updatedForeground.getRGB(), missingInputMessage.getForeground().getRGB());
             assertWarningColorsMatchBanner(claimBanner, claimBannerMessage, expirationWarning, expirationMessage);
             assertWarningColorsMatchBanner(claimBanner, claimBannerMessage, signatureResult, signatureMessage);
             assertWarningColorsMatchBanner(claimBanner, claimBannerMessage, missingInputHint, missingInputMessage);

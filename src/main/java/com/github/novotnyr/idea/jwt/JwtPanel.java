@@ -34,7 +34,6 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
@@ -50,7 +49,6 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.JBColor;
-import com.intellij.ui.NewUI;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBScrollPane;
@@ -142,9 +140,7 @@ public class JwtPanel implements Disposable {
 
     private final Color warningBackground = JBUI.CurrentTheme.Banner.WARNING_BACKGROUND;
 
-    private final Color warningForeground = NewUI.isEnabled()
-            ? JBUI.CurrentTheme.Banner.FOREGROUND
-            : EditorColorsManager.getInstance().getGlobalScheme().getDefaultForeground();
+    private final Color warningForeground = JBUI.CurrentTheme.Banner.FOREGROUND;
 
     private JwtHeaderTableModel headerTableModel;
 
